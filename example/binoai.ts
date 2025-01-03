@@ -37,22 +37,56 @@ async function runBinoai() {
   const memory = new SimpleMemory();
   const agent = new Agent(llm, tools, memory);
 
-  const inputs = [
-    "What is the weather like?",
-    "What are today's top headlines?",
-    "Given the weather and what is happening in the world, suggest some TODO for me today!"
-  ];
+  // const inputs = [
+  //   "What is the weather like?",
+  //   "What are today's top headlines?",
+  //   "Given the weather and what is happening in the world, suggest some TODO for me today!"
+  // ];
 
-  for (const input of inputs) {
-    console.log(`User Input: ${input}`);
-    try {
-      const response = await agent.run(input);
-      console.log(`Binoai Response:\n${response}`); // More descriptive output
-    } catch (error) {
-      console.error("Binoai Error:", error); // More descriptive error message
-    }
-    console.log("----");
-  }
+  // for (const input of inputs) {
+  //   console.log(`User Input: ${input}`);
+  //   try {
+  //     const response = await agent.run(input);
+  //     console.log(`Binoai Response:\n${response}`); // More descriptive output
+  //   } catch (error) {
+  //     console.error("Binoai Error:", error); // More descriptive error message
+  //   }
+  //   console.log("----");
+  // }
+
+  // read users' input
+  const readline = require('readline');
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  // Create a function to handle user input recursively
+  const askQuestion = async () => {
+    rl.question('Enter your input (or "exit" to quit): ', async (input: string) => {
+      if (input.toLowerCase() === 'exit') {
+        rl.close();
+        return;
+      }
+
+      console.log(`User Input: ${input}`);
+      try {
+        const response = await agent.run(input);
+        console.log(`Binoai Response:\n${response}`);
+      } catch (error) {
+        console.error("Binoai Error:", error);
+      }
+      console.log("----");
+      
+      // Ask for next input
+      askQuestion();
+    });
+  };
+
+  // Start the conversation
+  askQuestion();
+
+  // Move rl.close() to the exit condition above
 }
 
 runBinoai();

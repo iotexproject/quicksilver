@@ -32,7 +32,7 @@ export class Workflow {
             \`\`\`json
             {
                 "tool": "tool_name_or_null", // The name of the tool to use, or null if no tool is needed
-                "tool_input": "input_for_the_tool" // The input to pass to the tool (only if a tool is selected)
+                "tool_input": "input_for_the_tool" // The input to pass to the tool in json format (only if a tool is selected)
             }
             \`\`\`
             If no tool is needed, set "tool" to null and provide a response in "tool_input".

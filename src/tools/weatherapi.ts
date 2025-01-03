@@ -19,21 +19,22 @@ interface NubilaWeatherResponse {
 
 export class WeatherTool implements Tool {
     name: string = "WeatherAPI";
-    description: string = "Gets the current weather from Nubila API.";
+    description: string = "Gets the current weather from Nubila API. Input is json with latitude and longitude to retrieve weather data.";
     private readonly apiKey: string;
     private readonly baseUrl: string;
-    private readonly lat: number;
-    private readonly lon: number;
 
-    constructor(apiKey: string, lat: number = 37.2144, lon: number = -121.8574) {
+    constructor(apiKey: string) {
         this.apiKey = apiKey;
         this.baseUrl = 'https://api.nubila.ai/api/v1/weather';
-        this.lat = lat;
-        this.lon = lon;
     }
 
-    async execute(userInput: string): Promise<string> {
-        const url = `${this.baseUrl}?lat=${this.lat}&lon=${this.lon}`;
+    async execute(userInput: any): Promise<string> {
+        // check user input is json with latitude and longitude
+        if (!userInput || typeof userInput !== 'object' || !('latitude' in userInput) || !('longitude' in userInput)) {
+            return "Invalid input. Please provide a JSON object with 'latitude' and 'longitude' properties.";
+        }
+
+        const url = `${this.baseUrl}?lat=${userInput.latitude}&lon=${userInput.longitude}`;
 
         try {
             const response = await fetch(url, {
