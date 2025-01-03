@@ -2,6 +2,9 @@
 
 **Quicksilver** is a framework designed to bridge the gap between Large Language Models (LLMs) and DEPIN networks for enhanced building sentient AI and agents.
 
+![input-ezgif com-video-to-gif-converter](https://github.com/user-attachments/assets/9598efe8-e4ca-4d86-8e25-ffc218270e75)
+
+
 ## Key Concepts
 
 *   **LLM (Large Language Model):** An interface representing the LLM interaction. (Replace with your actual LLM integration, e.g., OpenAI, Gemini).
