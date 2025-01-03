@@ -63,7 +63,7 @@ export class WeatherTool implements Tool {
             const windDirection = weatherData.wind_direction ? ` Wind Direction: ${weatherData.wind_direction}°` : "";
 
 
-            return `The current weather in ${this.lat}, ${this.lon} is ${weatherDescription} with a temperature of ${temperature}°C${feelsLike}.${humidity}${pressure}${windSpeed}${windDirection}`;
+            return `The current weather in ${userInput.latitude}, ${userInput.longitude} is ${weatherDescription} with a temperature of ${temperature}°C${feelsLike}.${humidity}${pressure}${windSpeed}${windDirection}`;
         } catch (error) {
             console.error("Error fetching weather data:", error);
             return "Could not retrieve weather information. Please check the API or your network connection.";
