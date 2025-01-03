@@ -1,0 +1,33 @@
+# Compiled output
+dist/
+
+# Dependencies
+node_modules/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+.metadata/ # Eclipse metadata
+
+# OS-specific files
+.DS_Store
+
+# Log files
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# Environment files (sensitive data)
+.env
+
+# Temporary files
+*~
+#*
+*.tmp
+*.temp
+
+# Build artifacts (other than dist)
+build/
+out/
