@@ -1,5 +1,11 @@
 # Quicksilver: Building Sentient AI with DEPIN Networks
 
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![GitHub stars](https://img.shields.io/github/stars/raullenchai/quicksilver?style=social)](https://github.com/raullenchai/quicksilver/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/raullenchai/quicksilver?style=social)](https://github.com/raullenchai/quicksilver/network/members)
+[![GitHub last commit](https://img.shields.io/github/last-commit/raullenchai/quicksilver)](https://github.com/raullenchai/quicksilver/commits/main)
+[![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+
 **Quicksilver** is a framework designed to bridge the gap between Large Language Models (LLMs) and DEPIN networks for enhanced building sentient AI and agents.
 
 ![input-ezgif com-video-to-gif-converter](https://github.com/user-attachments/assets/9598efe8-e4ca-4d86-8e25-ffc218270e75)
