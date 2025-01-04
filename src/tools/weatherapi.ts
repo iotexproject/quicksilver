@@ -28,12 +28,12 @@ export class WeatherTool implements Tool {
     description: string = "Gets the current weather from Nubila API. Input is json with latitude and longitude and temperature to retrieve weather data.";
     private readonly apiKey: string;
     private readonly baseUrl: string;
-    private readonly baseWsUrl: string;
+    private readonly wsBaseUrl: string;
 
     constructor(apiKey: string) {
         this.apiKey = apiKey;
         this.baseUrl = 'https://api.nubila.ai/api/v1/weather';
-        this.baseWsUrl = 'https://dragonfruit-testnet.w3bstream.com/task/weather'
+        this.wsBaseUrl = 'https://dragonfruit-testnet.w3bstream.com/task/weather'
     }
 
     async execute(userInput: any): Promise<string> {
@@ -70,9 +70,9 @@ export class WeatherTool implements Tool {
             const windSpeed = weatherData.wind_speed ? ` Wind Speed: ${weatherData.wind_speed} m/s` : "";
             const windDirection = weatherData.wind_direction ? ` Wind Direction: ${weatherData.wind_direction}°` : "";
 
-            let wsResp: string = ``
+            let proofResp: string = ``
             if ('temperature' in userInput) {
-                const url = `${this.baseWsUrl}?temperature=${temperature}&expected_temperature=${userInput.temperature}`;
+                const url = `${this.wsBaseUrl}?temperature=${temperature}&expected_temperature=${userInput.temperature}`;
                 try {
                     const response = await fetch(url, {});
                     if (!response.ok) {
@@ -88,14 +88,14 @@ export class WeatherTool implements Tool {
                     if (!data.less) {
                         state = `greater`
                     }
-                    wsResp = `, expected temperature ${userInput.temperature} is ${state} than real temperature, here is the proof ${data.proof}`
+                    proofResp = `, expected temperature ${userInput.temperature} is ${state} than real temperature, here is the proof ${data.proof}`
                 } catch (error) {
                     console.error("Error fetching w3bstream data:", error);
                     return "Could not retrieve w3bstream information. Please check the API or your network connection.";
                 }
             }
 
-            return `The current weather in ${userInput.latitude}, ${userInput.longitude} is ${weatherDescription} with a temperature of ${temperature}°C${feelsLike}.${humidity}${pressure}${windSpeed}${windDirection}${wsResp}`;
+            return `The current weather in ${userInput.latitude}, ${userInput.longitude} is ${weatherDescription} with a temperature of ${temperature}°C${feelsLike}.${humidity}${pressure}${windSpeed}${windDirection}${proofResp}`;
         } catch (error) {
             console.error("Error fetching weather data:", error);
             return "Could not retrieve weather information. Please check the API or your network connection.";
