@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "bun run server.ts",
+    "dev": "bun run --watch server.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -14,6 +16,7 @@
     "@types/node": "^22.10.5",
     "axios": "^1.7.9",
     "dotenv": "^16.4.7",
+    "hono": "^4.6.16",
     "openai": "^4.77.0",
     "typescript": "^5.7.2"
   }
