@@ -11,8 +11,8 @@ app.get("/", (c) => {
 app.post('/ask', async (c) => {
     const APIKEY = c.req.header("API-KEY")
     // TODO handle API
-    const { query } = await c.req.json()
-    const response = await binoai.agent.run(query);
+    const content = c.req.param("content") && (await c.req.json()).content
+    const response = await binoai.agent.run(content);
     return c.json({ data: response })
 })
 
