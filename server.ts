@@ -4,15 +4,16 @@ const app = new Hono()
 
 const binoai = new BinoAI();
 
-app.post('/binoai', async (c) => {
+app.post('/ask', async (c) => {
+    const APIKEY = c.req.header("API-KEY")
+    // TODO handle API
     const { query } = await c.req.json()
-    console.log(query)
     const response = await binoai.agent.run(query);
     return c.json({ data: response })
 })
 
 export default {
-    port: 8000,
+    port: process.env.PORT || 8000,
     fetch: app.fetch,
 }
 
