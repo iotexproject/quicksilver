@@ -31,5 +31,3 @@ yarn-error.log*
 # Build artifacts (other than dist)
 build/
 out/
-
-bun.lockb
