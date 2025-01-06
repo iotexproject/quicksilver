@@ -1,20 +1,30 @@
-import { BinoAI } from './src/binoai';
+import { SentientAI } from './src/SentientAI ';
 import { Hono } from 'hono'
 const app = new Hono()
 
-const binoai = new BinoAI();
+const sentai = new SentientAI();
 
 app.get("/", (c) => {
-    return c.text("hello world!")
+    return c.text("hello world, Sentient AI!")
 })
 
 app.post('/ask', async (c) => {
 
-    const APIKEY = c.req.header("API-KEY")
-    // TODO handle API
-    const content = c.req.query("content") || (await c.req.json()).content
-    const response = await binoai.agent.run(content);
-    return c.json({ data: response })
+    const apiKey = c.req.header("API-KEY")
+    if (!apiKey) {
+        console.warn('no API-KEY provided');
+    }
+    let content;
+    try {
+        content = c.req.query("q") ||
+            (await c.req.json()).q ||
+            c.req.query("content") || 
+            (await c.req.json()).content;
+    } catch (e) {
+        return c.json({ error: "a question is required."});
+    }
+    const response = await sentai.agent.run(content);
+    return c.json({ data: response });
 })
 
 export default {
