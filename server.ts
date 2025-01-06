@@ -2,13 +2,13 @@ import { BinoAI } from './src/binoai';
 import { Hono } from 'hono'
 const app = new Hono()
 
+const binoai = new BinoAI();
 
 app.get("/", (c) => {
     return c.text("hello world!")
 })
 
 app.post('/ask', async (c) => {
-    const binoai = new BinoAI();
 
     const APIKEY = c.req.header("API-KEY")
     // TODO handle API
