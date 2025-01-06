@@ -4,6 +4,10 @@ const app = new Hono()
 
 const binoai = new BinoAI();
 
+app.get("/", (c) => {
+    return c.text("hello world!")
+})
+
 app.post('/ask', async (c) => {
     const APIKEY = c.req.header("API-KEY")
     // TODO handle API
