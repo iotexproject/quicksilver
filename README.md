@@ -99,7 +99,15 @@ graph TD
     NEWSAPI_API_KEY=your_newsapi_api_key
    ```
 
-4. Run the example agent:
+4. Run the example agents:
+
+   **Using Weather and News API
+
+   ```bash
+   npx ts-node example/binoai.ts
+   ```
+
+   **Using IoTeX ioID**
 
    ```bash
    npx ts-node example/binoai.ts
