@@ -96,7 +96,7 @@ describe("Server", () => {
             method: "POST",
         });
         const res = await testApp(req);
-        expect(res.status).toBe(500);
+        expect(res.status).toBe(400);
         const json = await res.json();
         expect(json.error).toBe("Internal server error.");
     });

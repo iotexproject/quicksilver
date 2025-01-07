@@ -29,7 +29,7 @@ app.post('/ask', async (c) => {
         const response = await sentai.agent.run(content);
         return c.json({ data: response });
     } catch (e) {
-        return c.json({ error: "Internal server error." }, 500);
+        return c.json({ error: "Internal server error." }, 400);
     }
 });
 
