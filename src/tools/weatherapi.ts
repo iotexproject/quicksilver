@@ -1,7 +1,6 @@
-import { Tool } from "./api_tool";
+import { Tool } from './api_tool';
 
-interface NubilaWeatherData {
-    // New interface for the nested data
+interface NubilaWeatherData { // New interface for the nested data
     temperature: number;
     feels_like?: number;
     humidity?: number;
@@ -20,24 +19,18 @@ interface NubilaWeatherResponse {
 
 export class WeatherTool implements Tool {
     name: string = "WeatherAPI";
-    description: string =
-        "Gets the current weather from Nubila API. Input is json with latitude and longitude to retrieve weather data.";
+    description: string = "Gets the current weather from Nubila API. Input is json with latitude and longitude to retrieve weather data.";
     private readonly apiKey: string;
     private readonly baseUrl: string;
 
     constructor(apiKey: string) {
         this.apiKey = apiKey;
-        this.baseUrl = "https://api.nubila.ai/api/v1/weather";
+        this.baseUrl = 'https://api.nubila.ai/api/v1/weather';
     }
 
     async execute(userInput: any): Promise<string> {
         // check user input is json with latitude and longitude
-        if (
-            !userInput ||
-            typeof userInput !== "object" ||
-            !("latitude" in userInput) ||
-            !("longitude" in userInput)
-        ) {
+        if (!userInput || typeof userInput !== 'object' || !('latitude' in userInput) || !('longitude' in userInput)) {
             return "Invalid input. Please provide a JSON object with 'latitude' and 'longitude' properties.";
         }
 
@@ -46,15 +39,13 @@ export class WeatherTool implements Tool {
         try {
             const response = await fetch(url, {
                 headers: {
-                    "x-api-key": this.apiKey,
+                    'x-api-key': this.apiKey,
                 },
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
-                const errorMessage =
-                    errorData?.message ||
-                    `API request failed with status: ${response.status} ${response.statusText}`;
+                const errorMessage = errorData?.message || `API request failed with status: ${response.status} ${response.statusText}`;
                 return `Weather API Error: ${errorMessage}`;
             }
 
@@ -65,21 +56,12 @@ export class WeatherTool implements Tool {
 
             const weatherDescription = weatherData.condition;
             const temperature = weatherData.temperature;
-            const feelsLike = weatherData.feels_like
-                ? ` (Feels like ${weatherData.feels_like}°C)`
-                : "";
-            const humidity = weatherData.humidity
-                ? ` Humidity: ${weatherData.humidity}%`
-                : "";
-            const pressure = weatherData.pressure
-                ? ` Pressure: ${weatherData.pressure} hPa`
-                : "";
-            const windSpeed = weatherData.wind_speed
-                ? ` Wind Speed: ${weatherData.wind_speed} m/s`
-                : "";
-            const windDirection = weatherData.wind_direction
-                ? ` Wind Direction: ${weatherData.wind_direction}°`
-                : "";
+            const feelsLike = weatherData.feels_like ? ` (Feels like ${weatherData.feels_like}°C)` : "";
+            const humidity = weatherData.humidity ? ` Humidity: ${weatherData.humidity}%` : "";
+            const pressure = weatherData.pressure ? ` Pressure: ${weatherData.pressure} hPa` : "";
+            const windSpeed = weatherData.wind_speed ? ` Wind Speed: ${weatherData.wind_speed} m/s` : "";
+            const windDirection = weatherData.wind_direction ? ` Wind Direction: ${weatherData.wind_direction}°` : "";
+
 
             return `The current weather in ${userInput.latitude}, ${userInput.longitude} is ${weatherDescription} with a temperature of ${temperature}°C${feelsLike}.${humidity}${pressure}${windSpeed}${windDirection}`;
         } catch (error) {

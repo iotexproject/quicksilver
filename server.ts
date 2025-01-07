@@ -7,13 +7,14 @@ const app = new Hono();
 const sentai = new SentientAI();
 
 app.get("/", (c) => {
-    return c.text("hello world, Sentient AI!");
-});
+    return c.text("hello world, Sentient AI!")
+})
 
-app.post("/ask", async (c) => {
-    const apiKey = c.req.header("API-KEY");
+app.post('/ask', async (c) => {
+
+    const apiKey = c.req.header("API-KEY")
     if (!apiKey) {
-        console.warn("no API-KEY provided");
+        console.warn('no API-KEY provided');
     }
     try {
         let content = c.req.query("q") || c.req.query("content");

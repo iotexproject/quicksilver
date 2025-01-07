@@ -1,6 +1,6 @@
-import { LLM } from "./llm";
-import { Tool } from "./tools/tool";
-import { Memory } from "./memory";
+import { LLM } from './llm';
+import { Tool } from './tools/tool';
+import { Memory } from './memory';
 
 interface ActionResult {
     tool?: Tool;
@@ -20,10 +20,7 @@ export class Workflow {
 
     async execute(input: string): Promise<string> {
         const memoryVariables = this.memory.loadMemoryVariables();
-        const availableTools = this.tools.map((tool) => ({
-            name: tool.name,
-            description: tool.description,
-        }));
+        const availableTools = this.tools.map(tool => ({ name: tool.name, description: tool.description }));
 
         const prompt = `
             Previous Conversation: ${JSON.stringify(memoryVariables.history)}
@@ -43,7 +40,7 @@ export class Workflow {
 
         try {
             const llmResponse = await this.llm.generate(prompt);
-            console.log("LLM raw response:", llmResponse);
+            console.log("LLM raw response:", llmResponse)
             const action: ActionResult = this.parseLLMResponse(llmResponse);
 
             let output: string;
@@ -61,53 +58,42 @@ export class Workflow {
                     Generate a human-readable response based on the tool output.
                 `;
                 output = await this.llm.generate(finalPrompt);
+
             } else {
                 output = action.output; // LLM handles it directly (no tool used)
             }
 
             this.memory.saveContext(input, output);
             return output;
+
         } catch (error) {
             console.error("Workflow Error:", error);
             return "Workflow Error: " + error; // Return a user-friendly error message
         }
     }
 
-    private parseLLMResponse(llmResponse: string): ActionResult {
-        try {
-            // Remove Markdown code blocks if present
-            const cleanResponse = llmResponse
-                .replace(/```json\n/g, "")
-                .replace(/```/g, "")
-                .trim();
+private parseLLMResponse(llmResponse: string): ActionResult {
+    try {
+        // Remove Markdown code blocks if present
+        const cleanResponse = llmResponse.replace(/```json\n/g, '').replace(/```/g, '').trim();
 
-            const jsonResponse = JSON.parse(cleanResponse);
-            const toolName = jsonResponse.tool;
-            const toolInput = jsonResponse.tool_input;
+        const jsonResponse = JSON.parse(cleanResponse);
+        const toolName = jsonResponse.tool;
+        const toolInput = jsonResponse.tool_input;
 
-            if (toolName) {
-                const tool = this.tools.find((t) => t.name === toolName);
-                if (tool) {
-                    return { tool, output: toolInput };
-                } else {
-                    return { output: `Tool "${toolName}" not found.` };
-                }
+        if (toolName) {
+            const tool = this.tools.find(t => t.name === toolName);
+            if (tool) {
+                return { tool, output: toolInput };
             } else {
-                return { output: toolInput || "No tool needed." };
+                return { output: `Tool "${toolName}" not found.` };
             }
-        } catch (error) {
-            console.error(
-                "Error parsing LLM response:",
-                error,
-                "Raw LLM Response:",
-                llmResponse
-            );
-            return {
-                output: `Error parsing LLM response: ${error}. Raw Response: ${llmResponse}. Cleaned Response (for debugging): ${llmResponse
-                    .replace(/```json\n/g, "")
-                    .replace(/```/g, "")
-                    .trim()}`,
-            };
+        } else {
+            return { output: toolInput || "No tool needed." };
         }
+    } catch (error) {
+        console.error("Error parsing LLM response:", error, "Raw LLM Response:", llmResponse);
+        return { output: `Error parsing LLM response: ${error}. Raw Response: ${llmResponse}. Cleaned Response (for debugging): ${llmResponse.replace(/```json\n/g, '').replace(/```/g, '').trim()}` };
     }
+}
 }
