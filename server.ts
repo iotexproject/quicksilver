@@ -1,6 +1,8 @@
-import { SentientAI } from './src/SentientAI';
-import { Hono } from 'hono'
-const app = new Hono()
+import { Hono } from "hono";
+
+import { SentientAI } from "./src/SentientAI";
+
+const app = new Hono();
 
 const sentai = new SentientAI();
 
@@ -13,23 +15,24 @@ app.post("/ask", async (c) => {
     if (!apiKey) {
         console.warn("no API-KEY provided");
     }
-    let content;
     try {
-        content =
-            c.req.query("q") ||
-            (await c.req.json()).q ||
-            c.req.query("content") ||
-            (await c.req.json()).content;
+        let content = c.req.query("q") || c.req.query("content");
+        if (!content) {
+            const body = await c.req.json();
+            content = body.q || body.content;
+        }
+        if (!content) {
+            return c.json({ error: "question is required." }, 400);
+        }
+
+        const response = await sentai.agent.run(content);
+        return c.json({ data: response });
     } catch (e) {
-        return c.json({ error: "a question is required." });
+        return c.json({ error: "Internal server error." }, 500);
     }
-    const response = await sentai.agent.run(content);
-    return c.json({ data: response });
 });
 
 export default {
     port: process.env.PORT || 8000,
     fetch: app.fetch,
 };
-
-// bun run server.ts
