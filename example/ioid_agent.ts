@@ -25,8 +25,8 @@ async function runExample() {
 
   // User inputs to process
   const inputs = [
-    "Provide Project Info for Network3",
-
+    "Provide Project ID for Network3.",
+    "What's the Project ID for IoTeXLab?",
   ];
 
   for (const input of inputs) {
