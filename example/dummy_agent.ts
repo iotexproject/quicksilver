@@ -1,8 +1,8 @@
-import { DummyLLM } from '../src/llm';
-import { Tool } from '../src/tools/tool';
-import { Memory, SimpleMemory } from '../src/memory';
-import { Workflow } from '../src/workflow';
-import { Agent } from '../src/agent';
+import { DummyLLM } from "../src/llm";
+import { Tool } from "../src/tools/tool";
+import { Memory, SimpleMemory } from "../src/memory";
+import { Workflow } from "../src/workflow";
+import { Agent } from "../src/agent";
 
 // Dummy Tool
 class EchoTool implements Tool {

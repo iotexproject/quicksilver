@@ -3,9 +3,7 @@
     "image": "ghcr.io/nhaef/devcontainer-bun:latest",
     "customizations": {
         "vscode": {
-            "extensions": [
-                "dbaeumer.vscode-eslint"
-            ]
+            "extensions": ["dbaeumer.vscode-eslint"]
         }
     }
 }
