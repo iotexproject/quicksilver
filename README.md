@@ -101,18 +101,12 @@ graph TD
     NEWSAPI_API_KEY=your_newsapi_api_key
    ```
 
-4. Run the example agents:
+4. Run example agents:
 
-   **Using Weather and News API
-
+Some example agents are located in the `example` folder. Run an example with:
+  
    ```bash
-   npx ts-node example/binoai.ts
-   ```
-
-   **Using IoTeX ioID**
-
-   ```bash
-   npx ts-node example/binoai.ts
+   npx ts-node example/demo_agent.ts
    ```
 
 ---
