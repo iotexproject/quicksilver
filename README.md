@@ -14,15 +14,18 @@
 <details>
   <summary>Read more</summary>
 The QuickSilver framework empowers developers to build intelligent agents that:
+
 - **Sense and Understand**: Use DePINs to collect and process data from decentralized physical infrastructure, acting as the sensory layer for AI agents.
 - **Act and Respond**: Combine LLMs' advanced reasoning capabilities with data from DePINs to perform context-aware interactions.
 - **Integrate Seamlessly**: Utilize the framework's modularity to connect with multiple DePIN projects, including weather, energy, and location networks, enabling agents to access diverse sources of decentralized data.
 - **Orchestrate Workflows**: Automate multi-step processes while maintaining state and context.
+
 </details>
 
 ---
 
-<video src="./images/preview.mp4" autoplay loop muted playsinline width="800"></video>
+![Preview](./images/preview.gif)
+
 ## Features
 
 - **Workflow Orchestration**: Executes complex, multi-step tasks orchestrating interaction between LLM, tools, and memory.

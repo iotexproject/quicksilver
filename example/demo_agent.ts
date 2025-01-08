@@ -5,6 +5,7 @@ import { Agent } from '../src/agent'; // Go up one level, then into src
 import { SimpleMemory } from '../src/memory'; // Go up one level, then into src
 import { Tool } from '../src/tools/api_tool'; // Go up one level, then into src/tools
 import * as dotenv from 'dotenv';
+import chalk from 'chalk'; // Import chalk for colored output
 
 dotenv.config();
 
@@ -13,20 +14,20 @@ async function main() {
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    console.error("Please set the OPENAI_API_KEY environment variable.");
+    console.error(chalk.red("Please set the OPENAI_API_KEY environment variable."));
     return;
   }
   llm = new OpenAILLM(apiKey, "gpt-3.5-turbo"); // Use gpt-3.5-turbo for cost-effectiveness
 
   const weatherApiKey = process.env.NUBILA_API_KEY;
   if (!weatherApiKey) {
-    console.error("Please set the NUBILA_API_KEY environment variable.");
+    console.error(chalk.red("Please set the NUBILA_API_KEY environment variable."));
     return;
   }
 
   const newsApiKey = process.env.NEWSAPI_API_KEY;
   if (!newsApiKey) {
-    console.error("Please set the NEWSAPI_API_KEY environment variable.");
+    console.error(chalk.red("Please set the NEWSAPI_API_KEY environment variable."));
     return;
   }
 
@@ -46,20 +47,22 @@ async function main() {
 
   // Create a function to handle user input recursively
   const askQuestion = async () => {
-    rl.question('Enter your input (or "exit" to quit): ', async (input: string) => {
+    rl.question(chalk.cyan('Enter your input (or "exit" to quit): '), async (input: string) => {
       if (input.toLowerCase() === 'exit') {
         rl.close();
+        console.log(chalk.green("Goodbye!"));
         return;
       }
 
-      console.log(`User Input: ${input}`);
+      // console.log(chalk.blue(`User Input: ${input}`));
       try {
         const response = await agent.run(input);
-        console.log(`Binoai Response:\n${response}`);
+        console.log(chalk.cyan(`Agent Response:`));
+        console.log(chalk.yellow(response));
       } catch (error) {
-        console.error("Binoai Error:", error);
+        console.error(chalk.red("Agent Error:"), error);
       }
-      console.log("----");
+      console.log(chalk.gray("----"));
       
       // Ask for next input
       askQuestion();
