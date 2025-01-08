@@ -22,8 +22,7 @@ The QuickSilver framework empowers developers to build intelligent agents that:
 
 ---
 
-![input-ezgif com-video-to-gif-converter](https://github.com/user-attachments/assets/9598efe8-e4ca-4d86-8e25-ffc218270e75)
-
+<video src="./images/preview.mp4" autoplay loop muted playsinline width="800"></video>
 ## Features
 
 - **Workflow Orchestration**: Executes complex, multi-step tasks orchestrating interaction between LLM, tools, and memory.
