@@ -8,7 +8,7 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-async function runBinoai() {
+async function main() {
   let llm: LLM;
 
   const apiKey = process.env.OPENAI_API_KEY;
@@ -36,23 +36,6 @@ async function runBinoai() {
   const tools: Tool[] = [weatherTool, newsTool]; // Only Weather and News tools
   const memory = new SimpleMemory();
   const agent = new Agent(llm, tools, memory);
-
-  // const inputs = [
-  //   "What is the weather like?",
-  //   "What are today's top headlines?",
-  //   "Given the weather and what is happening in the world, suggest some TODO for me today!"
-  // ];
-
-  // for (const input of inputs) {
-  //   console.log(`User Input: ${input}`);
-  //   try {
-  //     const response = await agent.run(input);
-  //     console.log(`Binoai Response:\n${response}`); // More descriptive output
-  //   } catch (error) {
-  //     console.error("Binoai Error:", error); // More descriptive error message
-  //   }
-  //   console.log("----");
-  // }
 
   // read users' input
   const readline = require('readline');
@@ -89,4 +72,4 @@ async function runBinoai() {
   // Move rl.close() to the exit condition above
 }
 
-runBinoai();
+main();
