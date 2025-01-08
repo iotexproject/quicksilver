@@ -1,10 +1,10 @@
 
-import { OpenAILLM, LLM } from './llm'; // Go up one level, then into src
-import { WeatherTool } from './tools/weatherapi'; // Go up one level, then into src/tools
-import { NewsAPITool } from './tools/newsapi'; // Go up one level, then into src/tools
 import { Agent } from './agent'; // Go up one level, then into src
+import { OpenAILLM } from './llm'; // Go up one level, then into src
 import { SimpleMemory } from './memory'; // Go up one level, then into src
 import { Tool } from './tools/api_tool'; // Go up one level, then into src/tools
+import { NewsAPITool } from './tools/newsapi'; // Go up one level, then into src/tools
+import { WeatherTool } from './tools/weatherapi'; // Go up one level, then into src/tools
 
 const { OPENAI_API_KEY, NUBILA_API_KEY, NEWSAPI_API_KEY } = process.env
 if (!OPENAI_API_KEY || !NUBILA_API_KEY || !NEWSAPI_API_KEY) {
