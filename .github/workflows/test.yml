@@ -11,8 +11,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    container:
-      image: jarredsumner/bun:latest
 
     steps:
     - name: Checkout code
@@ -24,7 +22,7 @@ jobs:
         node-version: '22'
 
     - name: Install dependencies
-      run: bun install
+      run: npm install
 
     - name: Run tests
       run: npm test 
