@@ -41,11 +41,11 @@ export class WeatherTool implements Tool {
                 headers: {
                     'x-api-key': this.apiKey,
                 },
+                signal: AbortSignal.timeout(5000)
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                const errorMessage = errorData?.message || `API request failed with status: ${response.status} ${response.statusText}`;
+                const errorMessage = `API request failed with status: ${response.status} ${response.statusText}`;
                 return `Weather API Error: ${errorMessage}`;
             }
 
