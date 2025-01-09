@@ -10,6 +10,7 @@ interface NewsAPIResponse {
 export class NewsAPITool extends APITool {
     constructor(apiKey: string) {
         super('NewsAPI', 'Fetches today\'s headlines from News API', apiKey);
+        this.twitterAccount = 'NewsAPIorg';
     }
 
     async execute(input: string): Promise<string> {
