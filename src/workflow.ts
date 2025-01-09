@@ -17,7 +17,7 @@ export class Workflow {
         this.fastllm = fastllm;
         this.llm = llm;
         this.tools = tools;
-        this.memory = memory;   
+        this.memory = memory;
     }
 
     async execute(input: string): Promise<string> {
@@ -43,7 +43,7 @@ export class Workflow {
             const llmResponse = await this.fastllm.generate(prompt);
             console.log("fast LLM raw response:", llmResponse)
             const action: ActionResult = this.parseLLMResponse(llmResponse);
-
+            console.log("action:", action)
             let output: string;
             if (action.tool) {
                 const toolOutput = await action.tool.execute(action.output);
@@ -75,34 +75,39 @@ export class Workflow {
         }
     }
 
-private parseLLMResponse(llmResponse: string): ActionResult {
-    try {
-        // Use regex to extract the first JSON object
-        const jsonMatch = llmResponse.match(/{(?:[^{}]|{[^{}]*})*}/);
-        if (!jsonMatch) {
-            throw new Error("No JSON object found in LLM response.");
-        }
-        
-        const json_string = jsonMatch[0];
-        console.log("json_string:", json_string);
-
-        const jsonResponse = JSON.parse(json_string);
-        const toolName = jsonResponse.tool;
-        const toolInput = jsonResponse.tool_input;
-
-        if (toolName) {
-            const tool = this.tools.find(t => t.name === toolName);
-            if (tool) {
-                return { tool, output: toolInput };
-            } else {
-                return { output: `Tool "${toolName}" not found.` };
+    private parseLLMResponse(llmResponse: string): ActionResult {
+        try {
+            // Use regex to extract the first JSON object
+            const jsonMatch = llmResponse.match(/{(?:[^{}]|{[^{}]*})*}/);
+            if (!jsonMatch) {
+                throw new Error("No JSON object found in LLM response.");
             }
-        } else {
-            return { output: toolInput || "No tool needed." };
+
+            const json_string = jsonMatch[0];
+            console.log("json_string:", json_string);
+
+            const jsonResponse = JSON.parse(json_string);
+            const toolName = jsonResponse.tool;
+            let toolInput
+            try {
+                toolInput = JSON.parse(jsonResponse.tool_input);
+            } catch (error) {
+                toolInput = jsonResponse.tool_input;
+            }
+
+            if (toolName) {
+                const tool = this.tools.find(t => t.name === toolName);
+                if (tool) {
+                    return { tool, output: toolInput };
+                } else {
+                    return { output: `Tool "${toolName}" not found.` };
+                }
+            } else {
+                return { output: toolInput || "No tool needed." };
+            }
+        } catch (error) {
+            console.error("Error parsing LLM response:", error, "Raw LLM Response:", llmResponse);
+            return { output: `Error parsing LLM response: ${error}. Raw Response: ${llmResponse}.` };
         }
-    } catch (error) {
-        console.error("Error parsing LLM response:", error, "Raw LLM Response:", llmResponse);
-        return { output: `Error parsing LLM response: ${error}. Raw Response: ${llmResponse}.` };
     }
-}
 }

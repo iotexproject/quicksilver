@@ -1,6 +1,8 @@
 import OpenAI from "openai";
-import Together from "together-ai";
+import { RAGApplication, RAGApplicationBuilder } from '@llm-tools/embedjs';
+import { LibSqlDb } from '@llm-tools/embedjs-libsql';
 
+import { OpenAiEmbeddings } from '@llm-tools/embedjs-openai';
 export interface LLM {
   generate(prompt: string): Promise<string>;
 }
@@ -56,38 +58,27 @@ export class OpenAILLM implements LLM {
   }
 }
 
-export class TogetherLLM implements LLM {
-  private together: Together;
-  private model: string;
 
-  constructor(model: string = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo-128K") {
-    this.together = new Together();
-    this.model = model;
+export class EmbedLLM implements LLM {
+  model: RAGApplication | null = null
+
+  constructor(args: Partial<EmbedLLM> = {}) {
+    Object.assign(this, args)
+    if (!this.model) {
+      new RAGApplicationBuilder()
+        .setEmbeddingModel(new OpenAiEmbeddings({
+          model: 'text-embedding-3-small'
+        }))
+        .setVectorDatabase(new LibSqlDb({ path: './data.db' }))
+        .build().then(model => this.model = model)
+    }
   }
 
   async generate(prompt: string): Promise<string> {
     try {
-      const response = await this.together.chat.completions.create({
-        messages: [{ role: "user", content: prompt }],
-        model: this.model,
-        max_tokens: null,
-        temperature: 0.7,
-        top_p: 0.7,
-        top_k: 50,
-        repetition_penalty: 1,
-        stop: ["<|eot_id|>", "<|eom_id|>"],
-        stream: true,
-      });
-
-      let result = "";
-      for await (const token of response) {
-        const content = token.choices[0]?.delta?.content;
-        if (content) {
-          result += content;
-        }
-      }
-      return result.trim() || "No content in response";
-
+      const result = await this.model?.query(prompt);
+      console.log(result)
+      return result?.content.trim() || "No content in response";
     } catch (error: any) {
       console.error("Together API Error:", error.message);
       return `Together API Error: ${error.message}`;
