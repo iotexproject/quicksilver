@@ -56,7 +56,7 @@ export class Workflow {
                     Tool Input: ${action.output}
                     Tool Output: ${toolOutput}
 
-                    Generate a human-readable response based on the tool output.
+                    Generate a human-readable response based on the tool output${action.tool.twitterAccount.length > 0 ? ` and cite the source of data in a bracket by tagging the twitter <account> ${action.tool.twitterAccount} </account> in the response` : ''}.
                 `;
                 output = await this.llm.generate(finalPrompt);
 
