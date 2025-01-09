@@ -43,7 +43,6 @@ export class Workflow {
             const llmResponse = await this.fastllm.generate(prompt);
             console.log("fast LLM raw response:", llmResponse)
             const action: ActionResult = this.parseLLMResponse(llmResponse);
-            console.log("action:", action)
             let output: string;
             if (action.tool) {
                 const toolOutput = await action.tool.execute(action.output);
