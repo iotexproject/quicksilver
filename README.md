@@ -49,14 +49,17 @@ graph TD
     E[LLM Integration]
     F[Energy DePIN Data]
     G[News API]
-    H[Custom Tool...]
+    H[Weather DePIN Data]
+    I[Custom Tool...]
 
-    A --> B
-    A --> C
-    B --> D
+
+    A <--> B
+    A --> C    
     C --> E
+    C --> D
     D --> F
     D --> G
+    D --> I
     D --> H
     E --> A
 ```
