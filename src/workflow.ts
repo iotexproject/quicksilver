@@ -1,6 +1,7 @@
 import { LLM } from './llm';
 import { Tool } from './tools/tool';
 import { Memory } from './memory';
+import chalk from 'chalk';
 
 interface ActionResult {
     tool?: Tool;
@@ -11,41 +12,43 @@ export class Workflow {
     llm: LLM;
     tools: Tool[];
     memory: Memory;
-
-    constructor(llm: LLM, tools: Tool[], memory: Memory) {
+    fastllm: LLM;
+    constructor(fastllm: LLM, llm: LLM, tools: Tool[], memory: Memory) {
+        this.fastllm = fastllm;
         this.llm = llm;
         this.tools = tools;
-        this.memory = memory;
+        this.memory = memory;   
     }
 
     async execute(input: string): Promise<string> {
         const memoryVariables = this.memory.loadMemoryVariables();
         const availableTools = this.tools.map(tool => ({ name: tool.name, description: tool.description }));
 
-        const prompt = `
-            Previous Conversation: ${JSON.stringify(memoryVariables.history)}
-            User Input: ${input}
+        const prompt = `            
+            Input: ${input}
 
             Available Tools: ${JSON.stringify(availableTools)}
 
-            Respond with a JSON object in the following format:
+            Only respond with a JSON object in the following format:
             \`\`\`json
             {
                 "tool": "tool_name_or_null", // The name of the tool to use, or null if no tool is needed
                 "tool_input": "input_for_the_tool" // The input to pass to the tool in json format (only if a tool is selected)
             }
             \`\`\`
-            If no tool is needed, set "tool" to null and provide a response in "tool_input".
+            If no tool is needed, set "tool" to null.
         `;
 
         try {
-            const llmResponse = await this.llm.generate(prompt);
-            console.log("LLM raw response:", llmResponse)
+            const llmResponse = await this.fastllm.generate(prompt);
+            console.log("fast LLM raw response:", llmResponse)
             const action: ActionResult = this.parseLLMResponse(llmResponse);
 
             let output: string;
             if (action.tool) {
                 const toolOutput = await action.tool.execute(action.output);
+
+                console.log("toolOutput:", toolOutput)
 
                 // FEED TOOL OUTPUT BACK TO LLM
                 const finalPrompt = `
@@ -74,10 +77,14 @@ export class Workflow {
 
 private parseLLMResponse(llmResponse: string): ActionResult {
     try {
-        // Remove Markdown code blocks if present
-        const cleanResponse = llmResponse.replace(/```json\n/g, '').replace(/```/g, '').trim();
+        // Use regex to extract the first JSON object
+        const jsonMatch = llmResponse.match(/{[^}]*}/);
+        if (!jsonMatch) {
+            throw new Error("No JSON object found in LLM response.");
+        }
 
-        const jsonResponse = JSON.parse(cleanResponse);
+        const json_string = jsonMatch[0];
+        const jsonResponse = JSON.parse(json_string);
         const toolName = jsonResponse.tool;
         const toolInput = jsonResponse.tool_input;
 
@@ -93,7 +100,7 @@ private parseLLMResponse(llmResponse: string): ActionResult {
         }
     } catch (error) {
         console.error("Error parsing LLM response:", error, "Raw LLM Response:", llmResponse);
-        return { output: `Error parsing LLM response: ${error}. Raw Response: ${llmResponse}. Cleaned Response (for debugging): ${llmResponse.replace(/```json\n/g, '').replace(/```/g, '').trim()}` };
+        return { output: `Error parsing LLM response: ${error}. Raw Response: ${llmResponse}.` };
     }
 }
 }

@@ -6,8 +6,8 @@ import { Workflow } from './workflow';
 export class Agent {
   private workflow: Workflow;
 
-  constructor(llm: LLM, tools: Tool[], memory: Memory) {
-    this.workflow = new Workflow(llm, tools, memory);
+  constructor(fastllm: LLM, llm: LLM, tools: Tool[], memory: Memory) {
+    this.workflow = new Workflow(fastllm, llm, tools, memory);
   }
 
   async run(input: string): Promise<string> {
