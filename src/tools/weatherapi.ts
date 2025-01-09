@@ -20,6 +20,8 @@ interface NubilaWeatherResponse {
 export class WeatherTool implements Tool {
     name: string = "WeatherAPI";
     description: string = "Gets the current weather from Nubila API. Input is json with latitude and longitude to retrieve weather data.";
+    twitterAccount: string = "nubilanetwork";
+
     private readonly apiKey: string;
     private readonly baseUrl: string;
 
