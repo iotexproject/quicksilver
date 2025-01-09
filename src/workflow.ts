@@ -78,12 +78,14 @@ export class Workflow {
 private parseLLMResponse(llmResponse: string): ActionResult {
     try {
         // Use regex to extract the first JSON object
-        const jsonMatch = llmResponse.match(/{[^}]*}/);
+        const jsonMatch = llmResponse.match(/{(?:[^{}]|{[^{}]*})*}/);
         if (!jsonMatch) {
             throw new Error("No JSON object found in LLM response.");
         }
-
+        
         const json_string = jsonMatch[0];
+        console.log("json_string:", json_string);
+
         const jsonResponse = JSON.parse(json_string);
         const toolName = jsonResponse.tool;
         const toolInput = jsonResponse.tool_input;
