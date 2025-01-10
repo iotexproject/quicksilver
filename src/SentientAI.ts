@@ -1,6 +1,6 @@
 
 import { Agent } from './agent'; // Go up one level, then into src
-import { OpenAILLM } from './llm'; // Go up one level, then into src
+import { OpenAILLM, EmbedLLM } from './llm'; // Go up one level, then into src
 import { SimpleMemory } from './memory'; // Go up one level, then into src
 import { Tool } from './tools/api_tool'; // Go up one level, then into src/tools
 import { NewsAPITool } from './tools/newsapi'; // Go up one level, then into src/tools
@@ -13,8 +13,9 @@ if (!OPENAI_API_KEY || !NUBILA_API_KEY || !NEWSAPI_API_KEY || !DIFY_API_KEY) {
 }
 
 export class SentientAI {
+    fastllm = new EmbedLLM();
     llm = new OpenAILLM(OPENAI_API_KEY!, "gpt-3.5-turbo"); // Use gpt-3.5-turbo for cost-effectiveness
-    
+
     weatherTool = new WeatherTool(NUBILA_API_KEY!);
     newsTool = new NewsAPITool(NEWSAPI_API_KEY!);
     depinTool = new DePINTool(DIFY_API_KEY!);
@@ -23,5 +24,5 @@ export class SentientAI {
 
     memory = new SimpleMemory();
 
-    agent = new Agent(this.llm, this.tools, this.memory);
+    agent = new Agent(this.fastllm, this.llm, this.tools, this.memory);
 }
