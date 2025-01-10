@@ -55,11 +55,11 @@ export class OpenAILLM implements LLM {
 }
 
 export class FastLLM implements LLM {
-  model: RAGApplication | null = null;
+  rag: RAGApplication | null = null;
 
   constructor(args: Partial<FastLLM> = {}) {
     Object.assign(this, args);
-    if (!this.model) {
+    if (!this.rag) {
       new RAGApplicationBuilder()
         .setModel(new OpenAi({
           model: "gpt-3.5-turbo", maxTokens: 200,
@@ -72,13 +72,13 @@ export class FastLLM implements LLM {
         )
         .setVectorDatabase(new LibSqlDb({ path: "./data.db" }))
         .build()
-        .then((model) => (this.model = model));
+        .then((model) => (this.rag = model));
     }
   }
 
   async generate(prompt: string): Promise<string> {
     try {
-      const result = await this.model?.query(prompt);
+      const result = await this.rag?.query(prompt);
       console.log(result);
       return result?.content.trim() || "No content in response";
     } catch (error: any) {

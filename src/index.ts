@@ -22,7 +22,7 @@ async function runExample() {
       console.error("Please set the OPENAI_API_KEY environment variable.");
       return;
     }
-    llm = new OpenAILLM(apiKey, "gpt-4");
+    llm = new OpenAILLM();
   } else {
     llm = new DummyLLM();
   }
