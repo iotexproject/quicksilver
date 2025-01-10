@@ -15,14 +15,12 @@
     "@llm-tools/embedjs": "^0.1.28",
     "@llm-tools/embedjs-libsql": "^0.1.28",
     "@llm-tools/embedjs-loader-web": "^0.1.28",
-    "@llm-tools/embedjs-ollama": "^0.1.28",
     "@llm-tools/embedjs-openai": "^0.1.28",
     "axios": "^1.7.9",
     "chalk": "^4.1.2",
     "dotenv": "^16.4.7",
     "ethers": "^6.13.5",
     "hono": "^4.6.16",
-    "openai": "^4.77.0",
     "typescript": "^5.7.2"
   },
   "devDependencies": {
