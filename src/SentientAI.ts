@@ -7,9 +7,6 @@ import {
 
 export class SentientAI {
   weatherAgent = new Agent({
-    name: "Weather Agent",
-    description:
-      "Weather Agent is a tool that can hanlde all weather related requests.",
     tools: [
       new CurrentWeatherAPITool(process.env.NUBILA_API_KEY!),
       new ForecastWeatherAPITool(process.env.OPENWEATHER_API_KEY!),
