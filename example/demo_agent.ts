@@ -23,7 +23,7 @@ async function main() {
 
       console.log(`User Input: ${input}`);
       try {
-        const response = await sentientAI.agent.run(input);
+        const response = await sentientAI.agent.execute(input);
         console.log(`Binoai Response:\n${response}`);
       } catch (error) {
         console.error("Binoai Error:", error);
