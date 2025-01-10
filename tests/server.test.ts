@@ -87,7 +87,7 @@ describe("Server", () => {
             method: "POST",
         });
         await testApp(req);
-        expect(consoleSpy).toHaveBeenCalledWith("no API-KEY provided");
+        expect(consoleSpy).toHaveBeenCalledWith("no SENTAI API-KEY provided");
         consoleSpy.mockRestore();
     });
 
