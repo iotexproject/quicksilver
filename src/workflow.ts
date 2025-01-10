@@ -70,6 +70,8 @@ export class Workflow {
                     Tool Output: ${toolOutput}
 
                     Generate a human-readable response based on the tool output${action.tool.twitterAccount ? ` and mention x handle ${action.tool.twitterAccount} in the end.` : ""}.
+
+                    If the tool is a ForecastWeatherAPITool, use the data output from the tool to answer the questions entered by the user.
                 `;
         output = await this.llm.generate(finalPrompt);
       } else {
