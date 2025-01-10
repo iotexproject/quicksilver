@@ -8,18 +8,18 @@ export interface ActionResult {
 }
 
 export class Workflow {
-  fastllm: LLM;
-  llm: LLM;
   agent: Agent;
+
+  get fastllm() {
+    return this.agent.fastllm;
+  }
+
+  get llm() {
+    return this.agent.llm;
+  }
 
   constructor(args: Partial<Workflow> = {}) {
     Object.assign(this, args);
-    if (!this.fastllm) {
-      this.fastllm = new FastLLM();
-    }
-    if (!this.llm) {
-      this.llm = new OpenAILLM();
-    }
   }
 
   async execute(input: string): Promise<string> {
@@ -52,8 +52,7 @@ export class Workflow {
       let output: string;
       if (action.tool) {
         const toolOutput = await action.tool.execute(action.output);
-        console.log({ toolOutput })
-
+        console.log({ toolOutput });
 
         // FEED TOOL OUTPUT BACK TO LLM
         // Previous Conversation: ${JSON.stringify(this.memory.loadMemoryVariables().history)}

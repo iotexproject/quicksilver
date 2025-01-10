@@ -1,6 +1,5 @@
-import { LLM } from "./llm";
+import { FastLLM, LLM, OpenAILLM, TogetherLLM } from "./llm";
 import { Tool } from "./tools/tool";
-import { Memory } from "./memory";
 import { Workflow } from "./workflow";
 
 interface PromptContext {
@@ -18,6 +17,8 @@ export interface Agent {
 }
 
 export class Agent {
+  fastllm: LLM;
+  llm: LLM;
   tools: Tool[] = [];
   workflow: Workflow;
 
@@ -42,6 +43,25 @@ export class Agent {
       this.workflow = new Workflow({});
     }
     this.workflow.agent = this;
+
+    if (!this.fastllm) {
+      if (process.env.TOGETHER_API_KEY) {
+        this.fastllm = new TogetherLLM({
+          model:
+            process.env.FAST_LLM_MODEL ||
+            "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+        });
+      } else {
+        this.fastllm = new OpenAILLM({
+          model: process.env.FAST_LLM_MODEL || "gpt-3.5-turbo",
+        });
+      }
+    }
+    if (!this.llm) {
+      this.llm = new OpenAILLM({
+        model: process.env.LLM_MODEL || "gpt-3.5-turbo",
+      });
+    }
   }
 
   async execute(input: string): Promise<string> {

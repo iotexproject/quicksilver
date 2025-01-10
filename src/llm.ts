@@ -2,6 +2,8 @@ import { RAGApplication, RAGApplicationBuilder } from "@llm-tools/embedjs";
 import { LibSqlDb } from "@llm-tools/embedjs-libsql";
 import { OpenAi } from "@llm-tools/embedjs-openai";
 import { OpenAiEmbeddings } from "@llm-tools/embedjs-openai";
+import { Together } from "together-ai";
+import { CompletionCreateParamsBase } from "together-ai/resources/chat/completions";
 export interface LLM {
   generate(prompt: string): Promise<string>;
 }
@@ -16,19 +18,19 @@ export class DummyLLM implements LLM {
   }
 }
 
-
 export class OpenAILLM implements LLM {
+  model: string = "gpt-3.5-turbo";
   rag: RAGApplication | null = null;
 
-  constructor(args: Partial<FastLLM> = {}) {
+  constructor(args: Partial<OpenAILLM> = {}) {
     Object.assign(this, args);
     if (!this.rag) {
       new RAGApplicationBuilder()
         .setModel(
           new OpenAi({
-            model: "gpt-3.5-turbo",
+            model: this.model,
             maxTokens: 200,
-            temperature: 0
+            temperature: 0,
           }),
         )
         .setEmbeddingModel(
@@ -54,33 +56,36 @@ export class OpenAILLM implements LLM {
   }
 }
 
-export class FastLLM implements LLM {
-  rag: RAGApplication | null = null;
+export class TogetherLLM implements LLM {
+  private together: Together = new Together();
+  model = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo-128K";
 
-  constructor(args: Partial<FastLLM> = {}) {
+  constructor(args: Partial<TogetherLLM> = {}) {
     Object.assign(this, args);
-    if (!this.rag) {
-      new RAGApplicationBuilder()
-        .setModel(new OpenAi({
-          model: "gpt-3.5-turbo", maxTokens: 200,
-          temperature: 0,
-        }))
-        .setEmbeddingModel(
-          new OpenAiEmbeddings({
-            model: "text-embedding-3-small",
-          }),
-        )
-        .setVectorDatabase(new LibSqlDb({ path: "./data.db" }))
-        .build()
-        .then((model) => (this.rag = model));
-    }
   }
 
   async generate(prompt: string): Promise<string> {
     try {
-      const result = await this.rag?.query(prompt);
-      console.log(result);
-      return result?.content.trim() || "No content in response";
+      const response = await this.together.chat.completions.create({
+        messages: [{ role: "user", content: prompt }],
+        model: this.model,
+        max_tokens: 2000,
+        temperature: 0.7,
+        top_p: 0.7,
+        top_k: 50,
+        repetition_penalty: 1,
+        stop: ["<|eot_id|>", "<|eom_id|>"],
+        stream: true,
+      });
+
+      let result = "";
+      for await (const token of response) {
+        const content = token.choices[0]?.delta?.content;
+        if (content) {
+          result += content;
+        }
+      }
+      return result.trim() || "No content in response";
     } catch (error: any) {
       console.error("Together API Error:", error.message);
       return `Together API Error: ${error.message}`;
