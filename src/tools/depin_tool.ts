@@ -1,32 +1,29 @@
-import axios from "axios";
-import { APITool } from "./tool";
-import { handleStreamResponse } from "../utils/stream_utils";
 import { callDify } from "utils/dify";
+import { APITool } from "./tool";
 
 export class DePINTool extends APITool {
-  private readonly baseUrl: string;
+  private readonly baseUrl: string = "https://dify.iotex.one/v1";
 
-  constructor(apiKey: string, baseUrl: string = "https://dify.iotex.one/v1") {
+  constructor() {
     super(
       "DePIN Tool",
-      `A tool for querying depin project token and market information. Can handle queries like:
-      - Current IOTX token price and market data
-      - IOTX token price history and trends
-      - Market cap and trading volume information
-      - Token price comparisons and analysis
-      - Market sentiment and price predictions
+      `A tool for querying DePIN project token and market information.
 
       Example queries:
-      - "What is the current IOTX price?"
+      - How many dimo vehicles?
+      - What is the current IOTX price?
+
+      Example output:
+      - "There are 1000 dimo vehicles"
+      - "The current IOTX market cap is $352,694,249"
 
       include project name keywords:
       - dimo
       - iotex
 
       Input should be a natural language question about DePIN token and market information.`,
-      apiKey,
+      process.env.DEPIN_API_KEY!,
     );
-    this.baseUrl = baseUrl;
   }
 
   async execute(input: string): Promise<string> {
