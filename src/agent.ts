@@ -6,7 +6,7 @@ import { Workflow } from "./workflow";
 export class Agent {
   name: string = "";
   description: string = "";
-  tools: Tool[] = [];
+  tools: (Tool | Agent)[] = [];
 
   private workflow: Workflow;
 
@@ -22,7 +22,7 @@ export class Agent {
     description?: string;
     fastllm?: LLM;
     llm?: LLM;
-    tools: Tool[];
+    tools: (Tool | Agent)[];
     memory?: Memory;
   }) {
     this.name = name || "";
@@ -31,7 +31,7 @@ export class Agent {
     this.workflow = new Workflow({ fastllm, llm, tools, memory });
   }
 
-  async execute(input: string): Promise<string> {
+  async run(input: string): Promise<string> {
     return this.workflow.execute(input);
   }
 }

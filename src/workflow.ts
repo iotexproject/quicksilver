@@ -12,7 +12,7 @@ export class Workflow {
   fastllm: LLM;
   llm: LLM;
   memory: Memory;
-  tools: Tool[] | Agent[];
+  tools: (Tool | Agent)[];
 
   constructor({
     fastllm,
@@ -23,7 +23,7 @@ export class Workflow {
     fastllm?: LLM;
     llm?: LLM;
     memory?: Memory;
-    tools: Tool[] | Agent[];
+    tools: (Tool | Agent)[];
   }) {
     this.fastllm = fastllm || new EmbedLLM();
     this.llm =
@@ -34,21 +34,7 @@ export class Workflow {
 
   async execute(input: string): Promise<string> {
     const memoryVariables = this.memory.loadMemoryVariables();
-    const availableTools = this.tools.flatMap((tool) => {
-      if (tool instanceof Agent) {
-        return tool.tools.map((t) => ({
-          name: t.name,
-          description: t.description,
-        }));
-      } else {
-        return [
-          {
-            name: tool.name,
-            description: tool.description,
-          },
-        ];
-      }
-    });
+    const availableTools = getAvailableTools(this.tools);
 
     const prompt = `            
             Input: ${input}
@@ -117,12 +103,7 @@ export class Workflow {
       }
 
       if (toolName) {
-        const allTools = this.tools.flatMap((tool) => {
-          if (tool instanceof Agent) {
-            return tool.tools;
-          }
-          return [tool];
-        });
+        const allTools: Tool[] = getAllTools(this.tools);
         const tool = allTools.find((t) => t.name === toolName);
         if (tool) {
           return { tool, output: toolInput };
@@ -144,4 +125,25 @@ export class Workflow {
       };
     }
   }
+}
+
+function getAvailableTools(tools: (Agent | Tool)[]): {
+  name: string;
+  description: string;
+}[] {
+  return tools.flatMap((tool) => {
+    if (tool instanceof Agent) {
+      return getAvailableTools(tool.tools);
+    }
+    return [{ name: tool.name, description: tool.description }];
+  });
+}
+
+function getAllTools(tools: (Agent | Tool)[]): Tool[] {
+  return tools.flatMap((tool) => {
+    if (tool instanceof Agent) {
+      return getAllTools(tool.tools);
+    }
+    return [tool];
+  });
 }
