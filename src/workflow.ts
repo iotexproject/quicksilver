@@ -1,4 +1,4 @@
-import { FastLLM, LLM, OpenAILLM, OpenAIRAG } from "./llm";
+import { FastLLM, LLM, OpenAILLM } from "./llm";
 import { Tool } from "./tools/tool";
 import { Agent } from "./agent";
 
@@ -52,6 +52,8 @@ export class Workflow {
       let output: string;
       if (action.tool) {
         const toolOutput = await action.tool.execute(action.output);
+        console.log({ toolOutput })
+
 
         // FEED TOOL OUTPUT BACK TO LLM
         // Previous Conversation: ${JSON.stringify(this.memory.loadMemoryVariables().history)}
@@ -62,7 +64,6 @@ export class Workflow {
           toolInput: action.output,
         });
         output = await this.llm.generate(finalPrompt);
-        console.log({ output })
       } else {
         output = action.output; // LLM handles it directly (no tool used)
       }
