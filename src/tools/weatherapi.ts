@@ -1,31 +1,13 @@
 import { Tool } from "./tool";
 
-interface NubilaWeatherData {
-  // New interface for the nested data
-  temperature: number;
-  feels_like?: number;
-  humidity?: number;
-  pressure?: number;
-  wind_speed?: number;
-  wind_direction?: number;
-  condition: string;
-  // ... other properties you might need
-}
-
-interface NubilaWeatherResponse {
-  data: NubilaWeatherData; // The weather data is now under the 'data' property
-  ok: boolean;
-  // ... other top-level properties if any
-}
-
 export class CurrentWeatherAPITool implements Tool {
   name: string = "CurrentWeatherAPITool";
   description: string =
     "Gets the current weather from Nubila API. Input is json with latitude and longitude to retrieve weather data.";
   twitterAccount: string = "nubilanetwork";
 
-  private apiKey: string = process.env.NUBILA_API_KEY!
-  private baseUrl: string = "https://api.nubila.ai/api/v1/weather"
+  private apiKey: string = process.env.NUBILA_API_KEY!;
+  private baseUrl: string = "https://api.nubila.ai/api/v1/weather";
 
   constructor() {
     if (!process.env.NUBILA_API_KEY) {
@@ -33,7 +15,6 @@ export class CurrentWeatherAPITool implements Tool {
       return;
     }
   }
-
 
   async execute(userInput: any): Promise<string> {
     // check user input is json with latitude and longitude
@@ -61,7 +42,7 @@ export class CurrentWeatherAPITool implements Tool {
         return `Weather API Error: ${errorMessage}`;
       }
 
-      const data: NubilaWeatherResponse = await response.json();
+      const data = await response.json();
 
       const weatherData = data.data; // Access the weather data using data.data
 
@@ -91,29 +72,13 @@ export class CurrentWeatherAPITool implements Tool {
   }
 }
 
-interface NubilaForecastData {
-  dt: number;
-  temp: number;
-  feels_like: number;
-  humidity: number;
-  pressure: number;
-  wind_speed: number;
-  wind_direction: number;
-  condition: string;
-}
-
-interface NubilaForecastResponse {
-  data: NubilaForecastData[];
-  ok: boolean;
-}
-
 export class ForecastWeatherAPITool implements Tool {
   name: string = "ForecastWeatherAPITool";
   description: string =
     "Get weather forecast data from the Nubila API. Input is json with latitude and longitude to retrieve weather data.";
 
-  private apiKey: string = process.env.NUBILA_API_KEY!
-  private baseUrl: string = "https://api.nubila.ai/api/v1/forecast"
+  private apiKey: string = process.env.NUBILA_API_KEY!;
+  private baseUrl: string = "https://api.nubila.ai/api/v1/forecast";
 
   constructor() {
     if (!process.env.NUBILA_API_KEY) {
@@ -121,7 +86,6 @@ export class ForecastWeatherAPITool implements Tool {
       return;
     }
   }
-
 
   async execute(userInput: any): Promise<string> {
     if (
@@ -148,22 +112,29 @@ export class ForecastWeatherAPITool implements Tool {
         return `Weather API Error: ${errorMessage}`;
       }
 
-      const data: NubilaForecastResponse = await response.json();
+      const data = await response.json();
       const forecastData = data.data;
 
-      if (!forecastData || !Array.isArray(forecastData) || forecastData.length === 0) {
+      if (
+        !forecastData ||
+        !Array.isArray(forecastData) ||
+        forecastData.length === 0
+      ) {
         return "No available weather data.";
       }
 
       const summaries = forecastData.map((item) => {
-        const date = new Date(item.dt * 1000).toLocaleString();
-        const temperature = item.temp;
-        const condition = item.condition;
+        const date = new Date(item.timestamp * 1000).toLocaleString();
+        const temperature = item.temperature;
+        const condition = item.condition_desc;
         const windSpeed = item.wind_speed;
         return `On ${date}, the temperature is ${temperature}°C, the weather is ${condition}, and the wind speed is ${windSpeed} m/s.`;
       });
 
-      return `Weather Forecast Data for ${userInput.latitude}, ${userInput.longitude}: ` + summaries.join(" ");
+      return (
+        `Weather Forecast Data for ${userInput.latitude}, ${userInput.longitude}: ` +
+        summaries.join(" ")
+      );
     } catch (error) {
       console.error("Error fetching forecast data:", error);
       return "Could not retrieve weather information. Please check the API or your network connection.";

@@ -27,30 +27,13 @@ async function runExample() {
     llm = new DummyLLM();
   }
 
-  const nubilaApiKey = process.env.NUBILA_API_KEY; // Get Nubila API Key
-  if (!nubilaApiKey) {
-    console.error("Please set the NUBILA_API_KEY environment variable.");
-    return;
-  }
-
-
-  const newsApiKey = process.env.NEWSAPI_API_KEY;
-  if (!newsApiKey) {
-    console.error("Please set the NEWSAPI_API_KEY environment variable.");
-    return;
-  }
-
   const weatherAgent = new Agent({
-    tools: [
-      new CurrentWeatherAPITool(),
-      new ForecastWeatherAPITool(),
-    ],
+    tools: [new CurrentWeatherAPITool(), new ForecastWeatherAPITool()],
   });
 
-  const newsTool = new NewsAPITool(newsApiKey);
+  const newsTool = new NewsAPITool();
 
-  const tools: (Tool | Agent)[] = [weatherAgent, newsTool];
-  const agent = new Agent({ tools });
+  const agent = new Agent({ tools: [weatherAgent, newsTool] });
 
   const inputs = [
     "Hello World",
