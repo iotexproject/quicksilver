@@ -166,7 +166,7 @@ export class ForecastWeatherAPITool implements Tool {
     const cityName = userInput.cityName;
     try {
       const response = await fetch(
-        `${this.baseUrl}?q=${cityName}&appid=${this.apiKey}`
+        `${this.baseUrl}?q=${cityName}&appid=${this.apiKey}`,
       );
       const data: ForecastWeatherResponse = await response.json();
       const weatherList = data?.list;

@@ -55,8 +55,7 @@ async function runExample() {
   const newsTool = new NewsAPITool(newsApiKey);
 
   const tools: (Tool | Agent)[] = [weatherAgent, newsTool];
-  const memory = new SimpleMemory();
-  const agent = new Agent({ llm, tools, memory });
+  const agent = new Agent({ tools });
 
   const inputs = [
     "Hello World",
@@ -69,7 +68,7 @@ async function runExample() {
   for (const input of inputs) {
     console.log(`User Input: ${input}`);
     try {
-      const response = await agent.run(input);
+      const response = await agent.execute(input);
       console.log(`Agent Response: ${response}`);
     } catch (error) {
       console.error("Error running agent:", error);

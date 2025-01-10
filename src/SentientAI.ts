@@ -9,7 +9,7 @@ export class SentientAI {
   weatherAgent = new Agent({
     name: "Weather Agent",
     description:
-      "Get current weather with CurrentWeatherAPITool and forecast weather with ForecastWeatherAPITool.",
+      "Weather Agent is a tool that can hanlde all weather related requests.",
     tools: [
       new CurrentWeatherAPITool(process.env.NUBILA_API_KEY!),
       new ForecastWeatherAPITool(process.env.OPENWEATHER_API_KEY!),
@@ -18,7 +18,5 @@ export class SentientAI {
 
   newsTool = new NewsAPITool(process.env.NEWSAPI_API_KEY!);
 
-  agent = new Agent({
-    tools: [this.weatherAgent, this.newsTool],
-  });
+  agent = new Agent({ tools: [this.weatherAgent, this.newsTool] });
 }

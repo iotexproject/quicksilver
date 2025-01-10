@@ -3,35 +3,48 @@ import { Tool } from "./tools/tool";
 import { Memory } from "./memory";
 import { Workflow } from "./workflow";
 
+interface PromptContext {
+  tool: Tool;
+  toolOutput: string;
+  toolInput: string;
+  input: string;
+}
+
+export interface Agent {
+  name: string;
+  description: string;
+  tools: Tool[];
+  prompt: (ctx: PromptContext) => string;
+}
+
 export class Agent {
-  name: string = "";
-  description: string = "";
-  tools: (Tool | Agent)[] = [];
+  tools: Tool[] = [];
+  workflow: Workflow;
 
-  private workflow: Workflow;
+  // support tempalte format
+  prompt = (ctx: PromptContext) => `
+  User Input: ${ctx.input}
+  Tool Used: ${ctx.tool.name}
+  Tool Input: ${ctx.toolInput}
+  Tool Output: ${ctx.toolOutput}
 
-  constructor({
-    name,
-    description,
-    fastllm,
-    llm,
-    tools,
-    memory,
-  }: {
-    name?: string;
-    description?: string;
-    fastllm?: LLM;
-    llm?: LLM;
-    tools: (Tool | Agent)[];
-    memory?: Memory;
-  }) {
-    this.name = name || "";
-    this.description = description || "";
-    this.tools = tools;
-    this.workflow = new Workflow({ fastllm, llm, tools, memory });
+  Generate a human-readable response based on the tool output${ctx.tool.twitterAccount ? ` and mention x handle ${ctx.tool.twitterAccount} in the end.` : ""}`;
+
+  constructor(args: Partial<Agent> = {}) {
+    Object.assign(this, args);
+    this.tools = this.tools.flatMap((i) => {
+      if (i instanceof Agent) {
+        return i.tools;
+      }
+      return i;
+    });
+    if (!this.workflow) {
+      this.workflow = new Workflow({});
+    }
+    this.workflow.agent = this;
   }
 
-  async run(input: string): Promise<string> {
+  async execute(input: string): Promise<string> {
     return this.workflow.execute(input);
   }
 }

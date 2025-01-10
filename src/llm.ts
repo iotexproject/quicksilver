@@ -1,8 +1,8 @@
 import OpenAI from "openai";
-import { RAGApplication, RAGApplicationBuilder } from '@llm-tools/embedjs';
-import { LibSqlDb } from '@llm-tools/embedjs-libsql';
-
-import { OpenAiEmbeddings } from '@llm-tools/embedjs-openai';
+import { RAGApplication, RAGApplicationBuilder } from "@llm-tools/embedjs";
+import { LibSqlDb, LibSqlStore } from "@llm-tools/embedjs-libsql";
+import { OpenAi } from "@llm-tools/embedjs-openai";
+import { OpenAiEmbeddings } from "@llm-tools/embedjs-openai";
 export interface LLM {
   generate(prompt: string): Promise<string>;
 }
@@ -21,7 +21,11 @@ export class OpenAILLM implements LLM {
   private openai: OpenAI;
   private model: string;
 
-  constructor(apiKey: string, model: string = "gpt-4") { // Default to gpt-4
+  constructor(
+    apiKey: string = process.env.OPENAI_API_KEY!,
+    model: string = "gpt-4",
+  ) {
+    // Default to gpt-4
     if (!apiKey) {
       throw new Error("OpenAI API key is required.");
     }
@@ -40,16 +44,20 @@ export class OpenAILLM implements LLM {
 
       // Correctly access the message content
       const message = completion.choices?.[0]?.message;
-      if (message) { // Check if message exists
+      if (message) {
+        // Check if message exists
         return message.content?.trim() || "No content in message"; // Check if message.content exists
       } else {
         console.error("Unexpected OpenAI response format:", completion); // Log the full response
         return "No message in response";
       }
-
     } catch (error: any) {
       if (error.response) {
-        console.error("OpenAI API Error:", error.response.status, error.response.data);
+        console.error(
+          "OpenAI API Error:",
+          error.response.status,
+          error.response.data,
+        );
       } else {
         console.error("OpenAI Error:", error.message);
       }
@@ -58,26 +66,65 @@ export class OpenAILLM implements LLM {
   }
 }
 
+export class OpenAIRAG implements LLM {
+  rag: RAGApplication | null = null;
 
-export class EmbedLLM implements LLM {
-  model: RAGApplication | null = null
+  constructor(args: Partial<FastLLM> = {}) {
+    Object.assign(this, args);
+    if (!this.rag) {
+      new RAGApplicationBuilder()
+        .setModel(
+          new OpenAi({
+            model: "gpt-4",
+          }),
+        )
+        .setEmbeddingModel(
+          new OpenAiEmbeddings({
+            model: "text-embedding-3-small",
+          }),
+        )
+        .setVectorDatabase(new LibSqlDb({ path: "./data.db" }))
+        .setStore(new LibSqlStore({ path: "./data.db" }))
+        .build()
+        .then((rag) => (this.rag = rag));
+    }
+  }
 
-  constructor(args: Partial<EmbedLLM> = {}) {
-    Object.assign(this, args)
+  async generate(prompt: string): Promise<string> {
+    try {
+      const result = await this.rag?.query(prompt);
+      console.log(result);
+      return result?.content.trim() || "No content in response";
+    } catch (error: any) {
+      console.error(" API Error:", error.message);
+      return ` API Error: ${error.message}`;
+    }
+  }
+}
+
+export class FastLLM implements LLM {
+  model: RAGApplication | null = null;
+
+  constructor(args: Partial<FastLLM> = {}) {
+    Object.assign(this, args);
     if (!this.model) {
       new RAGApplicationBuilder()
-        .setEmbeddingModel(new OpenAiEmbeddings({
-          model: 'text-embedding-3-small'
-        }))
-        .setVectorDatabase(new LibSqlDb({ path: './data.db' }))
-        .build().then(model => this.model = model)
+        .setModel(new OpenAi({ model: "gpt-3.5-turbo" }))
+        .setEmbeddingModel(
+          new OpenAiEmbeddings({
+            model: "text-embedding-3-small",
+          }),
+        )
+        .setVectorDatabase(new LibSqlDb({ path: "./data.db" }))
+        .build()
+        .then((model) => (this.model = model));
     }
   }
 
   async generate(prompt: string): Promise<string> {
     try {
       const result = await this.model?.query(prompt);
-      console.log(result)
+      console.log(result);
       return result?.content.trim() || "No content in response";
     } catch (error: any) {
       console.error("Together API Error:", error.message);
@@ -85,4 +132,3 @@ export class EmbedLLM implements LLM {
     }
   }
 }
-
