@@ -1,7 +1,6 @@
 import { LLM } from './llm';
-import { Tool } from './tools/tool';
 import { Memory } from './memory';
-import chalk from 'chalk';
+import { Tool } from './tools/tool';
 
 interface ActionResult {
     tool?: Tool;
