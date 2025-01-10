@@ -1,4 +1,4 @@
-import { Tool } from './api_tool';
+import { Tool } from './tool';
 import { ethers } from 'ethers';
 
 export class IoIDTool implements Tool {
