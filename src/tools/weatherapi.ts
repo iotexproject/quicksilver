@@ -146,7 +146,7 @@ interface ForecastWeatherResponse {
 export class ForecastWeatherAPITool implements Tool {
   name: string = "ForecastWeatherAPITool";
   description: string =
-    "Get weather forecast data from the OpenWeather API. Entering a question containing a city name will return the weather forecast for that city.";
+    "Get weather forecast data from the OpenWeather API. Input is json with cityName to retrieve weather data.";
 
   private readonly apiKey: string;
   private readonly baseUrl: string;
@@ -159,11 +159,11 @@ export class ForecastWeatherAPITool implements Tool {
     if (
       !userInput ||
       typeof userInput !== "object" ||
-      !("city_name" in userInput)
+      !("cityName" in userInput)
     ) {
       return "Invalid input. Please provide a JSON object with 'city_name' property.";
     }
-    const cityName = userInput.city_name;
+    const cityName = userInput.cityName;
     try {
       const response = await fetch(
         `${this.baseUrl}?q=${cityName}&appid=${this.apiKey}`
