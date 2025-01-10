@@ -56,7 +56,7 @@ export class Workflow {
                     Tool Input: ${action.output}
                     Tool Output: ${toolOutput}
 
-                    Generate a human-readable response based on the tool output.
+                    Generate a human-readable response based on the tool output${action.tool.twitterAccount ? ` and mention x handle ${action.tool.twitterAccount} in the end.` : ''}.
                 `;
                 output = await this.llm.generate(finalPrompt);
 
