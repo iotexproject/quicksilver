@@ -1,9 +1,8 @@
-import { EmbedLLM, LLM, OpenAILLM } from "./llm";
-import { Memory, SimpleMemory } from "./memory";
+import { FastLLM, LLM, OpenAILLM, OpenAIRAG } from "./llm";
 import { Tool } from "./tools/tool";
 import { Agent } from "./agent";
 
-interface ActionResult {
+export interface ActionResult {
   tool?: Tool;
   output: string;
 }
@@ -11,32 +10,27 @@ interface ActionResult {
 export class Workflow {
   fastllm: LLM;
   llm: LLM;
-  memory: Memory;
-  tools: (Tool | Agent)[];
+  agent: Agent;
 
-  constructor({
-    fastllm,
-    llm,
-    memory,
-    tools,
-  }: {
-    fastllm?: LLM;
-    llm?: LLM;
-    memory?: Memory;
-    tools: (Tool | Agent)[];
-  }) {
-    this.fastllm = fastllm || new EmbedLLM();
-    this.llm =
-      llm || new OpenAILLM(process.env.OPENAI_API_KEY!, "gpt-3.5-turbo"); // Use gpt-3.5-turbo for cost-effectiveness
-    this.memory = memory || new SimpleMemory();
-    this.tools = tools;
+  constructor(args: Partial<Workflow> = {}) {
+    Object.assign(this, args);
+    if (!this.fastllm) {
+      this.fastllm = new FastLLM();
+    }
+    if (!this.llm) {
+      this.llm = new OpenAILLM();
+    }
   }
 
   async execute(input: string): Promise<string> {
-    const memoryVariables = this.memory.loadMemoryVariables();
-    const availableTools = getAvailableTools(this.tools);
+    const availableTools = this.agent.tools.map((tool) => ({
+      name: tool.name,
+      description: tool.description,
+    }));
 
-    const prompt = `            
+    // TODO: retrieve data from vector database
+
+    const prompt = `
             Input: ${input}
 
             Available Tools: ${JSON.stringify(availableTools)}
@@ -50,33 +44,31 @@ export class Workflow {
             \`\`\`
             If no tool is needed, set "tool" to null.
         `;
-
     try {
       const llmResponse = await this.fastllm.generate(prompt);
+
       console.log("fast LLM raw response:", llmResponse);
       const action: ActionResult = this.parseLLMResponse(llmResponse);
       let output: string;
       if (action.tool) {
         const toolOutput = await action.tool.execute(action.output);
 
-        console.log("toolOutput:", toolOutput);
-
         // FEED TOOL OUTPUT BACK TO LLM
-        const finalPrompt = `
-                    Previous Conversation: ${JSON.stringify(this.memory.loadMemoryVariables().history)}
-                    User Input: ${input}
-                    Tool Used: ${action.tool.name}
-                    Tool Input: ${action.output}
-                    Tool Output: ${toolOutput}
-
-                    Generate a human-readable response based on the tool output${action.tool.twitterAccount ? ` and mention x handle ${action.tool.twitterAccount} in the end.` : ""}.
-                `;
+        // Previous Conversation: ${JSON.stringify(this.memory.loadMemoryVariables().history)}
+        const finalPrompt = this.agent.prompt({
+          input,
+          tool: action.tool,
+          toolOutput,
+          toolInput: action.output,
+        });
         output = await this.llm.generate(finalPrompt);
+        console.log({ output })
       } else {
         output = action.output; // LLM handles it directly (no tool used)
       }
 
-      this.memory.saveContext(input, output);
+      // this.memory.saveContext(input, output);
+
       return output;
     } catch (error) {
       console.error("Workflow Error:", error);
@@ -103,8 +95,7 @@ export class Workflow {
       }
 
       if (toolName) {
-        const allTools: Tool[] = getAllTools(this.tools);
-        const tool = allTools.find((t) => t.name === toolName);
+        const tool = this.agent.tools.find((t) => t.name === toolName);
         if (tool) {
           return { tool, output: toolInput };
         } else {
@@ -118,32 +109,11 @@ export class Workflow {
         "Error parsing LLM response:",
         error,
         "Raw LLM Response:",
-        llmResponse
+        llmResponse,
       );
       return {
         output: `Error parsing LLM response: ${error}. Raw Response: ${llmResponse}.`,
       };
     }
   }
-}
-
-function getAvailableTools(tools: (Agent | Tool)[]): {
-  name: string;
-  description: string;
-}[] {
-  return tools.flatMap((tool) => {
-    if (tool instanceof Agent) {
-      return getAvailableTools(tool.tools);
-    }
-    return [{ name: tool.name, description: tool.description }];
-  });
-}
-
-function getAllTools(tools: (Agent | Tool)[]): Tool[] {
-  return tools.flatMap((tool) => {
-    if (tool instanceof Agent) {
-      return getAllTools(tool.tools);
-    }
-    return [tool];
-  });
 }

@@ -33,11 +33,6 @@ async function runExample() {
     return;
   }
 
-  const openWeatherApiKey = process.env.OPEN_WEATHER_API_KEY;
-  if (!openWeatherApiKey) {
-    console.error("Please set the OPEN_WEATHER_API_KEY environment variable.");
-    return;
-  }
 
   const newsApiKey = process.env.NEWSAPI_API_KEY;
   if (!newsApiKey) {
@@ -47,16 +42,15 @@ async function runExample() {
 
   const weatherAgent = new Agent({
     tools: [
-      new CurrentWeatherAPITool(nubilaApiKey),
-      new ForecastWeatherAPITool(openWeatherApiKey),
+      new CurrentWeatherAPITool(),
+      new ForecastWeatherAPITool(),
     ],
   });
 
   const newsTool = new NewsAPITool(newsApiKey);
 
   const tools: (Tool | Agent)[] = [weatherAgent, newsTool];
-  const memory = new SimpleMemory();
-  const agent = new Agent({ llm, tools, memory });
+  const agent = new Agent({ tools });
 
   const inputs = [
     "Hello World",
@@ -69,7 +63,7 @@ async function runExample() {
   for (const input of inputs) {
     console.log(`User Input: ${input}`);
     try {
-      const response = await agent.run(input);
+      const response = await agent.execute(input);
       console.log(`Agent Response: ${response}`);
     } catch (error) {
       console.error("Error running agent:", error);

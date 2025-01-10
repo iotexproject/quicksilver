@@ -25,9 +25,10 @@ app.post("/ask", async (c) => {
       return c.json({ error: "question is required." }, 400);
     }
 
-    const response = await sentai.agent.run(content);
+    const response = await sentai.agent.execute(content);
     return c.json({ data: response });
   } catch (e) {
+    console.error(e);
     return c.json({ error: "Internal server error." }, 400);
   }
 });
