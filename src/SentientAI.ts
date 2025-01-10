@@ -8,12 +8,12 @@ import {
 export class SentientAI {
   weatherAgent = new Agent({
     tools: [
-      new CurrentWeatherAPITool(process.env.NUBILA_API_KEY!),
-      new ForecastWeatherAPITool(process.env.OPENWEATHER_API_KEY!),
+      new CurrentWeatherAPITool(),
+      new ForecastWeatherAPITool(),
     ],
   });
 
-  newsTool = new NewsAPITool(process.env.NEWSAPI_API_KEY!);
+  newsTool = new NewsAPITool();
 
   agent = new Agent({ tools: [this.weatherAgent, this.newsTool] });
 }

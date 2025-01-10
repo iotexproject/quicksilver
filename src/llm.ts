@@ -84,7 +84,6 @@ export class OpenAIRAG implements LLM {
           }),
         )
         .setVectorDatabase(new LibSqlDb({ path: "./data.db" }))
-        .setStore(new LibSqlStore({ path: "./data.db" }))
         .build()
         .then((rag) => (this.rag = rag));
     }

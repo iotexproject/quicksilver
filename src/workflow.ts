@@ -18,7 +18,7 @@ export class Workflow {
       this.fastllm = new FastLLM();
     }
     if (!this.llm) {
-      this.llm = new OpenAIRAG();
+      this.llm = new OpenAILLM();
     }
   }
 
@@ -53,8 +53,6 @@ export class Workflow {
       if (action.tool) {
         const toolOutput = await action.tool.execute(action.output);
 
-        console.log("toolOutput:", toolOutput);
-
         // FEED TOOL OUTPUT BACK TO LLM
         // Previous Conversation: ${JSON.stringify(this.memory.loadMemoryVariables().history)}
         const finalPrompt = this.agent.prompt({
@@ -64,6 +62,7 @@ export class Workflow {
           toolInput: action.output,
         });
         output = await this.llm.generate(finalPrompt);
+        console.log({ output })
       } else {
         output = action.output; // LLM handles it directly (no tool used)
       }

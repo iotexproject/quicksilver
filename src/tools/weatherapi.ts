@@ -24,13 +24,16 @@ export class CurrentWeatherAPITool implements Tool {
     "Gets the current weather from Nubila API. Input is json with latitude and longitude to retrieve weather data.";
   twitterAccount: string = "nubilanetwork";
 
-  private readonly apiKey: string;
-  private readonly baseUrl: string;
+  private apiKey: string = process.env.NUBILA_API_KEY!
+  private baseUrl: string = "https://api.nubila.ai/api/v1/weather"
 
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
-    this.baseUrl = "https://api.nubila.ai/api/v1/weather";
+  constructor() {
+    if (!process.env.NUBILA_API_KEY) {
+      console.error("Please set the NUBILA_API_KEY environment variable.");
+      return;
+    }
   }
+
 
   async execute(userInput: any): Promise<string> {
     // check user input is json with latitude and longitude
@@ -88,104 +91,81 @@ export class CurrentWeatherAPITool implements Tool {
   }
 }
 
-interface ForecastWeatherResponse {
-  cod: string;
-  message: number;
-  cnt: number;
-  list: Array<{
-    dt: number;
-    main: {
-      temp: number;
-      feels_like: number;
-      temp_min: number;
-      temp_max: number;
-      pressure: number;
-      sea_level: number;
-      grnd_level: number;
-      humidity: number;
-      temp_kf: number;
-    };
-    weather: Array<{
-      id: number;
-      main: string;
-      description: string;
-      icon: string;
-    }>;
-    clouds: {
-      all: number;
-    };
-    wind: {
-      speed: number;
-      deg: number;
-    };
-    visibility: number;
-    pop: number;
-    rain?: {
-      "1h": number;
-    };
-    sys: {
-      pod: string;
-    };
-    dt_txt: string;
-  }>;
-  city: {
-    id: number;
-    name: string;
-    coord: {
-      lat: number;
-      lon: number;
-    };
-    country: string;
-    population: number;
-    timezone: number;
-    sunrise: number;
-    sunset: number;
-  };
+interface NubilaForecastData {
+  dt: number;
+  temp: number;
+  feels_like: number;
+  humidity: number;
+  pressure: number;
+  wind_speed: number;
+  wind_direction: number;
+  condition: string;
+}
+
+interface NubilaForecastResponse {
+  data: NubilaForecastData[];
+  ok: boolean;
 }
 
 export class ForecastWeatherAPITool implements Tool {
   name: string = "ForecastWeatherAPITool";
   description: string =
-    "Get weather forecast data from the OpenWeather API. Input is json with 'cityName' to retrieve weather data.";
+    "Get weather forecast data from the Nubila API. Input is json with latitude and longitude to retrieve weather data.";
 
-  private readonly apiKey: string;
-  private readonly baseUrl: string;
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
-    this.baseUrl = "https://api.openweathermap.org/data/2.5/forecast";
+  private apiKey: string = process.env.NUBILA_API_KEY!
+  private baseUrl: string = "https://api.nubila.ai/api/v1/forecast"
+
+  constructor() {
+    if (!process.env.NUBILA_API_KEY) {
+      console.error("Please set the NUBILA_API_KEY environment variable.");
+      return;
+    }
   }
+
 
   async execute(userInput: any): Promise<string> {
     if (
       !userInput ||
       typeof userInput !== "object" ||
-      !("cityName" in userInput)
+      !("latitude" in userInput) ||
+      !("longitude" in userInput)
     ) {
-      return "Invalid input. Please provide a JSON object with 'cityName' property.";
+      return "Invalid input. Please provide a JSON object with 'latitude' and 'longitude' properties.";
     }
-    const cityName = userInput.cityName;
+
+    const url = `${this.baseUrl}?lat=${userInput.latitude}&lon=${userInput.longitude}`;
+
     try {
-      const response = await fetch(
-        `${this.baseUrl}?q=${cityName}&appid=${this.apiKey}`,
-      );
-      const data: ForecastWeatherResponse = await response.json();
-      const weatherList = data?.list;
-      if (
-        !weatherList ||
-        !Array.isArray(weatherList) ||
-        weatherList.length === 0
-      ) {
+      const response = await fetch(url, {
+        headers: {
+          "x-api-key": this.apiKey,
+        },
+        signal: AbortSignal.timeout(5000),
+      });
+
+      if (!response.ok) {
+        const errorMessage = `API request failed with status: ${response.status} ${response.statusText}`;
+        return `Weather API Error: ${errorMessage}`;
+      }
+
+      const data: NubilaForecastResponse = await response.json();
+      const forecastData = data.data;
+
+      if (!forecastData || !Array.isArray(forecastData) || forecastData.length === 0) {
         return "No available weather data.";
       }
-      const summaries = weatherList.map((item) => {
-        const date = item.dt_txt; // Use dt_txt for the date
-        const temperature = (item.main.temp - 273.15).toFixed(2); // Convert Kelvin to Celsius
-        const weatherDescription = item.weather[0].description; // Weather description
-        const windSpeed = item.wind.speed; // Wind speed
-        return `On ${date}, the temperature is ${temperature}°C, the weather is ${weatherDescription}, and the wind speed is ${windSpeed} m/s.`;
+
+      const summaries = forecastData.map((item) => {
+        const date = new Date(item.dt * 1000).toLocaleString();
+        const temperature = item.temp;
+        const condition = item.condition;
+        const windSpeed = item.wind_speed;
+        return `On ${date}, the temperature is ${temperature}°C, the weather is ${condition}, and the wind speed is ${windSpeed} m/s.`;
       });
-      return `Weather Forecast Data for ${cityName}: ` + summaries.join(" ");
+
+      return `Weather Forecast Data for ${userInput.latitude}, ${userInput.longitude}: ` + summaries.join(" ");
     } catch (error) {
+      console.error("Error fetching forecast data:", error);
       return "Could not retrieve weather information. Please check the API or your network connection.";
     }
   }

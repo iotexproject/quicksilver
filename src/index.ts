@@ -33,11 +33,6 @@ async function runExample() {
     return;
   }
 
-  const openWeatherApiKey = process.env.OPEN_WEATHER_API_KEY;
-  if (!openWeatherApiKey) {
-    console.error("Please set the OPEN_WEATHER_API_KEY environment variable.");
-    return;
-  }
 
   const newsApiKey = process.env.NEWSAPI_API_KEY;
   if (!newsApiKey) {
@@ -47,8 +42,8 @@ async function runExample() {
 
   const weatherAgent = new Agent({
     tools: [
-      new CurrentWeatherAPITool(nubilaApiKey),
-      new ForecastWeatherAPITool(openWeatherApiKey),
+      new CurrentWeatherAPITool(),
+      new ForecastWeatherAPITool(),
     ],
   });
 

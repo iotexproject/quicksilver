@@ -8,8 +8,12 @@ interface NewsAPIResponse {
 }
 
 export class NewsAPITool extends APITool {
-  constructor(apiKey: string) {
-    super("NewsAPI", "Fetches today's headlines from News API", apiKey);
+  constructor() {
+    if (!process.env.NEWSAPI_API_KEY) {
+      console.error("Please set the NUBILA_API_KEY environment variable.");
+      return;
+    }
+    super("NewsAPI", "Fetches today's headlines from News API", process.env.NEWSAPI_API_KEY!);
   }
 
   async execute(input: string): Promise<string> {
