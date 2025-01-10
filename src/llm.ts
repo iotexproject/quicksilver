@@ -1,5 +1,8 @@
 import OpenAI from "openai";
+import { RAGApplication, RAGApplicationBuilder } from '@llm-tools/embedjs';
+import { LibSqlDb } from '@llm-tools/embedjs-libsql';
 
+import { OpenAiEmbeddings } from '@llm-tools/embedjs-openai';
 export interface LLM {
   generate(prompt: string): Promise<string>;
 }
@@ -54,3 +57,32 @@ export class OpenAILLM implements LLM {
     }
   }
 }
+
+
+export class EmbedLLM implements LLM {
+  model: RAGApplication | null = null
+
+  constructor(args: Partial<EmbedLLM> = {}) {
+    Object.assign(this, args)
+    if (!this.model) {
+      new RAGApplicationBuilder()
+        .setEmbeddingModel(new OpenAiEmbeddings({
+          model: 'text-embedding-3-small'
+        }))
+        .setVectorDatabase(new LibSqlDb({ path: './data.db' }))
+        .build().then(model => this.model = model)
+    }
+  }
+
+  async generate(prompt: string): Promise<string> {
+    try {
+      const result = await this.model?.query(prompt);
+      console.log(result)
+      return result?.content.trim() || "No content in response";
+    } catch (error: any) {
+      console.error("Together API Error:", error.message);
+      return `Together API Error: ${error.message}`;
+    }
+  }
+}
+
