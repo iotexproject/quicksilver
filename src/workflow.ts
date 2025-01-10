@@ -82,8 +82,6 @@ export class Workflow {
             }
 
             const json_string = jsonMatch[0];
-            console.log("json_string:", json_string);
-
             const jsonResponse = JSON.parse(json_string);
             const toolName = jsonResponse.tool;
             let toolInput
