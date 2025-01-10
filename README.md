@@ -73,7 +73,6 @@ graph TD
 5. **LLM Integration**: Interfaces with language models for intelligent responses.
 
 ---
-
 ## Getting Started
 
 ### Prerequisites
@@ -128,6 +127,10 @@ Quicksilver is just getting started, and there’s immense potential for growth.
 - **Enhance workflow logic**: Improve the agent’s decision-making capabilities to make better use of the tools and resources available. Collaborate to create smarter, more adaptable workflows.
 
 Have an idea outside of this list? We’d love to hear it!
+
+## Work with Eliza
+
+Quicksilver is serving the sentient AI queries as the DePIN-Plugin on [Eliza](https://github.com/elizaOS/eliza). You can simply enable the plugin and start using it. With Quicksilver, your Eliza agent will gain sentient-like capabilities to interact intelligently with the world. The current capabilities are listed above. If you like to add more capabilities, please refer to the [Contributing](#contributing) section.
 
 ## Contributing
 
