@@ -1,7 +1,5 @@
-import axios from 'axios';
-import { APITool } from './api_tool';
-import { handleStreamResponse } from '../utils/stream_utils';
 import { callDify } from 'utils/dify';
+import { APITool } from './api_tool';
 
 export class DePINTool extends APITool {
   private readonly baseUrl: string;
@@ -12,15 +10,15 @@ export class DePINTool extends APITool {
   ) {
     super(
       'DePIN Tool',
-      `A tool for querying depin project token and market information. Can handle queries like:
-      - Current IOTX token price and market data
-      - IOTX token price history and trends
-      - Market cap and trading volume information
-      - Token price comparisons and analysis
-      - Market sentiment and price predictions
+      `A tool for querying DePIN project token and market information. 
       
       Example queries:
-      - "What is the current IOTX price?"
+      - How many dimo vehicles?
+      - What is the current IOTX price?
+      
+      Example output:
+      - "There are 1000 dimo vehicles"
+      - "The current IOTX market cap is $352,694,249"
 
       include project name keywords:
       - dimo

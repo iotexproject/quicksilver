@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { RAGApplication, RAGApplicationBuilder } from '@llm-tools/embedjs';
+import { RAGApplication, RAGApplicationBuilder, SIMPLE_MODELS } from '@llm-tools/embedjs';
 import { LibSqlDb } from '@llm-tools/embedjs-libsql';
 
 import { OpenAiEmbeddings } from '@llm-tools/embedjs-openai';
@@ -66,9 +66,8 @@ export class EmbedLLM implements LLM {
     Object.assign(this, args)
     if (!this.model) {
       new RAGApplicationBuilder()
-        .setEmbeddingModel(new OpenAiEmbeddings({
-          model: 'text-embedding-3-small'
-        }))
+        .setModel(SIMPLE_MODELS["OPENAI_GPT3.5_TURBO"])
+        .setEmbeddingModel(new OpenAiEmbeddings())
         .setVectorDatabase(new LibSqlDb({ path: './data.db' }))
         .build().then(model => this.model = model)
     }
