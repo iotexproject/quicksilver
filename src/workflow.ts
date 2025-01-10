@@ -44,7 +44,6 @@ export class Workflow {
             \`\`\`
             If no tool is needed, set "tool" to null.
         `;
-    console.log("prompt:", prompt);
     try {
       const llmResponse = await this.fastllm.generate(prompt);
 
