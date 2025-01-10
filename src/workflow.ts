@@ -1,6 +1,7 @@
 import { EmbedLLM, LLM, OpenAILLM } from "./llm";
 import { Memory, SimpleMemory } from "./memory";
 import { Tool } from "./tools/tool";
+import { Agent } from "./agent";
 
 interface ActionResult {
   tool?: Tool;
@@ -11,7 +12,7 @@ export class Workflow {
   fastllm: LLM;
   llm: LLM;
   memory: Memory;
-  tools: Tool[];
+  tools: Tool[] | Agent[];
 
   constructor({
     fastllm,
@@ -22,7 +23,7 @@ export class Workflow {
     fastllm?: LLM;
     llm?: LLM;
     memory?: Memory;
-    tools: Tool[];
+    tools: Tool[] | Agent[];
   }) {
     this.fastllm = fastllm || new EmbedLLM();
     this.llm =
@@ -33,10 +34,21 @@ export class Workflow {
 
   async execute(input: string): Promise<string> {
     const memoryVariables = this.memory.loadMemoryVariables();
-    const availableTools = this.tools.map((tool) => ({
-      name: tool.name,
-      description: tool.description,
-    }));
+    const availableTools = this.tools.flatMap((tool) => {
+      if (tool instanceof Agent) {
+        return tool.tools.map((t) => ({
+          name: t.name,
+          description: t.description,
+        }));
+      } else {
+        return [
+          {
+            name: tool.name,
+            description: tool.description,
+          },
+        ];
+      }
+    });
 
     const prompt = `            
             Input: ${input}
@@ -105,7 +117,13 @@ export class Workflow {
       }
 
       if (toolName) {
-        const tool = this.tools.find((t) => t.name === toolName);
+        const allTools = this.tools.flatMap((tool) => {
+          if (tool instanceof Agent) {
+            return tool.tools;
+          }
+          return [tool];
+        });
+        const tool = allTools.find((t) => t.name === toolName);
         if (tool) {
           return { tool, output: toolInput };
         } else {

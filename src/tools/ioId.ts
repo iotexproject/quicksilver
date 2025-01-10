@@ -1,10 +1,9 @@
-import { Tool } from './tool';
-import { ethers } from 'ethers';
+import { Tool } from "./tool";
+import { ethers } from "ethers";
 
 export class IoIDTool implements Tool {
   name: string = "IoIDTool";
-  description: string = 
-    `
+  description: string = `
     This tool can read the IoTeX blockchain to get information related to the 
     ioID decentralized identity framework. 
     It supports the following JSON inputs: 
@@ -15,7 +14,9 @@ export class IoIDTool implements Tool {
   provider: ethers.JsonRpcProvider;
 
   constructor() {
-    this.provider = new ethers.JsonRpcProvider('https://babel-api.mainnet.iotex.io');
+    this.provider = new ethers.JsonRpcProvider(
+      "https://babel-api.mainnet.iotex.io"
+    );
   }
 
   async execute(userInput: any): Promise<string> {
@@ -32,7 +33,7 @@ export class IoIDTool implements Tool {
       return await this.getProjectInfo(userInput.ioID);
     } else {
       return "Invalid query. Please provide a valid query parameter.";
-    }       
+    }
   }
 
   /**
@@ -44,41 +45,45 @@ export class IoIDTool implements Tool {
     const contractAddress = "0xA596800891e6a95Bf737404411ef529c1F377b4e";
     const contractABI = [
       {
-        "inputs": [
+        inputs: [
           {
-            "internalType": "uint256",
-            "name": "_projectId",
-            "type": "uint256"
-          }
+            internalType: "uint256",
+            name: "_projectId",
+            type: "uint256",
+          },
         ],
-        "name": "name",
-        "outputs": [
+        name: "name",
+        outputs: [
           {
-            "internalType": "string",
-            "name": "",
-            "type": "string"
-          }
+            internalType: "string",
+            name: "",
+            type: "string",
+          },
         ],
-        "stateMutability": "view",
-        "type": "function"
+        stateMutability: "view",
+        type: "function",
       },
       {
-        "inputs": [],
-        "name": "count",
-        "outputs": [
+        inputs: [],
+        name: "count",
+        outputs: [
           {
-            "internalType": "uint256",
-            "name": "",
-            "type": "uint256"
-          }
+            internalType: "uint256",
+            name: "",
+            type: "uint256",
+          },
         ],
-        "stateMutability": "view",
-        "type": "function"
-      }
+        stateMutability: "view",
+        type: "function",
+      },
     ];
 
     // Create a contract instance
-    const projectContract = new ethers.Contract(contractAddress, contractABI, this.provider);
+    const projectContract = new ethers.Contract(
+      contractAddress,
+      contractABI,
+      this.provider
+    );
 
     try {
       // Compute the hash of the project name

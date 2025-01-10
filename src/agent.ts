@@ -6,6 +6,7 @@ import { Workflow } from "./workflow";
 export class Agent {
   name: string = "";
   description: string = "";
+  tools: Tool[] = [];
 
   private workflow: Workflow;
 
@@ -26,6 +27,7 @@ export class Agent {
   }) {
     this.name = name || "";
     this.description = description || "";
+    this.tools = tools;
     this.workflow = new Workflow({ fastllm, llm, tools, memory });
   }
 
