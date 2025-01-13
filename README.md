@@ -43,7 +43,7 @@ Quicksilver's architecture is modular and extensible, enabling developers to cus
 ```mermaid
 graph TD
     A[Sentient AI - Core Orchestrator]
-    B[Contextual Memory (N/A)]
+    B[Contextual Memory]
     C[Workflow Manager]
     D[Modular Tools]
     E[LLM Integration]
