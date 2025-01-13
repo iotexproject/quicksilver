@@ -6,7 +6,6 @@ import {
 } from "./tools/weatherapi";
 import { NewsAPITool } from "./tools/newsapi";
 import { Agent } from "./agent";
-import { SimpleMemory } from "./memory";
 import { Tool } from "./tools/tool";
 import * as dotenv from "dotenv";
 

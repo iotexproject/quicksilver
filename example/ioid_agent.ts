@@ -1,7 +1,6 @@
 import { OpenAILLM, LLM } from "../src/llm";
 import { IoIDTool } from "../src/tools/ioId";
 import { Agent } from "../src/agent";
-import { SimpleMemory } from "../src/memory";
 import { Tool } from "../src/tools/tool";
 import * as dotenv from "dotenv";
 
@@ -17,11 +16,10 @@ async function runExample() {
 
   const llm: LLM = new OpenAILLM(apiKey, "gpt-4"); // Use "gpt-3.5-turbo" for cost-effectiveness if needed
 
-  // Initialize tools, memory, and agent
+  // Initialize tools, and agent
   const ioidTool = new IoIDTool();
   const tools: Tool[] = [ioidTool];
-  const memory = new SimpleMemory();
-  const agent = new Agent({ llm, tools, memory });
+  const agent = new Agent({ llm, tools });
 
   // User inputs to process
   const inputs = [

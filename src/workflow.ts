@@ -55,7 +55,6 @@ export class Workflow {
         console.log({ toolOutput });
 
         // FEED TOOL OUTPUT BACK TO LLM
-        // Previous Conversation: ${JSON.stringify(this.memory.loadMemoryVariables().history)}
         const finalPrompt = this.agent.prompt({
           input,
           tool: action.tool,
@@ -66,8 +65,6 @@ export class Workflow {
       } else {
         output = action.output; // LLM handles it directly (no tool used)
       }
-
-      // this.memory.saveContext(input, output);
 
       return output;
     } catch (error) {
