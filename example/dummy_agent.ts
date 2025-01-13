@@ -1,6 +1,5 @@
 import { DummyLLM } from "../src/llm";
 import { Tool } from "../src/tools/tool";
-import { Memory, SimpleMemory } from "../src/memory";
 import { Workflow } from "../src/workflow";
 import { Agent } from "../src/agent";
 
@@ -17,9 +16,8 @@ async function runDummyAgent() {
   const llm = new DummyLLM();
   const echoTool: Tool = new EchoTool(); // Explicitly type echoTool
   const tools: Tool[] = [echoTool];
-  const memory = new SimpleMemory();
-  const workflow = new Workflow({ llm, tools, memory });
-  const agent = new Agent({ llm, tools, memory });
+  const workflow = new Workflow({ llm });
+  const agent = new Agent({ llm, tools });
 
   const inputs = [
     "Hello, Quicksilver!",
