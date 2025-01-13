@@ -43,7 +43,7 @@ Quicksilver's architecture is modular and extensible, enabling developers to cus
 ```mermaid
 graph TD
     A[Sentient AI - Core Orchestrator]
-    B[Contextual Memory]
+    B[Contextual Memory (N/A)]
     C[Workflow Manager]
     D[Modular Tools]
     E[LLM Integration]
@@ -67,7 +67,7 @@ graph TD
 ### Key Components
 
 1. **Sentient AI (Core Orchestrator)**: Central hub managing interactions and delegating tasks.
-2. **Contextual Memory**: Tracks user interactions and maintains context for continuity.
+2. **Contextual Memory**: Tracks user interactions and maintains context for continuity. This has been removed to make API calls more efficient.
 3. **Workflow Manager**: Handles task automation and orchestration.
 4. **Modular Tools**: Extensible modues for interacting with different DePINs.
 5. **LLM Integration**: Interfaces with language models for intelligent responses.
@@ -76,8 +76,8 @@ graph TD
 ## Getting Started
 
 ### Prerequisites
-- [Node.js](https://nodejs.org/) (v16 or later)
-- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
+- [Node.js](https://nodejs.org/) (v22)
+- [bun](https://bun.sh/)
 - Docker (optional, for containerized environments)
 
 ### Installation
@@ -92,7 +92,7 @@ graph TD
 2. Install dependencies:
 
    ```bash
-   npm install
+   bun i
    ```
 
 3. Create a `.env` file based on `.env.template`:
@@ -108,7 +108,19 @@ graph TD
 Some example agents are located in the `example` folder. Run an example with:
   
    ```bash
-   npx ts-node example/demo_agent.ts
+   bun run example/demo_agent.ts
+   ```
+
+5. Run the server:
+
+   ```bash
+   bun run start
+   ```
+
+6. Test API query:
+
+   ```bash
+    curl http://localhost:8000/ask -X POST -H "Content-Type: application/json" -d '{"q": "What is the weather in San Francisco?"}' 
    ```
 
 ---
