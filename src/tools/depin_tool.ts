@@ -1,4 +1,4 @@
-import { callDify } from "utils/dify";
+import { callDify } from "../utils/dify";
 import { APITool } from "./tool";
 
 export class DePINTool extends APITool {

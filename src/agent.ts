@@ -1,4 +1,4 @@
-import { FastLLM, LLM, OpenAILLM, TogetherLLM } from "./llm";
+import { LLM, OpenAILLM, TogetherLLM } from "./llm";
 import { Tool } from "./tools/tool";
 import { Workflow } from "./workflow";
 
@@ -53,7 +53,7 @@ export class Agent {
         });
       } else {
         this.fastllm = new OpenAILLM({
-          model: process.env.FAST_LLM_MODEL || "gpt-3.5-turbo",
+          model: process.env.FAST_LLM_MODEL || "gpt-4",
         });
       }
     }
