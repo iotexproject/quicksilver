@@ -1,4 +1,4 @@
-import { FastLLM, LLM, OpenAILLM } from "./llm";
+import { LLM, OpenAILLM } from "./llm";
 import { Tool } from "./tools/tool";
 import { Agent } from "./agent";
 
@@ -31,28 +31,58 @@ export class Workflow {
     // TODO: retrieve data from vector database
 
     const prompt = `
-            Input: ${input}
-
-            Available Tools: ${JSON.stringify(availableTools)}
-
-            Only respond with a JSON object in the following format:
-            \`\`\`json
-            {
-                "tool": "tool_name_or_null", // The name of the tool to use, or null if no tool is needed
-                "tool_input": "input_for_the_tool" // The input to pass to the tool in json format (only if a tool is selected)
-            }
-            \`\`\`
-            If no tool is needed, set "tool" to null.
-        `;
+    Input: ${input}
+    
+    Available Tools: ${JSON.stringify(availableTools)}
+    
+    You are an AI agent tasked with providing the best possible response to the given input. You may use the tools listed above if they help generate a better or more accurate response. Your response must be actionable, contextually relevant, and formatted as a JSON object.
+    
+    Respond **only** with a JSON object in the following format:
+    \`\`\`json
+    {
+        "response": "best_possible_response", // The best response to the input, only if no tool is needed
+        "tool": "tool_name_or_null", // The name of the tool to use, or null if no tool is needed
+        "tool_input": { /* input for the tool */ } // A JSON object containing the tool input (only if a tool is selected)
+    }
+    \`\`\`
+    
+    Guidelines:
+    1. **Best Response**: The "response" field should contain the best answer to the input when no relevant tool is available.
+    2. **Tool Usage**:
+       - Use tools only when they help improve the quality of the response.
+       - If no tools are required, set "tool" to \`null\`, omit "tool_input" and provide the best response.
+    3. **Clarity and Relevance**:
+       - Provide accurate, concise, and contextually appropriate responses.
+       - Avoid redundant explanations or information outside the JSON structure.
+    
+    Examples:
+    - Input: "What’s the weather like in Paris?"
+      \`\`\`json
+      {
+          "response": null,
+          "tool": "weather_tool",
+          "tool_input": { "city": "Paris" }
+      }
+      \`\`\`
+    - Input: "Hello"
+      \`\`\`json
+      {
+          "response": "Hello! How can I assist you today?",
+          "tool": null
+      }
+      \`\`\`
+    
+    Process the input and respond accordingly.
+    `;
     try {
       const llmResponse = await this.fastllm.generate(prompt);
 
-      console.log("fast LLM raw response:", llmResponse);
+      // console.log("fast LLM raw response:", llmResponse);
       const action: ActionResult = this.parseLLMResponse(llmResponse);
       let output: string;
       if (action.tool) {
         const toolOutput = await action.tool.execute(action.output);
-        console.log({ toolOutput });
+       // console.log({ toolOutput });
 
         // FEED TOOL OUTPUT BACK TO LLM
         const finalPrompt = this.agent.prompt({
@@ -99,7 +129,7 @@ export class Workflow {
           return { output: `Tool "${toolName}" not found.` };
         }
       } else {
-        return { output: toolInput || "No tool needed." };
+        return { output: toolInput || jsonResponse.response };
       }
     } catch (error) {
       console.error(
