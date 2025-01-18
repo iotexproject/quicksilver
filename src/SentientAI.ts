@@ -1,8 +1,6 @@
 import { Agent } from "./agent"; // Go up one level, then into src
 import { NewsAPITool } from "./tools/newsapi"; // Go up one level, then into src/tools
-import { DePINTool } from "./tools/depin_tool";
-import { ReadEVMTxTool } from "./tools/read_evm_tx";
-
+import { DePINTool } from "tools/depin_tool";
 import {
   CurrentWeatherAPITool,
   ForecastWeatherAPITool,
@@ -15,14 +13,8 @@ export class SentientAI {
 
   depinTool = new DePINTool();
   newsTool = new NewsAPITool();
-  readEVMTxTool = new ReadEVMTxTool();
 
   agent = new Agent({
-    tools: [
-      this.weatherAgent, 
-      this.depinTool, 
-      this.newsTool, 
-      this.readEVMTxTool
-    ],
+    tools: [this.weatherAgent, this.depinTool, this.newsTool],
   });
 }

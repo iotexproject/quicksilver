@@ -47,7 +47,7 @@ export class OpenAILLM implements LLM {
   async generate(prompt: string): Promise<string> {
     try {
       const result = await this.rag?.query(prompt);
-      // console.log(result);
+      console.log(result);
       return result?.content.trim() || "No content in response";
     } catch (error: any) {
       console.error(" API Error:", error.message);

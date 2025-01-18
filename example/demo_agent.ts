@@ -1,5 +1,4 @@
 import * as dotenv from 'dotenv';
-import readline from 'readline';
 import { SentientAI } from '../src/SentientAI'; // Import SentientAI
 
 dotenv.config();
@@ -8,6 +7,7 @@ async function main() {
   const sentientAI = new SentientAI();  
 
   // read users' input
+  const readline = require('readline');
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout
@@ -21,7 +21,7 @@ async function main() {
         return;
       }
 
-      // console.log(`User Input: ${input}`);
+      console.log(`User Input: ${input}`);
       try {
         const response = await sentientAI.agent.execute(input);
         console.log(`Binoai Response:\n${response}`);

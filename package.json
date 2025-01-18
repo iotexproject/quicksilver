@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "start": "bun run server.ts",
     "dev": "bun run --watch server.ts",
@@ -29,7 +28,6 @@
     "@types/axios": "^0.14.4",
     "@types/node": "^22.10.5",
     "prettier": "^3.4.2",
-    "tsx": "^4.19.2",
     "vitest": "^2.1.8"
   }
 }
