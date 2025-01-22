@@ -1,45 +1,35 @@
-import { Tool } from "./tools/tool";
-import { Agent } from "./agent";
 import { LLMService } from "./services/llm-service";
-
-export interface ActionResult {
-  tool?: Tool;
-  output: string;
-}
+import { Tool, PromptContext, ActionResult } from "./types";
 
 export class Workflow {
-  agent: Agent;
   llmService: LLMService;
+  tools: Tool[] = [];
+  prompt: (ctx: PromptContext) => string;
 
-  constructor(args: Partial<Workflow> = {}) {
-    Object.assign(this, args);
+  constructor({
+    tools,
+    prompt,
+  }: {
+    tools: Tool[];
+    prompt?: (ctx: PromptContext) => string;
+  }) {
+    this.tools = tools;
+    this.prompt = prompt ? prompt : defaultTemplate;
     this.llmService = new LLMService();
   }
 
   async execute(input: string): Promise<string> {
-    const availableTools = this.agent.tools.map((tool) => ({
+    const availableTools = this.tools.map((tool) => ({
       name: tool.name,
       description: tool.description,
     }));
 
     // TODO: retrieve data from vector database
 
-    const prompt = `
-            Input: ${input}
-
-            Available Tools: ${JSON.stringify(availableTools)}
-
-            Only respond with a JSON object in the following format:
-            \`\`\`json
-            {
-                "tool": "tool_name_or_null", // The name of the tool to use, or null if no tool is needed
-                "tool_input": "input_for_the_tool" // The input to pass to the tool in json format (only if a tool is selected)
-            }
-            \`\`\`
-            If no tool is needed, set "tool" to null.
-        `;
+    const toolSelectionPrompt = toolSelectionTemplate(input, availableTools);
     try {
-      const llmResponse = await this.llmService.fastllm.generate(prompt);
+      const llmResponse =
+        await this.llmService.fastllm.generate(toolSelectionPrompt);
 
       const action: ActionResult = this.parseLLMResponse(llmResponse);
       let output: string;
@@ -47,7 +37,7 @@ export class Workflow {
         const toolOutput = await action.tool.execute(action.output);
 
         // FEED TOOL OUTPUT BACK TO LLM
-        const finalPrompt = this.agent.prompt({
+        const finalPrompt = this.prompt({
           input,
           tool: action.tool,
           toolOutput,
@@ -60,8 +50,7 @@ export class Workflow {
 
       return output;
     } catch (error) {
-      console.error("Workflow Error:", error);
-      return "Workflow Error: " + error; // Return a user-friendly error message
+      return "Workflow Error: " + error;
     }
   }
 
@@ -84,7 +73,7 @@ export class Workflow {
       }
 
       if (toolName) {
-        const tool = this.agent.tools.find((t) => t.name === toolName);
+        const tool = this.tools.find((t) => t.name === toolName);
         if (tool) {
           return { tool, output: toolInput };
         } else {
@@ -94,15 +83,35 @@ export class Workflow {
         return { output: toolInput || "No tool needed." };
       }
     } catch (error) {
-      console.error(
-        "Error parsing LLM response:",
-        error,
-        "Raw LLM Response:",
-        llmResponse,
-      );
       return {
         output: `Error parsing LLM response: ${error}. Raw Response: ${llmResponse}.`,
       };
     }
   }
 }
+
+const defaultTemplate = (ctx: PromptContext) => `
+User Input: ${ctx.input}
+Tool Used: ${ctx.tool.name}
+Tool Input: ${ctx.toolInput}
+Tool Output: ${ctx.toolOutput}
+
+Generate a human-readable response based on the tool output${ctx.tool.twitterAccount ? ` and mention x handle ${ctx.tool.twitterAccount} in the end.` : ""}`;
+
+const toolSelectionTemplate = (
+  input: string,
+  availableTools: { name: string; description: string }[],
+) => `
+Input: ${input}
+
+Available Tools: ${JSON.stringify(availableTools)}
+
+Only respond with a JSON object in the following format:
+\`\`\`json
+{
+    "tool": "tool_name_or_null", // The name of the tool to use, or null if no tool is needed
+    "tool_input": "input_for_the_tool" // The input to pass to the tool in json format (only if a tool is selected)
+}
+\`\`\`
+If no tool is needed, set "tool" to null.
+`;
