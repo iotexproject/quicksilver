@@ -1,6 +1,6 @@
-import { FastLLM, LLM, OpenAILLM } from "./llm";
 import { Tool } from "./tools/tool";
 import { Agent } from "./agent";
+import { LLMService } from "./services/llm-service";
 
 export interface ActionResult {
   tool?: Tool;
@@ -9,17 +9,11 @@ export interface ActionResult {
 
 export class Workflow {
   agent: Agent;
-
-  get fastllm() {
-    return this.agent.fastllm;
-  }
-
-  get llm() {
-    return this.agent.llm;
-  }
+  llmService: LLMService;
 
   constructor(args: Partial<Workflow> = {}) {
     Object.assign(this, args);
+    this.llmService = new LLMService();
   }
 
   async execute(input: string): Promise<string> {
@@ -45,14 +39,12 @@ export class Workflow {
             If no tool is needed, set "tool" to null.
         `;
     try {
-      const llmResponse = await this.fastllm.generate(prompt);
+      const llmResponse = await this.llmService.fastllm.generate(prompt);
 
-      console.log("fast LLM raw response:", llmResponse);
       const action: ActionResult = this.parseLLMResponse(llmResponse);
       let output: string;
       if (action.tool) {
         const toolOutput = await action.tool.execute(action.output);
-        console.log({ toolOutput });
 
         // FEED TOOL OUTPUT BACK TO LLM
         const finalPrompt = this.agent.prompt({
@@ -61,7 +53,7 @@ export class Workflow {
           toolOutput,
           toolInput: action.output,
         });
-        output = await this.llm.generate(finalPrompt);
+        output = await this.llmService.llm.generate(finalPrompt);
       } else {
         output = action.output; // LLM handles it directly (no tool used)
       }
