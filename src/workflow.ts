@@ -1,6 +1,6 @@
 import { finalResponseTemplate, toolSelectionTemplate } from "./templates";
 import { LLMService } from "./services/llm-service";
-import { Tool, ActionResult } from "./types";
+import { Tool } from "./types";
 
 export class QueryOrchestrator {
   llmService: LLMService;
@@ -11,34 +11,22 @@ export class QueryOrchestrator {
     this.llmService = new LLMService();
   }
 
+  // TODO: input should include user query and context
   async process(input: string): Promise<string> {
-    const availableTools = this.tools.map((tool) => ({
-      name: tool.name,
-      description: tool.description,
-    }));
-
-    // TODO: retrieve data from vector database
-
-    const toolSelectionPrompt = toolSelectionTemplate(input, availableTools);
     try {
-      const llmResponse =
-        await this.llmService.fastllm.generate(toolSelectionPrompt);
-
-      const action: ActionResult = this.parseLLMResponse(llmResponse);
-      let output: string;
-      if (action.tool) {
-        const toolOutput = await action.tool.execute(action.output);
-
-        const finalPrompt = finalResponseTemplate({
-          input,
-          tool: action.tool,
-          toolOutput,
-          toolInput: action.output,
-        });
-        output = await this.llmService.llm.generate(finalPrompt);
-      } else {
-        output = action.output; // LLM handles it directly (no tool used)
+      const tools = await this.selectTools(input);
+      if (!tools.length) {
+        return "No tools selected";
       }
+
+      const toolOutputs = await Promise.all(tools.map(tool => tool.execute(input)));
+
+      const finalPrompt = finalResponseTemplate({
+        input,
+        tools,
+        toolOutputs,
+      });
+      const output = await this.llmService.llm.generate(finalPrompt);
 
       return output;
     } catch (error) {
@@ -46,39 +34,35 @@ export class QueryOrchestrator {
     }
   }
 
-  private parseLLMResponse(llmResponse: string): ActionResult {
-    try {
-      // Use regex to extract the first JSON object
-      const jsonMatch = llmResponse.match(/{(?:[^{}]|{[^{}]*})*}/);
-      if (!jsonMatch) {
-        throw new Error("No JSON object found in LLM response.");
-      }
+  async selectTools(input: string): Promise<Tool[]> {
+    const availableTools = this.tools.map((tool) => ({
+      name: tool.name,
+      description: tool.description,
+    }));
 
-      const json_string = jsonMatch[0];
-      const jsonResponse = JSON.parse(json_string);
-      const toolName = jsonResponse.tool;
-      let toolInput;
-      try {
-        toolInput = JSON.parse(jsonResponse.tool_input);
-      } catch (error) {
-        toolInput = jsonResponse.tool_input;
-      }
-
-      if (toolName) {
-        const tool = this.tools.find((t) => t.name === toolName);
-        if (tool) {
-          return { tool, output: toolInput };
-        } else {
-          return { output: `Tool "${toolName}" not found.` };
-        }
-      } else {
-        return { output: toolInput || "No tool needed." };
-      }
-    } catch (error) {
-      return {
-        output: `Error parsing LLM response: ${error}. Raw Response: ${llmResponse}.`,
-      };
+    if (!availableTools.length) {
+      return [];
     }
+
+    const toolSelectionPrompt = toolSelectionTemplate(input, availableTools);
+    const llmResponse =
+      await this.llmService.fastllm.generate(toolSelectionPrompt);
+
+    console.log("llmResponse", llmResponse);
+
+    const toolNames = extractContentFromTags(llmResponse, "tool_selection");
+    if (!toolNames) {
+      return [];
+    }
+    const toolNamesParsed = JSON.parse(toolNames);
+    return toolNamesParsed.map((toolName: string) =>
+      this.tools.find((t) => t.name === toolName),
+    );
   }
 }
 
+const extractContentFromTags = (content: string, tag: string) => {
+  const regex = new RegExp(`<${tag}>(.*?)<\/${tag}>`, "s");
+  const match = content.match(regex);
+  return match ? match[1] : null;
+};
