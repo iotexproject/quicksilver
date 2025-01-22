@@ -16,7 +16,7 @@ describe("SentientAI", () => {
 
   it("should return a response", async () => {
     const sentai = new SentientAI();
-    const response = await sentai.agent.execute("Current temperature in SF?");
+    const response = await sentai.execute("Current temperature in SF?");
     expect(response).toBe("+10 C");
   });
 });

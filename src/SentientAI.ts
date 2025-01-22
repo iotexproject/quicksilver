@@ -1,19 +1,16 @@
-import { Agent } from "./agent";
+import { Workflow } from "./workflow";
 import { NewsAPITool } from "./tools/newsapi";
 import { DePINTool } from "./tools/depin_tool";
 import {
   CurrentWeatherAPITool,
   ForecastWeatherAPITool,
 } from "./tools/weatherapi";
-import { IAgent } from "types";
 
 export class SentientAI {
-  agent: IAgent;
+  workflow: Workflow;
 
   constructor() {
-    this.agent = new Agent({
-      name: "SentientAI",
-      description: "SentientAI is a tool that can help you with your tasks.",
+    this.workflow = new Workflow({
       tools: [
         new NewsAPITool(),
         new DePINTool(),
@@ -22,4 +19,10 @@ export class SentientAI {
       ],
     });
   }
+
+  async execute(input: string): Promise<string> {
+    return this.workflow.execute(input);
+  }
 }
+
+export default SentientAI;
