@@ -1,7 +1,7 @@
 import { LLMService } from "./services/llm-service";
 import { Tool, PromptContext, ActionResult } from "./types";
 
-export class Workflow {
+export class QueryOrchestrator {
   llmService: LLMService;
   tools: Tool[] = [];
   prompt: (ctx: PromptContext) => string;
@@ -18,7 +18,7 @@ export class Workflow {
     this.llmService = new LLMService();
   }
 
-  async execute(input: string): Promise<string> {
+  async process(input: string): Promise<string> {
     const availableTools = this.tools.map((tool) => ({
       name: tool.name,
       description: tool.description,
@@ -50,7 +50,7 @@ export class Workflow {
 
       return output;
     } catch (error) {
-      return "Workflow Error: " + error;
+      return "Processing Error: " + error;
     }
   }
 

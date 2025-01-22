@@ -1,4 +1,4 @@
-import { Workflow } from "./workflow";
+import { QueryOrchestrator } from "./workflow";
 import { NewsAPITool } from "./tools/newsapi";
 import { DePINTool } from "./tools/depin_tool";
 import {
@@ -7,10 +7,10 @@ import {
 } from "./tools/weatherapi";
 
 export class SentientAI {
-  workflow: Workflow;
+  orchestrator: QueryOrchestrator;
 
   constructor() {
-    this.workflow = new Workflow({
+    this.orchestrator = new QueryOrchestrator({
       tools: [
         new NewsAPITool(),
         new DePINTool(),
@@ -21,7 +21,7 @@ export class SentientAI {
   }
 
   async execute(input: string): Promise<string> {
-    return this.workflow.execute(input);
+    return this.orchestrator.process(input);
   }
 }
 

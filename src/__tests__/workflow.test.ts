@@ -2,7 +2,7 @@ import { mockLLMService } from "./mocks";
 
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 
-import { Workflow } from "../workflow";
+import { QueryOrchestrator } from "../workflow";
 import {
   CurrentWeatherAPITool,
   ForecastWeatherAPITool,
@@ -16,17 +16,17 @@ describe("Workflow", () => {
     vi.clearAllMocks();
   });
   it("should return tool not found if tool was not provided", async () => {
-    const workflow = new Workflow({ tools: [] });
-    const res = await workflow.execute("Current temperature in SF?");
+    const workflow = new QueryOrchestrator({ tools: [] });
+    const res = await workflow.process("Current temperature in SF?");
     expect(res).toBe('Tool "CurrentWeatherAPITool" not found.');
   });
   it("should return tool output if tool was provided", async () => {
-    const workflow = new Workflow({ tools: [new CurrentWeatherAPITool()] });
-    const res = await workflow.execute("Current temperature in SF?");
+    const workflow = new QueryOrchestrator({ tools: [new CurrentWeatherAPITool()] });
+    const res = await workflow.process("Current temperature in SF?");
     expect(res).toBe("+10 C");
   });
   it("should generate a prompt with twitter handle", () => {
-    const workflow = new Workflow({
+    const workflow = new QueryOrchestrator({
       tools: [new CurrentWeatherAPITool(), new ForecastWeatherAPITool()],
     });
     const prompt = workflow.prompt({
@@ -44,7 +44,7 @@ Tool Output: +10 C
 Generate a human-readable response based on the tool output and mention x handle nubilanetwork in the end.`);
   });
   it("should generate a prompt without twitter handle", () => {
-    const workflow = new Workflow({
+    const workflow = new QueryOrchestrator({
       tools: [new ForecastWeatherAPITool()],
     });
     const prompt = workflow.prompt({
