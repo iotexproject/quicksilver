@@ -28,10 +28,7 @@ export const mockWeatherTools = {
 };
 
 export const currentWeatherOutput = `
-\`\`\`json
-{
-    "tool": "CurrentWeatherAPITool",
-    "tool_input": {\"latitude\": 37.7749, \"longitude\": -122.4194}
-}
-\`\`\`
+<tool_selection>
+["CurrentWeatherAPITool"]
+</tool_selection>
 `;
