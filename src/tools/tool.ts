@@ -1,9 +1,4 @@
-export interface Tool {
-  name: string;
-  description: string;
-  twitterAccount?: string;
-  execute(input: string): Promise<string>;
-}
+import { Tool } from "types";
 
 export abstract class APITool implements Tool {
   name: string;
