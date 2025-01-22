@@ -3,7 +3,7 @@ import { LibSqlDb } from "@llm-tools/embedjs-libsql";
 import { OpenAi } from "@llm-tools/embedjs-openai";
 import { OpenAiEmbeddings } from "@llm-tools/embedjs-openai";
 import { Together } from "together-ai";
-import { CompletionCreateParamsBase } from "together-ai/resources/chat/completions";
+
 export interface LLM {
   generate(prompt: string): Promise<string>;
 }
@@ -47,7 +47,6 @@ export class OpenAILLM implements LLM {
   async generate(prompt: string): Promise<string> {
     try {
       const result = await this.rag?.query(prompt);
-      console.log(result);
       return result?.content.trim() || "No content in response";
     } catch (error: any) {
       console.error(" API Error:", error.message);
@@ -57,11 +56,16 @@ export class OpenAILLM implements LLM {
 }
 
 export class TogetherLLM implements LLM {
-  private together: Together = new Together();
+  private together: Together;
   model = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo-128K";
 
   constructor(args: Partial<TogetherLLM> = {}) {
     Object.assign(this, args);
+    const apiKey = process.env.TOGETHER_API_KEY;
+    if (!apiKey) {
+      throw new Error("Together API key is required");
+    }
+    this.together = new Together({ apiKey });
   }
 
   async generate(prompt: string): Promise<string> {
