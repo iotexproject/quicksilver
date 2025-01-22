@@ -10,33 +10,42 @@ describe("templates", () => {
   describe("finalResponseTemplate", () => {
     it("should generate a prompt with twitter handle", () => {
       const prompt = finalResponseTemplate({
-        tool: new CurrentWeatherAPITool(),
-        toolOutput: "+10 C",
-        toolInput: '{"latitude": 37.7749, "longitude": -122.4194}',
+        tools: [new CurrentWeatherAPITool()],
+        toolOutputs: ["+10 C"],
         input: "Current temperature in SF?",
       });
       expect(prompt).toBe(`
 User Input: Current temperature in SF?
-Tool Used: CurrentWeatherAPITool
-Tool Input: {"latitude": 37.7749, "longitude": -122.4194}
-Tool Output: +10 C
+Tools Used: CurrentWeatherAPITool
+Tool Outputs: +10 C
 
 Generate a human-readable response based on the tool output and mention x handle nubilanetwork in the end.`);
     });
     it("should generate a prompt without twitter handle", () => {
       const prompt = finalResponseTemplate({
-        tool: new ForecastWeatherAPITool(),
-        toolOutput: "+10 C",
-        toolInput: '{"latitude": 37.7749, "longitude": -122.4194}',
+        tools: [new ForecastWeatherAPITool()],
+        toolOutputs: ["+10 C"],
         input: "Current temperature in SF?",
       });
       expect(prompt).toBe(`
 User Input: Current temperature in SF?
-Tool Used: ForecastWeatherAPITool
-Tool Input: {"latitude": 37.7749, "longitude": -122.4194}
-Tool Output: +10 C
+Tools Used: ForecastWeatherAPITool
+Tool Outputs: +10 C
 
 Generate a human-readable response based on the tool output`);
+    });
+    it("should gen a prompt with multiple tools", () => {
+      const prompt = finalResponseTemplate({
+        tools: [new CurrentWeatherAPITool(), new ForecastWeatherAPITool()],
+        toolOutputs: ["+10 C", "+10 C"],
+        input: "Current temperature in SF?",
+      });
+      expect(prompt).toBe(`
+User Input: Current temperature in SF?
+Tools Used: CurrentWeatherAPITool, ForecastWeatherAPITool
+Tool Outputs: +10 C, +10 C
+
+Generate a human-readable response based on the tool output and mention x handle nubilanetwork,  in the end.`);
     });
   });
   describe("toolSelectionTemplate", () => {
@@ -51,14 +60,12 @@ Input: Current temperature in SF?
 
 Available Tools: [{"name":"${name}","description":"${description}"}]
 
-Only respond with a JSON object in the following format:
-\`\`\`json
-{
-    "tool": "tool_name_or_null", // The name of the tool to use, or null if no tool is needed
-    "tool_input": "input_for_the_tool" // The input to pass to the tool in json format (only if a tool is selected)
-}
-\`\`\`
-If no tool is needed, set "tool" to null.
+Select necessary tools to respond the user query and return a list of tool names.
+If no tool is needed, return an empty list.
+
+<tool_selection>
+["tool_name1", "tool_name2", "tool_name3"]
+</tool_selection>
 `);
     });
   });
