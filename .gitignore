@@ -33,3 +33,5 @@ build/
 out/
 bun.lockb
 *.db
+
+/coverage/
