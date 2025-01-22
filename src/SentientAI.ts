@@ -5,16 +5,21 @@ import {
   CurrentWeatherAPITool,
   ForecastWeatherAPITool,
 } from "./tools/weatherapi";
+import { IAgent } from "types";
 
 export class SentientAI {
-  weatherAgent = new Agent({
-    tools: [new CurrentWeatherAPITool(), new ForecastWeatherAPITool()],
-  });
+  agent: IAgent;
 
-  depinTool = new DePINTool();
-  newsTool = new NewsAPITool();
-
-  agent = new Agent({
-    tools: [this.weatherAgent, this.depinTool, this.newsTool],
-  });
+  constructor() {
+    this.agent = new Agent({
+      name: "SentientAI",
+      description: "SentientAI is a tool that can help you with your tasks.",
+      tools: [
+        new NewsAPITool(),
+        new DePINTool(),
+        new CurrentWeatherAPITool(),
+        new ForecastWeatherAPITool(),
+      ],
+    });
+  }
 }
