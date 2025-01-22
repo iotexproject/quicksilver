@@ -1,20 +1,13 @@
+import { finalResponseTemplate, toolSelectionTemplate } from "./templates";
 import { LLMService } from "./services/llm-service";
-import { Tool, PromptContext, ActionResult } from "./types";
+import { Tool, ActionResult } from "./types";
 
 export class QueryOrchestrator {
   llmService: LLMService;
   tools: Tool[] = [];
-  prompt: (ctx: PromptContext) => string;
 
-  constructor({
-    tools,
-    prompt,
-  }: {
-    tools: Tool[];
-    prompt?: (ctx: PromptContext) => string;
-  }) {
+  constructor({ tools }: { tools: Tool[] }) {
     this.tools = tools;
-    this.prompt = prompt ? prompt : defaultTemplate;
     this.llmService = new LLMService();
   }
 
@@ -36,8 +29,7 @@ export class QueryOrchestrator {
       if (action.tool) {
         const toolOutput = await action.tool.execute(action.output);
 
-        // FEED TOOL OUTPUT BACK TO LLM
-        const finalPrompt = this.prompt({
+        const finalPrompt = finalResponseTemplate({
           input,
           tool: action.tool,
           toolOutput,
@@ -90,28 +82,3 @@ export class QueryOrchestrator {
   }
 }
 
-const defaultTemplate = (ctx: PromptContext) => `
-User Input: ${ctx.input}
-Tool Used: ${ctx.tool.name}
-Tool Input: ${ctx.toolInput}
-Tool Output: ${ctx.toolOutput}
-
-Generate a human-readable response based on the tool output${ctx.tool.twitterAccount ? ` and mention x handle ${ctx.tool.twitterAccount} in the end.` : ""}`;
-
-const toolSelectionTemplate = (
-  input: string,
-  availableTools: { name: string; description: string }[],
-) => `
-Input: ${input}
-
-Available Tools: ${JSON.stringify(availableTools)}
-
-Only respond with a JSON object in the following format:
-\`\`\`json
-{
-    "tool": "tool_name_or_null", // The name of the tool to use, or null if no tool is needed
-    "tool_input": "input_for_the_tool" // The input to pass to the tool in json format (only if a tool is selected)
-}
-\`\`\`
-If no tool is needed, set "tool" to null.
-`;
