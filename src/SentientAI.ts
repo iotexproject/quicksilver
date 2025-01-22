@@ -1,10 +1,10 @@
-import { Agent } from "./agent"; // Go up one level, then into src
-import { NewsAPITool } from "./tools/newsapi"; // Go up one level, then into src/tools
-import { DePINTool } from "tools/depin_tool";
+import { Agent } from "./agent";
+import { NewsAPITool } from "./tools/newsapi";
+import { DePINTool } from "./tools/depin_tool";
 import {
   CurrentWeatherAPITool,
   ForecastWeatherAPITool,
-} from "./tools/weatherapi"; // Go up one level, then into src/tools
+} from "./tools/weatherapi";
 
 export class SentientAI {
   weatherAgent = new Agent({
