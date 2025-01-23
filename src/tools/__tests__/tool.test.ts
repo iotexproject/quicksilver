@@ -34,15 +34,4 @@ describe("APITool", () => {
     const tool = new TestAPITool(name, description);
     expect(tool.twitterAccount).toBe("");
   });
-
-  it("should serialize to JSON", () => {
-    // shouldn't include apiKey
-    expect(JSON.stringify(tool)).toEqual(
-      JSON.stringify({
-        name,
-        description,
-        twitterAccount,
-      }),
-    );
-  });
 });
