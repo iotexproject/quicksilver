@@ -1,6 +1,7 @@
 import { finalResponseTemplate, toolSelectionTemplate } from "./templates";
 import { LLMService } from "./services/llm-service";
 import { Tool } from "./types";
+import { extractContentFromTags } from "./utils/parsers";
 
 export class QueryOrchestrator {
   llmService: LLMService;
@@ -68,9 +69,3 @@ export class QueryOrchestrator {
     return output;
   }
 }
-
-const extractContentFromTags = (content: string, tag: string) => {
-  const regex = new RegExp(`<${tag}>(.*?)<\/${tag}>`, "s");
-  const match = content.match(regex);
-  return match ? match[1] : null;
-};
