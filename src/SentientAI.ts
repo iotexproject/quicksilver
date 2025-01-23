@@ -1,5 +1,5 @@
 import { QueryOrchestrator } from "./workflow";
-import { NewsAPITool } from "./tools/newsapi";
+import { NewsAPITool } from "./tools/news/newsapi";
 import { DePINTool } from "./tools/depin_tool";
 import {
   CurrentWeatherAPITool,

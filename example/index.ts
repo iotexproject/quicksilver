@@ -4,7 +4,7 @@ import {
   CurrentWeatherAPITool,
   ForecastWeatherAPITool,
 } from "../src/tools/weather/nubila";
-import { NewsAPITool } from "../src/tools/newsapi";
+import { NewsAPITool } from "../src/tools/news/newsapi";
 import { Agent } from "../src/agent";
 import { Tool } from "../src/tools/tool";
 import * as dotenv from "dotenv";
