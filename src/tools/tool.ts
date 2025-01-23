@@ -1,4 +1,4 @@
-import { Tool } from "types";
+import { Tool } from "../types";
 
 export abstract class APITool<T> implements Tool {
   name: string;
