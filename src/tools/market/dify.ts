@@ -5,9 +5,9 @@ import { handleStreamResponse } from "../../utils/stream_utils";
 
 export class DePINTool extends APITool<any> {
   constructor() {
-    super(
-      "DePIN Tool",
-      `A tool for querying DePIN project token and market information.
+    super({
+      name: "DePIN Tool",
+      description: `A tool for querying DePIN project token and market information.
 
       Example queries:
       - How many dimo vehicles?
@@ -22,8 +22,9 @@ export class DePINTool extends APITool<any> {
       - iotex
 
       Input should be a natural language question about DePIN token and market information.`,
-      "https://dify.iotex.one/v1",
-    );
+      baseUrl: "https://dify.iotex.one/v1",
+      output: "Textual response about DePIN tokens and market information",
+    });
 
     // api key not implemented
     // if (!process.env.DEPIN_API_KEY) {

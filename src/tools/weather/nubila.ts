@@ -11,8 +11,19 @@ interface CoordinatesInput {
 const NUBILA_URL = "https://api.nubila.ai/api/v1/";
 
 abstract class BaseWeatherAPITool extends APITool<CoordinatesInput> {
-  constructor(name: string, description: string, endpoint: string) {
-    super(name, description, NUBILA_URL + endpoint, "nubilanetwork");
+  constructor(
+    name: string,
+    description: string,
+    endpoint: string,
+    output: string,
+  ) {
+    super({
+      name,
+      description,
+      output,
+      baseUrl: NUBILA_URL + endpoint,
+      twitterAccount: "nubilanetwork",
+    });
 
     if (!process.env.NUBILA_API_KEY) {
       console.error("Please set the NUBILA_API_KEY environment variable.");
@@ -67,6 +78,7 @@ export class CurrentWeatherAPITool extends BaseWeatherAPITool {
       "CurrentWeatherAPITool",
       "Gets the current weather from Nubila API.",
       "weather",
+      "temperature,condition,condition_desc,condition_code,temperature_min,temperature_max,feels_like,pressure,humidity,wind_speed,wind_scale,wind_direction,uv,luminance,elevation,rain,wet_bulb,timestamp,timezone,location_name,address,source,tag",
     );
   }
 
@@ -94,6 +106,7 @@ export class ForecastWeatherAPITool extends BaseWeatherAPITool {
       "ForecastWeatherAPITool",
       "Get weather forecast data from the Nubila API.",
       "forecast",
+      "Array of: temperature,condition,condition_desc,condition_code,temperature_min,temperature_max,feels_like,pressure,humidity,wind_speed,wind_direction,uv,luminance,elevation,rain,wet_bulb,timestamp,timezone,location_name,address,source,tag",
     );
   }
 

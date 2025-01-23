@@ -1,16 +1,17 @@
 import { describe, it, expect } from "vitest";
 
-import { finalResponseTemplate, toolSelectionTemplate } from "../templates";
+import { finalResponseTemplate, toolSelectionTemplate } from ".";
 import { APITool } from "../tools/tool";
 
 class ToolWithTwitterAccount extends APITool<any> {
   constructor() {
-    super(
-      "ToolWithTwitterAccount",
-      "ToolWithTwitterAccount",
-      "https://api.nubila.ai/api/v1/",
-      "nubilanetwork",
-    );
+    super({
+      name: "ToolWithTwitterAccount",
+      description: "ToolWithTwitterAccount",
+      baseUrl: "https://api.nubila.ai/api/v1/",
+      output: "Textual response",
+      twitterAccount: "nubilanetwork",
+    });
   }
   execute(input: string): Promise<string> {
     return Promise.resolve("ToolWithTwitterAccount");
@@ -22,11 +23,12 @@ class ToolWithTwitterAccount extends APITool<any> {
 
 class ToolWithoutTwitterAccount extends APITool<any> {
   constructor() {
-    super(
-      "ToolWithoutTwitterAccount",
-      "ToolWithoutTwitterAccount",
-      "https://api.nubila.ai/api/v1/",
-    );
+    super({
+      name: "ToolWithoutTwitterAccount",
+      description: "ToolWithoutTwitterAccount",
+      output: "Textual response",
+      baseUrl: "https://api.nubila.ai/api/v1/",
+    });
   }
   execute(input: string): Promise<string> {
     return Promise.resolve("ToolWithoutTwitterAccount");
@@ -88,7 +90,7 @@ Generate a human-readable response based on the tool output and mention x handle
       expect(prompt).toBe(`
 Input: Current temperature in SF?
 
-Available Tools: [{"name":"${name}","description":"${description}"}]
+Available Tools: [{"name":"${name}","description":"${description}","output":"Textual response"}]
 
 Select necessary tools to respond the user query and return a list of tool names.
 If no tool is needed, return an empty list.

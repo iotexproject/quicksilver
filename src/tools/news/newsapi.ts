@@ -8,17 +8,19 @@ interface NewsAPIResponse {
   articles: { source: { name: string }; title: string; url: string }[]; // Include URL
 }
 
+const NUMBER_OF_HEADLINES = 10;
+
 export class NewsAPITool extends APITool<any> {
   constructor() {
-    super(
-      "NewsAPI",
-      "Fetches today's headlines from News API",
-      process.env.NEWSAPI_API_KEY!,
-    );
+    super({
+      name: "NewsAPI",
+      description: "Fetches today's headlines from News API",
+      output: `Array of ${NUMBER_OF_HEADLINES} top headlines with their titles and links`,
+      baseUrl: "https://newsapi.org/v2/top-headlines?country=us&apiKey=",
+    });
 
     if (!process.env.NEWSAPI_API_KEY) {
-      console.error("Please set the NUBILA_API_KEY environment variable.");
-      return;
+      throw new Error("Please set the NEWSAPI_API_KEY environment variable.");
     }
   }
 
@@ -33,7 +35,7 @@ export class NewsAPITool extends APITool<any> {
           (article) =>
             `- [${article.title}](${article.url}) - ${article.source.name}`,
         ); // Markdown links
-        return headlines.slice(0, 10).join("\n");
+        return headlines.slice(0, NUMBER_OF_HEADLINES).join("\n");
       } else {
         return `Error fetching headlines: ${response.data.status}`; // Return error as string
       }

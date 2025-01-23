@@ -19,7 +19,6 @@ export type WeatherData = {
     rain: number;
     wet_bulb: number;
     timestamp: number;
-    parsed_timestamp: string;
     timezone: number;
     location_name: string;
     address: string;
@@ -49,7 +48,6 @@ export type WeatherForecastDP = {
     rain: number;
     wet_bulb: number;
     timestamp: number;
-    parsed_timestamp: string;
     timezone: number;
     location_name: string;
     source: string;

@@ -21,10 +21,8 @@ describe("NewsAPITool", () => {
 
   it("should return error message when API key is not set", () => {
     delete process.env.NEWSAPI_API_KEY;
-    const consoleSpy = vi.spyOn(console, "error");
-    new NewsAPITool();
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "Please set the NUBILA_API_KEY environment variable.",
+    expect(() => new NewsAPITool()).toThrow(
+      "Please set the NEWSAPI_API_KEY environment variable.",
     );
   });
 

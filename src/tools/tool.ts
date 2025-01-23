@@ -1,21 +1,24 @@
 import { Tool } from "../types";
 
 export abstract class APITool<T> implements Tool {
-  name: string;
-  description: string;
-  twitterAccount: string;
-  baseUrl: string;
+  name: string; // name of the tool, used in tool selection
+  description: string; // what the tool does, used in tool selection
+  output: string; // what the tool returns, used in tool selection
+  twitterAccount: string; // used to tag the tool in tweets
+  baseUrl: string; // used to fetch data from the tool
 
-  constructor(
-    name: string,
-    description: string,
-    baseUrl: string,
-    twitterAccount?: string,
-  ) {
-    this.name = name;
-    this.description = description;
-    this.twitterAccount = twitterAccount || "";
-    this.baseUrl = baseUrl;
+  constructor(params: {
+    name: string;
+    description: string;
+    output: string;
+    baseUrl: string;
+    twitterAccount?: string;
+  }) {
+    this.name = params.name;
+    this.description = params.description;
+    this.output = params.output;
+    this.twitterAccount = params.twitterAccount || "";
+    this.baseUrl = params.baseUrl;
   }
 
   abstract execute(input: string): Promise<string>;
