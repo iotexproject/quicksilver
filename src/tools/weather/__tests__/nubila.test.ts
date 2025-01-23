@@ -14,6 +14,7 @@ describe("CurrentWeatherAPITool", () => {
   let mockFetch: any;
 
   const setupMockLLM = (locationResponse: string) => {
+    // @ts-ignore no need to mock private methods
     vi.mocked(LLMService).mockImplementation(() => ({
       fastllm: {
         generate: vi.fn().mockResolvedValue(locationResponse),
@@ -135,6 +136,7 @@ describe("ForecastWeatherAPITool", () => {
   let mockFetch: any;
 
   const setupMockLLM = (locationResponse: string) => {
+    // @ts-ignore no need to mock private methods
     vi.mocked(LLMService).mockImplementation(() => ({
       fastllm: {
         generate: vi.fn().mockResolvedValue(locationResponse),

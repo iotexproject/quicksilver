@@ -26,6 +26,7 @@ describe("Workflow", () => {
       expect(res).toBe("+10 C");
     });
     it("should process user input without tools if no tools are selected", async () => {
+      // @ts-ignore no need to mock private methods
       vi.mocked(LLMService).mockImplementationOnce(() => ({
         fastllm: {
           generate: vi.fn().mockResolvedValue(noTools),
@@ -58,6 +59,7 @@ describe("Workflow", () => {
       expect(res[0].execute).toBeDefined();
     });
     it("should return correct multiple tools", async () => {
+      // @ts-ignore no need to mock private methods
       vi.mocked(LLMService).mockImplementationOnce(() => ({
         fastllm: {
           generate: vi.fn().mockResolvedValue(multipleTools),
