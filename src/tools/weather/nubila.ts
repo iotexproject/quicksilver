@@ -1,6 +1,5 @@
 import { LLMService } from "../../services/llm-service";
 import { APITool } from "../tool";
-import { Tool } from "../../types";
 import { extractContentFromTags } from "../../utils/parsers";
 import { WeatherData, WeatherForecast } from "./types";
 
@@ -11,14 +10,9 @@ interface CoordinatesInput {
 
 const NUBILA_URL = "https://api.nubila.ai/api/v1/";
 
-export class CurrentWeatherAPITool extends APITool<CoordinatesInput> {
-  constructor() {
-    const name = "CurrentWeatherAPITool";
-    const description = "Gets the current weather from Nubila API.";
-    const baseUrl = NUBILA_URL + "weather";
-    const twitterAccount = "nubilanetwork";
-
-    super(name, description, baseUrl, twitterAccount);
+abstract class BaseWeatherAPITool extends APITool<CoordinatesInput> {
+  constructor(name: string, description: string, endpoint: string) {
+    super(name, description, NUBILA_URL + endpoint, "nubilanetwork");
 
     if (!process.env.NUBILA_API_KEY) {
       console.error("Please set the NUBILA_API_KEY environment variable.");
@@ -34,7 +28,7 @@ export class CurrentWeatherAPITool extends APITool<CoordinatesInput> {
     } catch (error: any) {
       console.error("Error fetching weather data, skipping...");
       console.error(error.message);
-      return "Skipping weather data fetch.";
+      return `Skipping weather ${this.name.toLowerCase()} fetch.`;
     }
   }
 
@@ -42,9 +36,7 @@ export class CurrentWeatherAPITool extends APITool<CoordinatesInput> {
     return Coordinates.extractFromQuery(userInput, new LLMService());
   }
 
-  private async fetchWeatherData(
-    coords: CoordinatesInput,
-  ): Promise<WeatherData> {
+  protected async fetchWeatherData(coords: CoordinatesInput): Promise<any> {
     const url = `${this.baseUrl}?lat=${coords.lat}&lon=${coords.lon}`;
     const apiKey = process.env.NUBILA_API_KEY as string;
     const response = await fetch(url, {
@@ -60,11 +52,25 @@ export class CurrentWeatherAPITool extends APITool<CoordinatesInput> {
     }
 
     const data = await response.json();
-
     return data.data;
   }
 
-  private async formatWeatherData(
+  protected abstract formatWeatherData(
+    coords: CoordinatesInput,
+    data: any,
+  ): Promise<string>;
+}
+
+export class CurrentWeatherAPITool extends BaseWeatherAPITool {
+  constructor() {
+    super(
+      "CurrentWeatherAPITool",
+      "Gets the current weather from Nubila API.",
+      "weather",
+    );
+  }
+
+  protected async formatWeatherData(
     coords: CoordinatesInput,
     weatherData: WeatherData,
   ): Promise<string> {
@@ -82,60 +88,16 @@ export class CurrentWeatherAPITool extends APITool<CoordinatesInput> {
   }
 }
 
-export class ForecastWeatherAPITool extends APITool<CoordinatesInput> {
+export class ForecastWeatherAPITool extends BaseWeatherAPITool {
   constructor() {
-    const name = "ForecastWeatherAPITool";
-    const description = "Get weather forecast data from the Nubila API.";
-    const baseUrl = NUBILA_URL + "forecast";
-    const twitterAccount = "nubilanetwork";
-
-    super(name, description, baseUrl, twitterAccount);
-
-    if (!process.env.NUBILA_API_KEY) {
-      console.error("Please set the NUBILA_API_KEY environment variable.");
-      return;
-    }
+    super(
+      "ForecastWeatherAPITool",
+      "Get weather forecast data from the Nubila API.",
+      "forecast",
+    );
   }
 
-  async execute(userInput: any): Promise<string> {
-    try {
-      const parsedInput = await this.parseInput(userInput);
-      const forecastData = await this.fetchWeatherData(parsedInput);
-      return this.formatWeatherData(parsedInput, forecastData);
-    } catch (error: any) {
-      console.error("Error fetching weather data, skipping...");
-      console.error(error.message);
-      return "Skipping weather forecast fetch.";
-    }
-  }
-
-  async parseInput(userInput: any): Promise<CoordinatesInput> {
-    return Coordinates.extractFromQuery(userInput, new LLMService());
-  }
-
-  private async fetchWeatherData(
-    coords: CoordinatesInput,
-  ): Promise<WeatherForecast> {
-    const url = `${this.baseUrl}?lat=${coords.lat}&lon=${coords.lon}`;
-    const apiKey = process.env.NUBILA_API_KEY as string;
-    const response = await fetch(url, {
-      headers: {
-        "x-api-key": apiKey,
-      },
-      signal: AbortSignal.timeout(5000),
-    });
-
-    if (!response.ok) {
-      const errorMessage = `API request failed with status: ${response.status} ${response.statusText}`;
-      throw new Error(`Weather API Error: ${errorMessage}`);
-    }
-
-    const data = await response.json();
-
-    return data.data;
-  }
-
-  private async formatWeatherData(
+  protected async formatWeatherData(
     coords: CoordinatesInput,
     forecastData: WeatherForecast,
   ): Promise<string> {
@@ -145,10 +107,7 @@ export class ForecastWeatherAPITool extends APITool<CoordinatesInput> {
       return `On ${date}, the temperature is ${temperature}°C, the weather is ${condition_desc}, and the wind speed is ${wind_speed} m/s.`;
     });
 
-    return (
-      `Weather Forecast Data for ${coords.lat}, ${coords.lon}: ` +
-      summaries.join(" ")
-    );
+    return `Weather Forecast Data for ${coords.lat}, ${coords.lon}: ${summaries.join(" ")}`;
   }
 }
 

@@ -69,7 +69,7 @@ describe("CurrentWeatherAPITool", () => {
     expect(consoleSpy).toHaveBeenCalledWith(
       "Could not extract latitude and longitude from query.",
     );
-    expect(res).toBe("Skipping weather data fetch.");
+    expect(res).toBe("Skipping weather currentweatherapitool fetch.");
   });
 
   it("should handle successful API response", async () => {
@@ -115,7 +115,7 @@ describe("CurrentWeatherAPITool", () => {
     expect(consoleSpy).toHaveBeenCalledWith(
       "Weather API Error: API request failed with status: 404 Not Found",
     );
-    expect(result).toBe("Skipping weather data fetch.");
+    expect(result).toBe("Skipping weather currentweatherapitool fetch.");
   });
 
   it("should handle network errors", async () => {
@@ -125,7 +125,7 @@ describe("CurrentWeatherAPITool", () => {
 
     const result = await tool.execute("How's the weather in SF?");
 
-    expect(result).toBe("Skipping weather data fetch.");
+    expect(result).toBe("Skipping weather currentweatherapitool fetch.");
     expect(consoleSpy).toHaveBeenCalledWith("Network error");
   });
 });
@@ -177,7 +177,7 @@ describe("ForecastWeatherAPITool", () => {
     expect(consoleSpy).toHaveBeenCalledWith(
       "Could not extract latitude and longitude from query.",
     );
-    expect(res).toBe("Skipping weather forecast fetch.");
+    expect(res).toBe("Skipping weather forecastweatherapitool fetch.");
   });
 
   it("should handle successful API response", async () => {
@@ -233,7 +233,7 @@ describe("ForecastWeatherAPITool", () => {
       latitude: 37.7749,
       longitude: -122.4194,
     });
-    expect(result).toBe("Skipping weather forecast fetch.");
+    expect(result).toBe("Skipping weather forecastweatherapitool fetch.");
     expect(consoleSpy).toHaveBeenCalledWith(
       "Weather API Error: API request failed with status: 404 Not Found",
     );
@@ -249,7 +249,7 @@ describe("ForecastWeatherAPITool", () => {
       longitude: -122.4194,
     });
 
-    expect(result).toBe("Skipping weather forecast fetch.");
+    expect(result).toBe("Skipping weather forecastweatherapitool fetch.");
     expect(consoleSpy).toHaveBeenCalledWith("Network error");
   });
 });
