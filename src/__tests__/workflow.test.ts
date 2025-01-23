@@ -19,17 +19,29 @@ describe("Workflow", () => {
   });
 
   describe("process", () => {
-    it("should return tool not found if tool was not provided", async () => {
-      const workflow = new QueryOrchestrator({ tools: [] });
-      const res = await workflow.process("Current temperature in SF?");
-      expect(res).toBe("No tools selected");
-    });
     it("should return tool output if tool was provided", async () => {
       const workflow = new QueryOrchestrator({
         tools: [new CurrentWeatherAPITool()],
       });
       const res = await workflow.process("Current temperature in SF?");
       expect(res).toBe("+10 C");
+    });
+    it("should process user input without tools if no tools are selected", async () => {
+      vi.mocked(LLMService).mockImplementationOnce(() => ({
+        fastllm: {
+          generate: vi.fn().mockResolvedValue(noTools),
+        },
+        llm: {
+          generate: vi.fn().mockResolvedValue("What is the weather in SF?"),
+        },
+      }));
+      const workflow = new QueryOrchestrator({
+        tools: [new CurrentWeatherAPITool()],
+      });
+      const res = await workflow.process(
+        "Rephrase the following sentence'Current temperature in SF?'",
+      );
+      expect(res).toBe("What is the weather in SF?");
     });
   });
   describe("selectTools", () => {
@@ -47,7 +59,7 @@ describe("Workflow", () => {
       expect(res[0].execute).toBeDefined();
     });
     it("should return correct multiple tools", async () => {
-      vi.mocked(LLMService).mockImplementation(() => ({
+      vi.mocked(LLMService).mockImplementationOnce(() => ({
         fastllm: {
           generate: vi.fn().mockResolvedValue(multipleTools),
         },
@@ -70,5 +82,10 @@ describe("Workflow", () => {
 const multipleTools = `
 <tool_selection>
 ["CurrentWeatherAPITool", "ForecastWeatherAPITool"]
+</tool_selection>
+`;
+const noTools = `
+<tool_selection>
+[]
 </tool_selection>
 `;

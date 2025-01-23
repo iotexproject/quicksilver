@@ -14,21 +14,11 @@ export class QueryOrchestrator {
   // TODO: input should include user query and context
   async process(input: string): Promise<string> {
     try {
-      const tools = await this.selectTools(input);
-      if (!tools.length) {
-        return "No tools selected";
+      const selectedTools = await this.selectTools(input);
+      if (!selectedTools.length) {
+        return this.proceedWithoutTools(input);
       }
-
-      const toolOutputs = await Promise.all(tools.map(tool => tool.execute(input)));
-
-      const finalPrompt = finalResponseTemplate({
-        input,
-        tools,
-        toolOutputs,
-      });
-      const output = await this.llmService.llm.generate(finalPrompt);
-
-      return output;
+      return this.proceedWithTools(input, selectedTools);
     } catch (error) {
       return "Processing Error: " + error;
     }
@@ -58,6 +48,24 @@ export class QueryOrchestrator {
     return toolNamesParsed.map((toolName: string) =>
       this.tools.find((t) => t.name === toolName),
     );
+  }
+
+  async proceedWithoutTools(input: string): Promise<string> {
+    const llmResponse = await this.llmService.llm.generate(input);
+    return llmResponse;
+  }
+
+  async proceedWithTools(input: string, tools: Tool[]): Promise<string> {
+    const toolOutputs = await Promise.all(
+      tools.map((tool) => tool.execute(input)),
+    );
+    const finalPrompt = finalResponseTemplate({
+      input,
+      tools,
+      toolOutputs,
+    });
+    const output = await this.llmService.llm.generate(finalPrompt);
+    return output;
   }
 }
 
