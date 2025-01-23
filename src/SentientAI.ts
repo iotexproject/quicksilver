@@ -1,6 +1,6 @@
 import { QueryOrchestrator } from "./workflow";
 import { NewsAPITool } from "./tools/news/newsapi";
-import { DePINTool } from "./tools/depin_tool";
+import { DePINTool } from "./tools/market/dify";
 import {
   CurrentWeatherAPITool,
   ForecastWeatherAPITool,
