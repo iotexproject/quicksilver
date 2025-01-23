@@ -4,7 +4,7 @@ import { finalResponseTemplate, toolSelectionTemplate } from "../templates";
 import {
   CurrentWeatherAPITool,
   ForecastWeatherAPITool,
-} from "../tools/weatherapi";
+} from "../tools/weather/nubila";
 
 describe("templates", () => {
   describe("finalResponseTemplate", () => {

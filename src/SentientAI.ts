@@ -4,7 +4,7 @@ import { DePINTool } from "./tools/depin_tool";
 import {
   CurrentWeatherAPITool,
   ForecastWeatherAPITool,
-} from "./tools/weatherapi";
+} from "./tools/weather/nubila";
 
 export class SentientAI {
   orchestrator: QueryOrchestrator;

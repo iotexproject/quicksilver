@@ -7,7 +7,7 @@ import { SentientAI } from "../SentientAI";
 describe("SentientAI", () => {
   beforeEach(() => {
     vi.mock("../services/llm-service", () => mockLLMService);
-    vi.mock("../tools/weatherapi", () => mockWeatherTools);
+    vi.mock("../tools/weather/nubila", () => mockWeatherTools);
   });
 
   afterEach(() => {

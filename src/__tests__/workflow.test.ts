@@ -1,17 +1,16 @@
-import { mockLLMService, mockWeatherTools } from "./mocks";
+import { mockLLMService } from "./mocks";
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 
 import { QueryOrchestrator } from "../workflow";
 import {
   CurrentWeatherAPITool,
   ForecastWeatherAPITool,
-} from "../tools/weatherapi";
+} from "../tools/weather/nubila";
 import { LLMService } from "../services/llm-service";
 
 describe("Workflow", () => {
   beforeEach(() => {
     vi.mock("../services/llm-service", () => mockLLMService);
-    vi.mock("../tools/weatherapi", () => mockWeatherTools);
   });
 
   afterEach(() => {
@@ -54,7 +53,7 @@ describe("Workflow", () => {
       expect(res.length).toEqual(1);
       expect(res[0].name).toEqual("CurrentWeatherAPITool");
       expect(res[0].description).toEqual(
-        "Gets the current weather from Nubila API. Input is json with latitude and longitude to retrieve weather data.",
+        "Gets the current weather from Nubila API.",
       );
       expect(res[0].execute).toBeDefined();
     });
