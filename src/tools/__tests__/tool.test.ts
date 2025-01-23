@@ -2,9 +2,19 @@ import { describe, it, beforeEach, expect } from "vitest";
 
 import { APITool } from "../tool";
 
-class TestAPITool extends APITool {
+interface ToolInput {
+  lat: number;
+  lon: number;
+}
+
+class TestAPITool extends APITool<ToolInput> {
   async execute(input: string): Promise<string> {
-    return `Executed with input: ${input}`;
+    const parsedInput = await this.parseInput(input);
+    return `Executed with input: ${JSON.stringify(parsedInput)}`;
+  }
+
+  async parseInput(input: string): Promise<ToolInput> {
+    return { lat: 0, lon: 0 };
   }
 }
 
@@ -25,13 +35,19 @@ describe("APITool", () => {
   });
 
   it("should execute and return expected string", async () => {
-    const input = "test input";
-    const result = await tool.execute(input);
-    expect(result).toBe("Executed with input: test input");
+    const query = "test input";
+    const result = await tool.execute(query);
+    expect(result).toBe('Executed with input: {"lat":0,"lon":0}');
   });
 
   it("twitter account is optional", () => {
     const tool = new TestAPITool(name, description);
     expect(tool.twitterAccount).toBe("");
+  });
+
+  it("should receive a quiery, decide if it's aligned with the tool's input type, extract the input from the query in the correct format, and execute the tool with the input", async () => {
+    const query = "What is the weather in SF?";
+    const result = await tool.parseInput(query);
+    expect(result).toEqual({ lat: 0, lon: 0 });
   });
 });
