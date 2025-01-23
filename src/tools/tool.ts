@@ -3,13 +3,12 @@ import { Tool } from "types";
 export abstract class APITool implements Tool {
   name: string;
   description: string;
-  twitterAccount: string = "";
-  protected apiKey: string;
+  twitterAccount: string;
 
-  constructor(name: string, description: string, apiKey: string) {
+  constructor(name: string, description: string, twitterAccount?: string) {
     this.name = name;
     this.description = description;
-    this.apiKey = apiKey;
+    this.twitterAccount = twitterAccount || "";
   }
 
   abstract execute(input: string): Promise<string>;
