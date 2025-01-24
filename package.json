@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.36.2",
     "@llm-tools/embedjs": "^0.1.28",
     "@llm-tools/embedjs-libsql": "^0.1.28",
     "@llm-tools/embedjs-loader-web": "^0.1.28",

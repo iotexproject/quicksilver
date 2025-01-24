@@ -1,38 +1,28 @@
-import { LLM, OpenAILLM, TogetherLLM } from "../llm";
+import { LLM, AnthropicLLM } from "../llm";
 
 export class LLMService {
   fastllm: LLM;
   llm: LLM;
 
   constructor() {
-    this.shouldUseTogetherForFastLLM()
-      ? this.initFastLLMTogether()
-      : this.initFastLLMOpenAI();
-      
-    this.initLLMOpenAI();
+    if (!process.env.TOGETHER_API_KEY) {
+      throw new Error("TOGETHER_API_KEY is required");
+    }
+    this.initFastLLM();
+    this.initLLM();
   }
 
-  private shouldUseTogetherForFastLLM(): boolean {
-    return !!process.env.TOGETHER_API_KEY;
-  }
-
-  private initFastLLMTogether(): void {
-    this.fastllm = new TogetherLLM({
+  private initFastLLM(): void {
+    this.fastllm = new AnthropicLLM({
       model:
         process.env.FAST_LLM_MODEL ||
-        "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+        "claude-3-5-haiku-latest",
     });
   }
 
-  private initFastLLMOpenAI(): void {
-    this.fastllm = new OpenAILLM({
-      model: process.env.LLM_MODEL || "gpt-3.5-turbo",
-    });
-  }
-
-  private initLLMOpenAI(): void {
-    this.llm = new OpenAILLM({
-      model: process.env.LLM_MODEL || "gpt-3.5-turbo",
+  private initLLM(): void {
+    this.llm = new AnthropicLLM({
+      model: process.env.LLM_MODEL || "claude-3-5-sonnet-latest",
     });
   }
 }

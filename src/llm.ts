@@ -1,8 +1,4 @@
-import { RAGApplication, RAGApplicationBuilder } from "@llm-tools/embedjs";
-import { LibSqlDb } from "@llm-tools/embedjs-libsql";
-import { OpenAi } from "@llm-tools/embedjs-openai";
-import { OpenAiEmbeddings } from "@llm-tools/embedjs-openai";
-import { Together } from "together-ai";
+import Anthropic from "@anthropic-ai/sdk";
 
 export interface LLM {
   generate(prompt: string): Promise<string>;
@@ -18,81 +14,29 @@ export class DummyLLM implements LLM {
   }
 }
 
-export class OpenAILLM implements LLM {
-  model: string = "gpt-3.5-turbo";
-  rag: RAGApplication | null = null;
-
-  constructor(args: Partial<OpenAILLM> = {}) {
-    Object.assign(this, args);
-    if (!this.rag) {
-      new RAGApplicationBuilder()
-        .setModel(
-          new OpenAi({
-            model: this.model,
-            maxTokens: 200,
-            temperature: 0,
-          }),
-        )
-        .setEmbeddingModel(
-          new OpenAiEmbeddings({
-            model: "text-embedding-3-small",
-          }),
-        )
-        .setVectorDatabase(new LibSqlDb({ path: "./data.db" }))
-        .build()
-        .then((rag) => (this.rag = rag));
-    }
-  }
-
-  async generate(prompt: string): Promise<string> {
-    try {
-      const result = await this.rag?.query(prompt);
-      return result?.content.trim() || "No content in response";
-    } catch (error: any) {
-      console.error(" API Error:", error.message);
-      return ` API Error: ${error.message}`;
-    }
-  }
-}
-
-export class TogetherLLM implements LLM {
-  private together: Together;
+export class AnthropicLLM implements LLM {
+  private anthropic: Anthropic;
   model = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo-128K";
 
-  constructor(args: Partial<TogetherLLM> = {}) {
+  constructor(args: Partial<AnthropicLLM> = {}) {
     Object.assign(this, args);
-    const apiKey = process.env.TOGETHER_API_KEY;
-    if (!apiKey) {
-      throw new Error("Together API key is required");
-    }
-    this.together = new Together({ apiKey });
+    const anthropic = new Anthropic();
+    this.anthropic = anthropic;
   }
 
   async generate(prompt: string): Promise<string> {
     try {
-      const response = await this.together.chat.completions.create({
+      const response = await this.anthropic.messages.create({
         messages: [{ role: "user", content: prompt }],
         model: this.model,
-        max_tokens: 2000,
-        temperature: 0.7,
-        top_p: 0.7,
-        top_k: 50,
-        repetition_penalty: 1,
-        stop: ["<|eot_id|>", "<|eom_id|>"],
-        stream: true,
+        max_tokens: 1000,
+        temperature: 0,
       });
-
-      let result = "";
-      for await (const token of response) {
-        const content = token.choices[0]?.delta?.content;
-        if (content) {
-          result += content;
-        }
-      }
-      return result.trim() || "No content in response";
+      // @ts-ignore
+      return response.content[0]?.text || "No content in response";
     } catch (error: any) {
-      console.error("Together API Error:", error.message);
-      return `Together API Error: ${error.message}`;
+      console.error("Anthropic API Error:", error.message);
+      return `Anthropic API Error: ${error.message}`;
     }
   }
 }

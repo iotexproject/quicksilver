@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.36.2
+        version: 0.36.2
       '@llm-tools/embedjs':
         specifier: ^0.1.28
         version: 0.1.28(@langchain/core@0.3.27(openai@4.77.4(zod@3.24.1)))(@langchain/ollama@0.1.4(@langchain/core@0.3.27(openai@4.77.4(zod@3.24.1))))(axios@1.7.9)(openai@4.77.4(zod@3.24.1))
@@ -66,6 +69,9 @@ packages:
   '@ampproject/remapping@2.3.0':
     resolution: {integrity: sha512-30iZtAPgz+LTIYoeivqYo853f02jBYSd5uGnGpkFV0M3xOt9aN73erkgYAmZU43x4VfqcnLxW9Kpg3R5LC4YYw==}
     engines: {node: '>=6.0.0'}
+
+  '@anthropic-ai/sdk@0.36.2':
+    resolution: {integrity: sha512-+/DcVCGoPtUBOPO+1w+7YPdw9Xzt2M5GW6LpSxeGwDfdUSoJbyezGJvGEtdYjV/XXyGx5pf852S4+PG+3MUEsA==}
 
   '@babel/helper-string-parser@7.25.9':
     resolution: {integrity: sha512-4A/SCr/2KLd5jrtOMFzaKjVtAei3+2r/NChoBNoZ3EyP/+GlhoaEGoWOZUmFmoITP7zOJyHIMm+DYRd8o3PvHA==}
@@ -1412,6 +1418,18 @@ snapshots:
     dependencies:
       '@jridgewell/gen-mapping': 0.3.8
       '@jridgewell/trace-mapping': 0.3.25
+
+  '@anthropic-ai/sdk@0.36.2':
+    dependencies:
+      '@types/node': 18.19.70
+      '@types/node-fetch': 2.6.12
+      abort-controller: 3.0.0
+      agentkeepalive: 4.6.0
+      form-data-encoder: 1.7.2
+      formdata-node: 4.4.1
+      node-fetch: 2.7.0
+    transitivePeerDependencies:
+      - encoding
 
   '@babel/helper-string-parser@7.25.9': {}
 
