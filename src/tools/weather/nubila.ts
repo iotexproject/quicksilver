@@ -31,9 +31,9 @@ abstract class BaseWeatherAPITool extends APITool<CoordinatesInput> {
     }
   }
 
-  async execute(userInput: any): Promise<string> {
+  async execute(userInput: any, llmService: LLMService): Promise<string> {
     try {
-      const parsedInput = await this.parseInput(userInput);
+      const parsedInput = await this.parseInput(userInput, llmService);
       const weatherData = await this.fetchWeatherData(parsedInput);
       return this.formatWeatherData(parsedInput, weatherData);
     } catch (error: any) {
@@ -43,8 +43,11 @@ abstract class BaseWeatherAPITool extends APITool<CoordinatesInput> {
     }
   }
 
-  async parseInput(userInput: any): Promise<CoordinatesInput> {
-    return Coordinates.extractFromQuery(userInput, new LLMService());
+  async parseInput(
+    userInput: any,
+    llmService: LLMService,
+  ): Promise<CoordinatesInput> {
+    return Coordinates.extractFromQuery(userInput, llmService);
   }
 
   protected async fetchWeatherData(coords: CoordinatesInput): Promise<any> {
@@ -132,9 +135,9 @@ export class Coordinates {
     llmService: LLMService,
   ): Promise<CoordinatesInput> {
     const llmResponse = await llmService.fastllm.generate(
-      `Extract latitude and longitude from this query: "${query}". Return JSON in format <location>{"lat": number, "lon": number}</location>`,
+      `Extract latitude and longitude from this query: "${query}". If there are no coordinates try to derive them from the location name. Return JSON in format <response>{"lat": number, "lon": number}</response>`,
     );
-    const extractedCoords = extractContentFromTags(llmResponse, "location");
+    const extractedCoords = extractContentFromTags(llmResponse, "response");
     if (!extractedCoords) {
       throw new Error("Could not extract latitude and longitude from query.");
     }

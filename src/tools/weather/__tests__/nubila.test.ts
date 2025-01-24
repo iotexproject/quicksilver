@@ -65,7 +65,7 @@ describe("CurrentWeatherAPITool", () => {
     setupMockLLM(invalidLocation);
     const consoleSpy = vi.spyOn(console, "error");
 
-    const res = await tool.execute("How's the weather is LA");
+    const res = await tool.execute("How's the weather is LA", new LLMService());
 
     expect(consoleSpy).toHaveBeenCalledWith(
       "Could not extract latitude and longitude from query.",
@@ -89,7 +89,7 @@ describe("CurrentWeatherAPITool", () => {
 
     mockWeatherAPIResponse(mockWeatherData);
 
-    const result = await tool.execute("How's the weather in SF?");
+    const result = await tool.execute("How's the weather in SF?", new LLMService());
 
     expect(result).toBe(
       "The current weather in 37.7749, -122.4194 is Sunny with a temperature of 25°C (Feels like 27°C). Humidity: 60% Pressure: 1013 hPa Wind Speed: 5 m/s Wind Direction: 180°",
@@ -111,7 +111,7 @@ describe("CurrentWeatherAPITool", () => {
     });
     const consoleSpy = vi.spyOn(console, "error");
 
-    const result = await tool.execute("How's the weather in SF?");
+    const result = await tool.execute("How's the weather in SF?", new LLMService());
 
     expect(consoleSpy).toHaveBeenCalledWith(
       "Weather API Error: API request failed with status: 404 Not Found",
@@ -124,7 +124,7 @@ describe("CurrentWeatherAPITool", () => {
     mockFetch.mockRejectedValueOnce(new Error("Network error"));
     const consoleSpy = vi.spyOn(console, "error");
 
-    const result = await tool.execute("How's the weather in SF?");
+    const result = await tool.execute("How's the weather in SF?", new LLMService());
 
     expect(result).toBe("Skipping weather currentweatherapitool fetch.");
     expect(consoleSpy).toHaveBeenCalledWith("Network error");
@@ -174,7 +174,7 @@ describe("ForecastWeatherAPITool", () => {
     setupMockLLM(invalidLocation);
     const consoleSpy = vi.spyOn(console, "error");
 
-    const res = await tool.execute("How's the weather is LA");
+    const res = await tool.execute("How's the weather is LA", new LLMService());
 
     expect(consoleSpy).toHaveBeenCalledWith(
       "Could not extract latitude and longitude from query.",
@@ -206,10 +206,13 @@ describe("ForecastWeatherAPITool", () => {
       json: () => Promise.resolve(mockForecastData),
     });
 
-    const result = await tool.execute({
-      latitude: 37.7749,
-      longitude: -122.4194,
-    });
+    const result = await tool.execute(
+      {
+        latitude: 37.7749,
+        longitude: -122.4194,
+      },
+      new LLMService(),
+    );
 
     expect(result).toContain("Weather Forecast Data for 37.7749, -122.4194:");
     expect(result).toContain("the temperature is 25°C, the weather is Sunny");
@@ -231,10 +234,13 @@ describe("ForecastWeatherAPITool", () => {
     });
     const consoleSpy = vi.spyOn(console, "error");
 
-    const result = await tool.execute({
-      latitude: 37.7749,
-      longitude: -122.4194,
-    });
+    const result = await tool.execute(
+      {
+        latitude: 37.7749,
+        longitude: -122.4194,
+      },
+      new LLMService(),
+    );
     expect(result).toBe("Skipping weather forecastweatherapitool fetch.");
     expect(consoleSpy).toHaveBeenCalledWith(
       "Weather API Error: API request failed with status: 404 Not Found",
@@ -246,10 +252,13 @@ describe("ForecastWeatherAPITool", () => {
     mockFetch.mockRejectedValueOnce(new Error("Network error"));
     const consoleSpy = vi.spyOn(console, "error");
 
-    const result = await tool.execute({
-      latitude: 37.7749,
-      longitude: -122.4194,
-    });
+    const result = await tool.execute(
+      {
+        latitude: 37.7749,
+        longitude: -122.4194,
+      },
+      new LLMService(),
+    );
 
     expect(result).toBe("Skipping weather forecastweatherapitool fetch.");
     expect(consoleSpy).toHaveBeenCalledWith("Network error");
@@ -299,5 +308,5 @@ describe("Coordinates", () => {
 });
 
 const invalidLocation =
-  '<location>{"invalid": 37.7749, "data": -122.4194}</location>';
-const validLocation = '<location>{"lat": 37.7749, "lon": -122.4194}</location>';
+  '<response>{"invalid": 37.7749, "data": -122.4194}</response>';
+const validLocation = '<response>{"lat": 37.7749, "lon": -122.4194}</response>';
