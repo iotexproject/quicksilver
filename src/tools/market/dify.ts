@@ -2,6 +2,8 @@ import axios from "axios";
 
 import { APITool } from "../tool";
 import { handleStreamResponse } from "../../utils/stream_utils";
+import { extractContentFromTags } from "../../utils/parsers";
+import { LLMService } from "../../services/llm-service";
 
 export class DePINTool extends APITool<any> {
   constructor() {
@@ -26,20 +28,31 @@ export class DePINTool extends APITool<any> {
       output: "Textual response about DePIN tokens and market information",
     });
 
-    // api key not implemented
-    // if (!process.env.DEPIN_API_KEY) {
-    //   throw new Error("Please set the DEPIN_API_KEY environment variable.");
-    // }
+    if (!process.env.DEPIN_API_KEY) {
+      throw new Error("Please set the DEPIN_API_KEY environment variable.");
+    }
   }
 
-  async execute(input: string): Promise<string> {
-    // api key not implemented, update this when it is
-    const apiKey = process.env.DEPIN_API_KEY || "";
-    return callDify(this.baseUrl, apiKey, input);
+  async execute(input: string, llmService: LLMService): Promise<string> {
+    try {
+      const parsedInput = await this.parseInput(input, llmService);
+      const apiKey = process.env.DEPIN_API_KEY!;
+      return callDify(this.baseUrl, apiKey, parsedInput);
+    } catch (e: any) {
+      console.error("Error fetching dify data, skipping...");
+      console.error(e.message);
+      return `Skipping weather ${this.name.toLowerCase()} fetch.`;
+    }
   }
 
-  async parseInput(userInput: any): Promise<any> {
-    return userInput;
+  async parseInput(userInput: any, llmService: LLMService): Promise<any> {
+    const prompt = `based on userInput: ${userInput}, return a new query related to DePIN market information and include it in <query> tags, like <query>new query</query>`;
+    const llmResponse = await llmService.fastllm.generate(prompt);
+    const extractedQuery = extractContentFromTags(llmResponse, "query");
+    if (!extractedQuery) {
+      throw new Error("Could not extract query from LLM response.");
+    }
+    return extractedQuery;
   }
 }
 

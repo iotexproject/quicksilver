@@ -1,7 +1,11 @@
+import { mockLLMService } from "./../../__tests__/mocks";
+
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import axios from "axios";
+
 import { DePINTool } from "./dify";
 import { handleStreamResponse } from "../../utils/stream_utils";
+import { LLMService } from "../../services/llm-service";
 
 vi.mock("axios");
 vi.mock("../../utils/stream_utils", () => ({
@@ -12,10 +16,22 @@ describe("DePINTool", () => {
   let tool: DePINTool;
   const mockApiKey = "test-api-key";
 
+  const setupMockLLM = (queryResponse: string) => {
+    // @ts-ignore no need to mock private methods
+    vi.mocked(LLMService).mockImplementation(() => ({
+      fastllm: {
+        generate: vi.fn().mockResolvedValue(queryResponse),
+      },
+      llm: {
+        generate: vi.fn().mockResolvedValue("+10 C"),
+      },
+    }));
+  };
+
   beforeEach(() => {
     process.env.DEPIN_API_KEY = mockApiKey;
     tool = new DePINTool();
-    vi.clearAllMocks();
+    vi.mock("../../services/llm-service", () => mockLLMService);
   });
 
   it("should initialize with correct properties", () => {
@@ -26,7 +42,7 @@ describe("DePINTool", () => {
     expect(tool.baseUrl).toBe("https://dify.iotex.one/v1");
   });
 
-  it.skip("should return error message when API key is not set", () => {
+  it("should return error message when API key is not set", () => {
     delete process.env.DEPIN_API_KEY;
     expect(() => new DePINTool()).toThrow(
       "Please set the DEPIN_API_KEY environment variable.",
@@ -35,6 +51,7 @@ describe("DePINTool", () => {
 
   describe("execute", () => {
     it("should make correct API call", async () => {
+      setupMockLLM("<query>How many dimo vehicles?</query>");
       const mockInput = "How many dimo vehicles?";
       const mockResponse = { data: "stream" };
       vi.mocked(axios.post).mockResolvedValueOnce(mockResponse);
@@ -43,7 +60,7 @@ describe("DePINTool", () => {
         return Promise.resolve(undefined);
       });
 
-      const result = await tool.execute(mockInput);
+      const result = await tool.execute(mockInput, new LLMService());
 
       expect(result).toBe("There are 1000 dimo vehicles");
       expect(axios.post).toHaveBeenCalledWith(
@@ -70,7 +87,9 @@ describe("DePINTool", () => {
       vi.mocked(axios.post).mockRejectedValueOnce(mockError);
       const consoleSpy = vi.spyOn(console, "error");
 
-      await expect(tool.execute("test query")).rejects.toThrow("API Error");
+      await expect(
+        tool.execute("test query", new LLMService()),
+      ).rejects.toThrow("API Error");
       expect(consoleSpy).toHaveBeenCalledWith(
         "DifyTool Streaming Error:",
         mockError.message,
@@ -83,9 +102,9 @@ describe("DePINTool", () => {
       vi.mocked(handleStreamResponse).mockRejectedValueOnce(mockError);
 
       const consoleSpy = vi.spyOn(console, "error");
-      await expect(tool.execute("test query")).rejects.toThrow(
-        "Streaming Error",
-      );
+      await expect(
+        tool.execute("test query", new LLMService()),
+      ).rejects.toThrow("Streaming Error");
       expect(consoleSpy).toHaveBeenCalledWith(
         "DifyTool Streaming Error:",
         mockError.message,
@@ -94,10 +113,11 @@ describe("DePINTool", () => {
   });
 
   describe("parseInput", () => {
-    it("should pass through input unchanged", async () => {
+    it("should return query from LLM response", async () => {
       const input = "test input";
-      const result = await tool.parseInput(input);
-      expect(result).toBe(input);
+      setupMockLLM("<query>How many dimo vehicles?</query>");
+      const result = await tool.parseInput(input, new LLMService());
+      expect(result).toBe("How many dimo vehicles?");
     });
   });
 });
