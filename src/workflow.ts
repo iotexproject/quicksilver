@@ -29,6 +29,7 @@ export class QueryOrchestrator {
     const availableTools = this.tools.map((tool) => ({
       name: tool.name,
       description: tool.description,
+      output: tool.output,
     }));
 
     if (!availableTools.length) {
@@ -41,7 +42,7 @@ export class QueryOrchestrator {
 
     console.log("llmResponse", llmResponse);
 
-    const toolNames = extractContentFromTags(llmResponse, "tool_selection");
+    const toolNames = extractContentFromTags(llmResponse, "response");
     if (!toolNames) {
       return [];
     }
@@ -58,7 +59,7 @@ export class QueryOrchestrator {
 
   async proceedWithTools(input: string, tools: Tool[]): Promise<string> {
     const toolOutputs = await Promise.all(
-      tools.map((tool) => tool.execute(input)),
+      tools.map((tool) => tool.execute(input, this.llmService)),
     );
     const finalPrompt = finalResponseTemplate({
       input,
@@ -66,6 +67,7 @@ export class QueryOrchestrator {
       toolOutputs,
     });
     const output = await this.llmService.llm.generate(finalPrompt);
-    return output;
+    const parsedOutput = extractContentFromTags(output, "response");
+    return parsedOutput || "Could not generate response";
   }
 }
