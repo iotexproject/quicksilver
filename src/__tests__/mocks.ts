@@ -6,7 +6,7 @@ export const mockLLMService = {
       generate: vi.fn().mockResolvedValue(currentWeatherOutput),
     },
     llm: {
-      generate: vi.fn().mockResolvedValue("+10 C"),
+      generate: vi.fn().mockResolvedValue("<response>+10 C</response>"),
     },
   })),
 };
@@ -28,7 +28,7 @@ export const mockWeatherTools = {
 };
 
 export const currentWeatherOutput = `
-<tool_selection>
+<response>
 ["CurrentWeatherAPITool"]
-</tool_selection>
+</response>
 `;
