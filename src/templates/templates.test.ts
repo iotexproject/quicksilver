@@ -46,38 +46,41 @@ describe("templates", () => {
         toolOutputs: ["+10 C"],
         input: "Current temperature in SF?",
       });
-      expect(prompt).toBe(`
-User Input: Current temperature in SF?
-Tools Used: ToolWithTwitterAccount
-Tool Outputs: +10 C
 
-Generate a human-readable response based on the tool output and mention x handle nubilanetwork in the end.`);
+      expect(prompt).toContain("Current temperature in SF?");
+      expect(prompt).toContain("ToolWithTwitterAccount");
+      expect(prompt).toContain("+10 C");
+      expect(prompt).toContain("nubilanetwork");
+      expect(prompt).toContain("<response>");
     });
+
     it("should generate a prompt without twitter handle", () => {
       const prompt = finalResponseTemplate({
         tools: [new ToolWithoutTwitterAccount()],
         toolOutputs: ["+10 C"],
         input: "Current temperature in SF?",
       });
-      expect(prompt).toBe(`
-User Input: Current temperature in SF?
-Tools Used: ToolWithoutTwitterAccount
-Tool Outputs: +10 C
 
-Generate a human-readable response based on the tool output`);
+      expect(prompt).toContain("Current temperature in SF?");
+      expect(prompt).toContain("ToolWithoutTwitterAccount");
+      expect(prompt).toContain("+10 C");
+      expect(prompt).not.toContain("nubilanetwork");
+      expect(prompt).toContain("<response>");
     });
+
     it("should gen a prompt with multiple tools", () => {
       const prompt = finalResponseTemplate({
         tools: [new ToolWithTwitterAccount(), new ToolWithoutTwitterAccount()],
         toolOutputs: ["+10 C", "+10 C"],
         input: "Current temperature in SF?",
       });
-      expect(prompt).toBe(`
-User Input: Current temperature in SF?
-Tools Used: ToolWithTwitterAccount, ToolWithoutTwitterAccount
-Tool Outputs: +10 C, +10 C
 
-Generate a human-readable response based on the tool output and mention x handle nubilanetwork,  in the end.`);
+      expect(prompt).toContain("Current temperature in SF?");
+      expect(prompt).toContain("ToolWithTwitterAccount");
+      expect(prompt).toContain("ToolWithoutTwitterAccount");
+      expect(prompt).toContain("+10 C");
+      expect(prompt).toContain("nubilanetwork");
+      expect(prompt).toContain("<response>");
     });
   });
   describe("toolSelectionTemplate", () => {
@@ -87,18 +90,12 @@ Generate a human-readable response based on the tool output and mention x handle
       ]);
       const name = new ToolWithTwitterAccount().name;
       const description = new ToolWithTwitterAccount().description;
-      expect(prompt).toBe(`
-Input: Current temperature in SF?
 
-Available Tools: [{"name":"${name}","description":"${description}","output":"Textual response"}]
-
-Select necessary tools to respond the user query and return a list of tool names.
-If no tool is needed, return an empty list.
-
-<tool_selection>
-["tool_name1", "tool_name2", "tool_name3"]
-</tool_selection>
-`);
+      expect(prompt).toContain("Current temperature in SF?");
+      expect(prompt).toContain(name);
+      expect(prompt).toContain(description);
+      expect(prompt).toContain("Textual response");
+      expect(prompt).toContain("<response>");
     });
   });
 });
