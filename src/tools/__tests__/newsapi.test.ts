@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import axios from "axios";
-import { NewsAPITool } from "./newsapi";
+import { NewsAPITool } from "../newsapi";
 
 vi.mock("axios");
 

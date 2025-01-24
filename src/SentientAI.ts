@@ -1,10 +1,7 @@
 import { QueryOrchestrator } from "./workflow";
-import { NewsAPITool } from "./tools/news/newsapi";
-import { DePINTool } from "./tools/market/dify";
-import {
-  CurrentWeatherAPITool,
-  ForecastWeatherAPITool,
-} from "./tools/weather/nubila";
+import { NewsAPITool } from "./tools/newsapi";
+import { DePINTool } from "./tools/dify";
+import { CurrentWeatherAPITool, ForecastWeatherAPITool } from "./tools/nubila";
 
 export class SentientAI {
   orchestrator: QueryOrchestrator;

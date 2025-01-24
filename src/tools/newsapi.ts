@@ -1,6 +1,6 @@
 import axios from "axios";
 
-import { APITool } from "../tool";
+import { APITool } from "./tool";
 
 interface NewsAPIResponse {
   status: string;

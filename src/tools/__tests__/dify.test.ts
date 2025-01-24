@@ -1,9 +1,9 @@
-import { mockLLMService } from "./../../__tests__/mocks";
+import { mockLLMService } from "../../__tests__/mocks";
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import axios from "axios";
 
-import { DePINTool } from "./dify";
+import { DePINTool } from "../dify";
 import { handleStreamResponse } from "../../utils/stream_utils";
 import { LLMService } from "../../services/llm-service";
 

@@ -2,10 +2,7 @@ import { mockLLMService } from "./mocks";
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 
 import { QueryOrchestrator } from "../workflow";
-import {
-  CurrentWeatherAPITool,
-  ForecastWeatherAPITool,
-} from "../tools/weather/nubila";
+import { CurrentWeatherAPITool, ForecastWeatherAPITool } from "../tools/nubila";
 import { LLMService } from "../services/llm-service";
 import { APITool } from "../tools/tool";
 

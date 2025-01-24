@@ -1,8 +1,8 @@
-import { mockLLMService } from "../../../__tests__/mocks";
+import { mockLLMService } from "../../__tests__/mocks";
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-import { LLMService } from "../../../services/llm-service";
+import { LLMService } from "../../services/llm-service";
 import {
   CurrentWeatherAPITool,
   ForecastWeatherAPITool,
@@ -41,7 +41,7 @@ describe("CurrentWeatherAPITool", () => {
     mockFetch = vi.fn();
     global.fetch = mockFetch;
 
-    vi.mock("../../../services/llm-service", () => mockLLMService);
+    vi.mock("../../services/llm-service", () => mockLLMService);
   });
 
   it("should initialize with correct properties", () => {
@@ -89,7 +89,10 @@ describe("CurrentWeatherAPITool", () => {
 
     mockWeatherAPIResponse(mockWeatherData);
 
-    const result = await tool.execute("How's the weather in SF?", new LLMService());
+    const result = await tool.execute(
+      "How's the weather in SF?",
+      new LLMService(),
+    );
 
     expect(result).toBe(
       "The current weather in 37.7749, -122.4194 is Sunny with a temperature of 25°C (Feels like 27°C). Humidity: 60% Pressure: 1013 hPa Wind Speed: 5 m/s Wind Direction: 180°",
@@ -111,7 +114,10 @@ describe("CurrentWeatherAPITool", () => {
     });
     const consoleSpy = vi.spyOn(console, "error");
 
-    const result = await tool.execute("How's the weather in SF?", new LLMService());
+    const result = await tool.execute(
+      "How's the weather in SF?",
+      new LLMService(),
+    );
 
     expect(consoleSpy).toHaveBeenCalledWith(
       "Weather API Error: API request failed with status: 404 Not Found",
@@ -124,7 +130,10 @@ describe("CurrentWeatherAPITool", () => {
     mockFetch.mockRejectedValueOnce(new Error("Network error"));
     const consoleSpy = vi.spyOn(console, "error");
 
-    const result = await tool.execute("How's the weather in SF?", new LLMService());
+    const result = await tool.execute(
+      "How's the weather in SF?",
+      new LLMService(),
+    );
 
     expect(result).toBe("Skipping weather currentweatherapitool fetch.");
     expect(consoleSpy).toHaveBeenCalledWith("Network error");

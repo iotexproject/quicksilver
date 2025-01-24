@@ -1,7 +1,7 @@
-import { LLMService } from "../../services/llm-service";
-import { APITool } from "../tool";
-import { extractContentFromTags } from "../../utils/parsers";
-import { WeatherData, WeatherForecast } from "./types";
+import { LLMService } from "../services/llm-service";
+import { APITool } from "./tool";
+import { extractContentFromTags } from "../utils/parsers";
+import { WeatherData, WeatherForecast } from "./types/nubila";
 
 interface CoordinatesInput {
   lat: number;
