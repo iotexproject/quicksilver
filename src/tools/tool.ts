@@ -1,3 +1,4 @@
+import { LLMService } from "../services/llm-service";
 import { Tool } from "../types";
 
 export abstract class APITool<T> implements Tool {
@@ -21,7 +22,7 @@ export abstract class APITool<T> implements Tool {
     this.baseUrl = params.baseUrl;
   }
 
-  abstract execute(input: string): Promise<string>;
+  abstract execute(input: string, llmService: LLMService): Promise<string>;
 
-  abstract parseInput(input: string): Promise<T>;
+  abstract parseInput(input: string, llmService: LLMService): Promise<T>;
 }
