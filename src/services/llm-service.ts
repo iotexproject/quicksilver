@@ -5,9 +5,6 @@ export class LLMService {
   llm: LLM;
 
   constructor() {
-    if (!process.env.TOGETHER_API_KEY) {
-      throw new Error("TOGETHER_API_KEY is required");
-    }
     this.initFastLLM();
     this.initLLM();
   }
