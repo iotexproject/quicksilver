@@ -2,6 +2,7 @@ import { LLMService } from "../services/llm-service";
 import { APITool } from "./tool";
 import { extractContentFromTags } from "../utils/parsers";
 import { WeatherData, WeatherForecast } from "./types/nubila";
+import { coordinatesTemplate } from "./templates";
 
 interface CoordinatesInput {
   lat: number;
@@ -81,7 +82,7 @@ export class CurrentWeatherAPITool extends BaseWeatherAPITool {
       "CurrentWeatherAPITool",
       "Gets the current weather from Nubila API.",
       "weather",
-      "temperature,condition,condition_desc,condition_code,temperature_min,temperature_max,feels_like,pressure,humidity,wind_speed,wind_scale,wind_direction,uv,luminance,elevation,rain,wet_bulb,timestamp,timezone,location_name,address,source,tag",
+      "temperature,condition,pressure,humidity,wind,uv,luminance,elevation,rain,wet_bulb",
     );
   }
 
@@ -109,7 +110,7 @@ export class ForecastWeatherAPITool extends BaseWeatherAPITool {
       "ForecastWeatherAPITool",
       "Get weather forecast data from the Nubila API.",
       "forecast",
-      "Array of: temperature,condition,condition_desc,condition_code,temperature_min,temperature_max,feels_like,pressure,humidity,wind_speed,wind_direction,uv,luminance,elevation,rain,wet_bulb,timestamp,timezone,location_name,address,source,tag",
+      "Array of: temperature,condition,pressure,humidity,wind,uv,luminance,elevation,rain,wet_bulb",
     );
   }
 
@@ -135,7 +136,7 @@ export class Coordinates {
     llmService: LLMService,
   ): Promise<CoordinatesInput> {
     const llmResponse = await llmService.fastllm.generate(
-      `Extract latitude and longitude from this query: "${query}". If there are no coordinates try to derive them from the location name. Return JSON in format <response>{"lat": number, "lon": number}</response>`,
+      coordinatesTemplate(query),
     );
     const extractedCoords = extractContentFromTags(llmResponse, "response");
     if (!extractedCoords) {
