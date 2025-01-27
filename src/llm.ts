@@ -56,10 +56,12 @@ export class OpenAILLM implements LLM {
   }
 
   async generate(prompt: string): Promise<string> {
+    console.time("called with model: " + this.model);
     const response = await this.openai.chat.completions.create({
       model: this.model,
       messages: [{ role: "user", content: prompt }],
     });
+    console.timeEnd("called with model: " + this.model);
     return response.choices[0]?.message.content || "No content in response";
   }
 }
