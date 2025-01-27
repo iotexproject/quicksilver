@@ -16,10 +16,10 @@ export class DummyLLM implements LLM {
 
 export class AnthropicLLM implements LLM {
   private anthropic: Anthropic;
-  model = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo-128K";
+  model: string;
 
-  constructor(args: Partial<AnthropicLLM> = {}) {
-    Object.assign(this, args);
+  constructor(params: { model: string }) {
+    this.model = params.model;
     const anthropic = new Anthropic();
     this.anthropic = anthropic;
   }
