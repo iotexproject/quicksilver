@@ -56,6 +56,10 @@ describe("Workflow", () => {
       setupMockLLM('<response>["Test Tool"]</response>');
       const workflow = new QueryOrchestrator({
         tools: [tool],
+        llmService: new LLMService({
+          fastLLMProvider: "anthropic",
+          llmProvider: "anthropic",
+        }),
       });
       const res = await workflow.process("Current temperature in SF?");
       console.log("result is: ", res);
@@ -73,6 +77,10 @@ describe("Workflow", () => {
       }));
       const workflow = new QueryOrchestrator({
         tools: [new CurrentWeatherAPITool()],
+        llmService: new LLMService({
+          fastLLMProvider: "deepseek",
+          llmProvider: "deepseek",
+        }),
       });
       const res = await workflow.process(
         "Rephrase the following sentence'Current temperature in SF?'",
@@ -84,6 +92,10 @@ describe("Workflow", () => {
     it("should return correct single tool", async () => {
       const workflow = new QueryOrchestrator({
         tools: [tool],
+        llmService: new LLMService({
+          fastLLMProvider: "deepseek",
+          llmProvider: "deepseek",
+        }),
       });
       const res = await workflow.selectTools("Current temperature in SF?");
 
@@ -104,6 +116,10 @@ describe("Workflow", () => {
       }));
       const workflow = new QueryOrchestrator({
         tools: [new CurrentWeatherAPITool(), new ForecastWeatherAPITool()],
+        llmService: new LLMService({
+          fastLLMProvider: "deepseek",
+          llmProvider: "deepseek",
+        }),
       });
       const res = await workflow.selectTools("Current temperature in SF?");
 
