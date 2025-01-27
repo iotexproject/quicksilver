@@ -3,6 +3,7 @@ import { NewsAPITool } from "./tools/newsapi";
 import { CurrentWeatherAPITool, ForecastWeatherAPITool } from "./tools/nubila";
 import { LLMService } from "./services/llm-service";
 import { DePINScanMetricsTool, DePINScanProjectsTool } from "./tools/depinscan";
+import { L1DataTool } from "./tools/l1data";
 
 export class SentientAI {
   orchestrator: QueryOrchestrator;
@@ -15,6 +16,7 @@ export class SentientAI {
         new ForecastWeatherAPITool(),
         new DePINScanMetricsTool(),
         new DePINScanProjectsTool(),
+        new L1DataTool(),
       ],
       llmService: new LLMService({
         fastLLMProvider: "openai",
