@@ -27,12 +27,14 @@ export class AnthropicLLM implements LLM {
 
   async generate(prompt: string): Promise<string> {
     try {
+      console.time("called with model: " + this.model);
       const response = await this.anthropic.messages.create({
         messages: [{ role: "user", content: prompt }],
         model: this.model,
         max_tokens: 1000,
         temperature: 0,
       });
+      console.timeEnd("called with model: " + this.model);
       // @ts-ignore property text does exist
       return response.content[0]?.text || "No content in response";
     } catch (error: any) {
