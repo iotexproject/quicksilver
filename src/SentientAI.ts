@@ -1,7 +1,8 @@
 import { QueryOrchestrator } from "./workflow";
 import { NewsAPITool } from "./tools/newsapi";
-import { DePINTool } from "./tools/dify";
 import { CurrentWeatherAPITool, ForecastWeatherAPITool } from "./tools/nubila";
+import { LLMService } from "./services/llm-service";
+import { DePINScanMetricsTool, DePINScanProjectsTool } from "./tools/depinscan";
 
 export class SentientAI {
   orchestrator: QueryOrchestrator;
@@ -10,10 +11,15 @@ export class SentientAI {
     this.orchestrator = new QueryOrchestrator({
       tools: [
         new NewsAPITool(),
-        new DePINTool(),
         new CurrentWeatherAPITool(),
         new ForecastWeatherAPITool(),
+        new DePINScanMetricsTool(),
+        new DePINScanProjectsTool(),
       ],
+      llmService: new LLMService({
+        fastLLMProvider: "openai",
+        llmProvider: "anthropic",
+      }),
     });
   }
 

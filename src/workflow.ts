@@ -7,9 +7,15 @@ export class QueryOrchestrator {
   llmService: LLMService;
   tools: Tool[] = [];
 
-  constructor({ tools }: { tools: Tool[] }) {
+  constructor({
+    tools,
+    llmService,
+  }: {
+    tools: Tool[];
+    llmService: LLMService;
+  }) {
     this.tools = tools;
-    this.llmService = new LLMService();
+    this.llmService = llmService;
   }
 
   // TODO: input should include user query and context
