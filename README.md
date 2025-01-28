@@ -144,18 +144,41 @@ Have an idea outside of this list? We’d love to hear it!
 
 Quicksilver is serving the sentient AI queries as the DePIN-Plugin on [Eliza](https://github.com/elizaOS/eliza). You can simply enable the plugin and start using it. With Quicksilver, your Eliza agent will gain sentient-like capabilities to interact intelligently with the world. The current capabilities are listed above. If you like to add more capabilities, please refer to the [Contributing](#contributing) section.
 
-## Quicksilver works with OpenAI
+## LLM Provider Configuration
 
-You can use OpenAI as your LLM provider by setting the `LLM_MODEL` to `gpt-4o-mini` in the `.env` file.
+Quicksilver supports multiple LLM providers and uses a dual-LLM architecture with a fast LLM for initial processing and a primary LLM for complex reasoning. Configure your providers in the `.env` file:
 
-## Quicksilver works with Anthropic
+```env
+# LLM Provider API Keys
+OPENAI_API_KEY=your_openai_api_key
+ANTHROPIC_API_KEY=your_anthropic_api_key
+DEEPSEEK_API_KEY=your_deepseek_api_key
 
-You can use Anthropic as your LLM provider by setting the `LLM_MODEL` to `claude-3-5-haiku-latest` in the `.env` file.
+# LLM Model Selection
+FAST_LLM_MODEL=gpt-4o-mini    # Model for fast processing
+LLM_MODEL=deepseek-chat       # Model for primary reasoning
+```
 
-## Quicksilver works with DeepSeek
+### Supported Providers
 
-You can use DeepSeek as your LLM provider by setting the `LLM_MODEL` to `deepseek-chat` in the `.env` file.
+- **OpenAI**: Use OpenAI's models by setting the provider to `openai`
+  - Default model: `gpt-4o-mini`
+  
+- **Anthropic**: Use Claude models by setting the provider to `anthropic`
+  - Default model: `claude-3-5-haiku-latest`
+  
+- **DeepSeek**: Use DeepSeek's models by setting the provider to `deepseek`
+  - Default model: `deepseek-chat`
+  - Note: DeepSeek uses OpenAI-compatible API endpoints
 
+You can configure both the fast LLM and primary LLM providers in the SentientAI initialization:
+
+```typescript
+new SentientAI({
+  fastLLMProvider: "openai",    // For quick processing
+  llmProvider: "deepseek"       // For main reasoning
+});
+```
 
 ## Contributing
 
