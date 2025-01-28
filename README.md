@@ -140,9 +140,22 @@ Quicksilver is just getting started, and there’s immense potential for growth.
 
 Have an idea outside of this list? We’d love to hear it!
 
-## Work with Eliza
+## Quicksilver works with Eliza
 
 Quicksilver is serving the sentient AI queries as the DePIN-Plugin on [Eliza](https://github.com/elizaOS/eliza). You can simply enable the plugin and start using it. With Quicksilver, your Eliza agent will gain sentient-like capabilities to interact intelligently with the world. The current capabilities are listed above. If you like to add more capabilities, please refer to the [Contributing](#contributing) section.
+
+## Quicksilver works with OpenAI
+
+You can use OpenAI as your LLM provider by setting the `LLM_MODEL` to `gpt-4o-mini` in the `.env` file.
+
+## Quicksilver works with Anthropic
+
+You can use Anthropic as your LLM provider by setting the `LLM_MODEL` to `claude-3-5-haiku-latest` in the `.env` file.
+
+## Quicksilver works with DeepSeek
+
+You can use DeepSeek as your LLM provider by setting the `LLM_MODEL` to `deepseek-chat` in the `.env` file.
+
 
 ## Contributing
 
