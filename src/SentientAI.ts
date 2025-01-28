@@ -20,7 +20,7 @@ export class SentientAI {
       ],
       llmService: new LLMService({
         fastLLMProvider: "openai",
-        llmProvider: "anthropic",
+        llmProvider: "deepseek",
       }),
     });
   }
