@@ -1,0 +1,8 @@
+services:
+  app:
+    image: qs:main
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+    restart: always

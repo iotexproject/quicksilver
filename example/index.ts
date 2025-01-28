@@ -1,12 +1,12 @@
 // src/index.ts (Example/test file)
-import { DummyLLM, OpenAILLM, LLM } from "./llm";
+import { DummyLLM, OpenAILLM, LLM } from "../src/llm";
 import {
   CurrentWeatherAPITool,
   ForecastWeatherAPITool,
-} from "./tools/weatherapi";
-import { NewsAPITool } from "./tools/newsapi";
-import { Agent } from "./agent";
-import { Tool } from "./tools/tool";
+} from "../src/tools/nubila";
+import { NewsAPITool } from "../src/tools/newsapi";
+import { Agent } from "../src/agent";
+import { Tool } from "../src/tools/tool";
 import * as dotenv from "dotenv";
 
 dotenv.config();

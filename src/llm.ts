@@ -1,9 +1,6 @@
-import { RAGApplication, RAGApplicationBuilder } from "@llm-tools/embedjs";
-import { LibSqlDb } from "@llm-tools/embedjs-libsql";
-import { OpenAi } from "@llm-tools/embedjs-openai";
-import { OpenAiEmbeddings } from "@llm-tools/embedjs-openai";
-import { Together } from "together-ai";
-import { CompletionCreateParamsBase } from "together-ai/resources/chat/completions";
+import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
+
 export interface LLM {
   generate(prompt: string): Promise<string>;
 }
@@ -18,77 +15,55 @@ export class DummyLLM implements LLM {
   }
 }
 
-export class OpenAILLM implements LLM {
-  model: string = "gpt-3.5-turbo";
-  rag: RAGApplication | null = null;
+export class AnthropicLLM implements LLM {
+  private anthropic: Anthropic;
+  model: string;
 
-  constructor(args: Partial<OpenAILLM> = {}) {
-    Object.assign(this, args);
-    if (!this.rag) {
-      new RAGApplicationBuilder()
-        .setModel(
-          new OpenAi({
-            model: this.model,
-            maxTokens: 200,
-            temperature: 0,
-          }),
-        )
-        .setEmbeddingModel(
-          new OpenAiEmbeddings({
-            model: "text-embedding-3-small",
-          }),
-        )
-        .setVectorDatabase(new LibSqlDb({ path: "./data.db" }))
-        .build()
-        .then((rag) => (this.rag = rag));
-    }
+  constructor(params: { model: string }) {
+    this.model = params.model;
+    const anthropic = new Anthropic();
+    this.anthropic = anthropic;
   }
 
   async generate(prompt: string): Promise<string> {
     try {
-      const result = await this.rag?.query(prompt);
-      console.log(result);
-      return result?.content.trim() || "No content in response";
+      console.time("called with model: " + this.model);
+      const response = await this.anthropic.messages.create({
+        messages: [{ role: "user", content: prompt }],
+        model: this.model,
+        max_tokens: 1000,
+        temperature: 0,
+      });
+      console.timeEnd("called with model: " + this.model);
+      // @ts-ignore property text does exist
+      return response.content[0]?.text || "No content in response";
     } catch (error: any) {
-      console.error(" API Error:", error.message);
-      return ` API Error: ${error.message}`;
+      console.error("Anthropic API Error:", error.message);
+      return `Anthropic API Error: ${error.message}`;
     }
   }
 }
 
-export class TogetherLLM implements LLM {
-  private together: Together = new Together();
-  model = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo-128K";
+export class OpenAILLM implements LLM {
+  private openai: OpenAI;
+  model: string;
 
-  constructor(args: Partial<TogetherLLM> = {}) {
-    Object.assign(this, args);
+  constructor(params: { model: string; apiKey: string; baseURL?: string }) {
+    this.model = params.model;
+    const openai = new OpenAI({
+      apiKey: params.apiKey,
+      baseURL: params.baseURL || "https://api.openai.com/v1",
+    });
+    this.openai = openai;
   }
 
   async generate(prompt: string): Promise<string> {
-    try {
-      const response = await this.together.chat.completions.create({
-        messages: [{ role: "user", content: prompt }],
-        model: this.model,
-        max_tokens: 2000,
-        temperature: 0.7,
-        top_p: 0.7,
-        top_k: 50,
-        repetition_penalty: 1,
-        stop: ["<|eot_id|>", "<|eom_id|>"],
-        stream: true,
-      });
-
-      let result = "";
-      for await (const token of response) {
-        const content = token.choices[0]?.delta?.content;
-        if (content) {
-          result += content;
-        }
-      }
-      return result.trim() || "No content in response";
-    } catch (error: any) {
-      console.error("Together API Error:", error.message);
-      return `Together API Error: ${error.message}`;
-    }
+    console.time("called with model: " + this.model);
+    const response = await this.openai.chat.completions.create({
+      model: this.model,
+      messages: [{ role: "user", content: prompt }],
+    });
+    console.timeEnd("called with model: " + this.model);
+    return response.choices[0]?.message.content || "No content in response";
   }
 }

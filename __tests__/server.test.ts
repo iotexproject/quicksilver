@@ -8,11 +8,9 @@ describe("Server", () => {
   beforeEach(() => {
     vi.mock("../src/SentientAI", () => ({
       SentientAI: vi.fn().mockImplementation(() => ({
-        agent: new (class {
-          async execute(_: string): Promise<string> {
-            return "mocked response";
-          }
-        })(),
+        async execute(_: string): Promise<string> {
+          return "mocked response";
+        },
       })),
     }));
   });

@@ -1,4 +1,5 @@
 import axios from "axios";
+
 import { APITool } from "./tool";
 
 interface NewsAPIResponse {
@@ -7,26 +8,34 @@ interface NewsAPIResponse {
   articles: { source: { name: string }; title: string; url: string }[]; // Include URL
 }
 
-export class NewsAPITool extends APITool {
+const NUMBER_OF_HEADLINES = 10;
+
+export class NewsAPITool extends APITool<any> {
   constructor() {
+    super({
+      name: "NewsAPI",
+      description: "Fetches today's headlines from News API",
+      output: `Array of ${NUMBER_OF_HEADLINES} top headlines with their titles and links`,
+      baseUrl: "https://newsapi.org/v2/top-headlines?country=us&apiKey=",
+    });
+
     if (!process.env.NEWSAPI_API_KEY) {
-      console.error("Please set the NUBILA_API_KEY environment variable.");
-      return;
+      throw new Error("Please set the NEWSAPI_API_KEY environment variable.");
     }
-    super("NewsAPI", "Fetches today's headlines from News API", process.env.NEWSAPI_API_KEY!);
   }
 
-  async execute(input: string): Promise<string> {
+  async execute(_: string): Promise<string> {
+    const apiKey = process.env.NEWSAPI_API_KEY!;
     try {
-      const url = `https://newsapi.org/v2/top-headlines?country=us&apiKey=${this.apiKey}`;
+      const url = `https://newsapi.org/v2/top-headlines?country=us&apiKey=${apiKey}`;
       const response = await axios.get<NewsAPIResponse>(url);
 
       if (response.data.status === "ok") {
         const headlines = response.data.articles.map(
           (article) =>
-            `- [${article.title}](${article.url}) - ${article.source.name}`
+            `- [${article.title}](${article.url}) - ${article.source.name}`,
         ); // Markdown links
-        return headlines.join("\n");
+        return headlines.slice(0, NUMBER_OF_HEADLINES).join("\n");
       } else {
         return `Error fetching headlines: ${response.data.status}`; // Return error as string
       }
@@ -34,5 +43,9 @@ export class NewsAPITool extends APITool {
       console.error("NewsAPI Error", error);
       return `Error fetching headlines: ${error}`; // More robust error handling
     }
+  }
+
+  async parseInput(userInput: any): Promise<any> {
+    return userInput;
   }
 }
