@@ -9,6 +9,9 @@ export class SentientAI {
   orchestrator: QueryOrchestrator;
 
   constructor() {
+    if (!process.env.FAST_LLM_PROVIDER || !process.env.LLM_PROVIDER) {
+      throw new Error("FAST_LLM_PROVIDER and LLM_PROVIDER must be set");
+    }
     this.orchestrator = new QueryOrchestrator({
       tools: [
         new NewsAPITool(),
@@ -19,8 +22,8 @@ export class SentientAI {
         new L1DataTool(),
       ],
       llmService: new LLMService({
-        fastLLMProvider: "openai",
-        llmProvider: "deepseek",
+        fastLLMProvider: process.env.FAST_LLM_PROVIDER,
+        llmProvider: process.env.LLM_PROVIDER,
       }),
     });
   }
