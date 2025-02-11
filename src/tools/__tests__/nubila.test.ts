@@ -92,6 +92,12 @@ describe("CurrentWeatherAPITool", () => {
         pressure: 1013,
         wind_speed: 5,
         wind_direction: 180,
+        uv: 5,
+        luminance: 50000,
+        elevation: 100,
+        rain: 0,
+        wet_bulb: 20,
+        location_name: "San Francisco",
       },
     };
 
@@ -102,9 +108,20 @@ describe("CurrentWeatherAPITool", () => {
       new LLMService(llmServiceParams),
     );
 
-    expect(result).toBe(
-      "The current weather in 37.7749, -122.4194 is Sunny with a temperature of 25°C (Feels like 27°C). Humidity: 60% Pressure: 1013 hPa Wind Speed: 5 m/s Wind Direction: 180°",
-    );
+    expect(result).toBe(`
+The current weather in San Francisco (37.7749, -122.4194) is:
+Condition: Sunny,
+Temperature: 25°C (Feels like 27°C),
+Humidity: 60%,
+Pressure: 1013 hPa,
+Wind Speed: 5 m/s,
+Wind Direction: 180°,
+UV: 5,
+Luminance: 50000,
+Elevation: 100 m,
+Rain: 0,
+Wet Bulb: 20°C,
+`);
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("lat=37.7749&lon=-122.4194"),
       expect.objectContaining({
@@ -209,14 +226,30 @@ describe("ForecastWeatherAPITool", () => {
         {
           timestamp: 1234567890,
           temperature: 25,
+          condition: "Clear",
           condition_desc: "Sunny",
           wind_speed: 5,
+          pressure: 1013,
+          humidity: 60,
+          uv: 5,
+          luminance: 50000,
+          rain: 0,
+          wet_bulb: 20,
+          location_name: "San Francisco",
         },
         {
           timestamp: 1234571490,
           temperature: 23,
+          condition: "Clouds",
           condition_desc: "Cloudy",
           wind_speed: 6,
+          pressure: 1015,
+          humidity: 65,
+          uv: 3,
+          luminance: 30000,
+          rain: 0,
+          wet_bulb: 19,
+          location_name: "San Francisco",
         },
       ],
     };
@@ -234,9 +267,18 @@ describe("ForecastWeatherAPITool", () => {
       new LLMService(llmServiceParams),
     );
 
-    expect(result).toContain("Weather Forecast Data for 37.7749, -122.4194:");
-    expect(result).toContain("the temperature is 25°C, the weather is Sunny");
-    expect(result).toContain("the temperature is 23°C, the weather is Cloudy");
+    expect(result).toContain(
+      "Weather Forecast Data for San Francisco (37.7749, -122.4194):",
+    );
+    expect(result).toContain(
+      "temperature,condition,condition_desc,wind_speed,pressure,humidity,uv,luminance,rain,wet_bulb",
+    );
+    expect(result).toContain(
+      "25°C, Clear, Sunny, 5 m/s, 1013 hPa, 60%, 5, 50000, 0, 20°C",
+    );
+    expect(result).toContain(
+      "23°C, Clouds, Cloudy, 6 m/s, 1015 hPa, 65%, 3, 30000, 0, 19°C",
+    );
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("lat=37.7749&lon=-122.4194"),
       expect.objectContaining({
@@ -313,7 +355,10 @@ describe("Coordinates", () => {
   it("should throw error for invalid location response", async () => {
     mockLLMInstance.fastllm.generate.mockResolvedValueOnce(invalidLocation);
     await expect(
-      Coordinates.extractFromQuery("Invalid location", new LLMService(llmServiceParams)),
+      Coordinates.extractFromQuery(
+        "Invalid location",
+        new LLMService(llmServiceParams),
+      ),
     ).rejects.toThrow("Could not extract latitude and longitude from query.");
   });
 
@@ -322,7 +367,10 @@ describe("Coordinates", () => {
       new Error("LLM error"),
     );
     await expect(
-      Coordinates.extractFromQuery("Error case", new LLMService(llmServiceParams)),
+      Coordinates.extractFromQuery(
+        "Error case",
+        new LLMService(llmServiceParams),
+      ),
     ).rejects.toThrow("LLM error");
   });
 });

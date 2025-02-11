@@ -98,9 +98,28 @@ export class CurrentWeatherAPITool extends BaseWeatherAPITool {
       pressure,
       wind_speed,
       wind_direction,
+      uv,
+      luminance,
+      elevation,
+      rain,
+      wet_bulb,
+      location_name,
     } = weatherData;
 
-    return `The current weather in ${coords.lat}, ${coords.lon} is ${condition} with a temperature of ${temperature}°C${feels_like && ` (Feels like ${feels_like}°C)`}.${humidity && ` Humidity: ${humidity}%`}${pressure && ` Pressure: ${pressure} hPa`}${wind_speed && ` Wind Speed: ${wind_speed} m/s`}${wind_direction && ` Wind Direction: ${wind_direction}°`}`;
+    return `
+The current weather in ${location_name} (${coords.lat}, ${coords.lon}) is:
+Condition: ${condition},
+Temperature: ${temperature}°C${feels_like && ` (Feels like ${feels_like}°C)`},
+Humidity: ${humidity}%,
+Pressure: ${pressure} hPa,
+Wind Speed: ${wind_speed} m/s,
+Wind Direction: ${wind_direction}°,
+UV: ${uv},
+Luminance: ${luminance},
+Elevation: ${elevation} m,
+Rain: ${rain},
+Wet Bulb: ${wet_bulb}°C,
+`;
   }
 }
 
@@ -110,7 +129,7 @@ export class ForecastWeatherAPITool extends BaseWeatherAPITool {
       "ForecastWeatherAPITool",
       "Get weather forecast data from the Nubila API.",
       "forecast",
-      "Array of: temperature,condition,pressure,humidity,wind,uv,luminance,elevation,rain,wet_bulb",
+      "Array of: temperature,condition,pressure,humidity,wind,uv,luminance,rain,wet_bulb",
     );
   }
 
@@ -119,12 +138,27 @@ export class ForecastWeatherAPITool extends BaseWeatherAPITool {
     forecastData: WeatherForecast,
   ): Promise<string> {
     const summaries = forecastData.map((item) => {
-      const { temperature, condition_desc, wind_speed } = item;
+      const {
+        temperature,
+        condition,
+        condition_desc,
+        wind_speed,
+        pressure,
+        humidity,
+        uv,
+        luminance,
+        rain,
+        wet_bulb,
+      } = item;
       const date = new Date(item.timestamp * 1000).toLocaleString();
-      return `On ${date}, the temperature is ${temperature}°C, the weather is ${condition_desc}, and the wind speed is ${wind_speed} m/s.`;
+      return `On ${date}, ${temperature}°C, ${condition}, ${condition_desc}, ${wind_speed} m/s, ${pressure} hPa, ${humidity}%, ${uv}, ${luminance}, ${rain}, ${wet_bulb}°C.`;
     });
 
-    return `Weather Forecast Data for ${coords.lat}, ${coords.lon}: ${summaries.join(" ")}`;
+    return `
+Weather Forecast Data for ${forecastData[0].location_name} (${coords.lat}, ${coords.lon}):
+temperature,condition,condition_desc,wind_speed,pressure,humidity,uv,luminance,rain,wet_bulb
+${summaries.join("\n")}
+`;
   }
 }
 
