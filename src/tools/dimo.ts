@@ -69,30 +69,30 @@ export class DimoTool extends APITool<any> {
     how many vehicles do i have
     </user_query>
     <vehicles>
-    117315 - Lexus NX 2021
-    107505 - Tesla Model 3 2019
-    24316 - BMW 440i 2023
-    135 - Tesla Model 3 2023
-    17 - Hyundai Tucson 2022
-    3 - Cadillac ATS-V 2019
+    98765 - Toyota Camry 2022
+    45678 - Ford Mustang 2021
+    23456 - Honda Civic 2023
+    12345 - Chevrolet Bolt 2022
+    34567 - Volkswagen ID.4 2023
+    56789 - Kia Telluride 2021
     </vehicles>
     <response>
     {
       "tokenIds": [],
-      "intermediateResponse": "You have 6 vehicles in total: a Lexus NX 2021, a Tesla Model 3 2019, a BMW 440i 2023, another Tesla Model 3 2023, a Hyundai Tucson 2022, and a Cadillac ATS-V 2019.",
+      "intermediateResponse": "You have 6 vehicles in total: a Toyota Camry 2022, a Ford Mustang 2021, a Honda Civic 2023, a Chevrolet Bolt 2022, a Volkswagen ID.4 2023, and a Kia Telluride 2021.",
       "processingRequired": false
     }
     </response>
     <user_query>
-    get me the speed of vehicle 107505
+    get me the speed of Toyota Camry
     </user_query>
     <vehicles>
-    ...
+    98765 - Toyota Camry 2022
     </vehicles>
     <response>
     {
-      "tokenIds": ["107505"],
-      "intermediateResponse": "Need to fetch the latest signals for vehicle 107505",
+      "tokenIds": ["98765"],
+      "intermediateResponse": "Need to fetch the latest signals for vehicle 98765",
       "processingRequired": true
     }
     </response>

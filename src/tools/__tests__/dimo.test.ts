@@ -38,12 +38,12 @@ describe("DimoTool", () => {
         vehicles: {
           nodes: [
             {
-              owner: "0x123",
-              tokenId: "456",
+              owner: "0x264BC41755BA9F5a00DCEC07F96cB14339dBD970",
+              tokenId: "24316",
               definition: {
-                make: "Tesla",
-                model: "Model 3",
-                year: "2021",
+                make: "BMW",
+                model: "440i",
+                year: "2023",
               },
             },
           ],
@@ -62,15 +62,15 @@ describe("DimoTool", () => {
     vi.spyOn(dimoTool["dimo"].telemetry, "query")
       .mockResolvedValueOnce({
         data: {
-          availableSignals: ["speed", "battery", "location"],
+          availableSignals: ["powertrainCombustionEngineSpeed", "powertrainRange", "currentLocationLatitude"],
         },
       })
       .mockResolvedValueOnce({
         data: {
           signalsLatest: {
-            speed: { value: 60, timestamp: "2024-03-20T12:00:00Z" },
-            battery: { value: 80, timestamp: "2024-03-20T12:00:00Z" },
-            location: { value: "123,456", timestamp: "2024-03-20T12:00:00Z" },
+            powertrainCombustionEngineSpeed: { value: 1168, timestamp: "2025-01-17T16:44:29Z" },
+            powertrainRange: { value: 324.21, timestamp: "2025-02-11T10:00:21.56234Z" },
+            currentLocationLatitude: { value: 42.5525551, timestamp: "2025-02-11T10:00:21.56234Z" },
           },
         },
       });
@@ -91,14 +91,14 @@ describe("DimoTool", () => {
 
   describe("parseInput", () => {
     it("should parse input with token IDs", async () => {
-      const input = "get signals for vehicle 456";
+      const input = "get signals for vehicle 24316";
       (mockLLMService.fastllm.generate as Mock).mockResolvedValueOnce(
-        '<response>{"tokenIds": ["456"], "intermediateResponse": "", "processingRequired": true}</response>',
+        '<response>{"tokenIds": ["24316"], "intermediateResponse": "", "processingRequired": true}</response>',
       );
 
       const result = await dimoTool.parseInput(input, mockLLMService);
       expect(result).toEqual({
-        tokenIds: ["456"],
+        tokenIds: ["24316"],
         intermediateResponse: "",
         processingRequired: true,
       });
@@ -134,15 +134,15 @@ describe("DimoTool", () => {
 
   describe("execute", () => {
     it("should execute query for specific vehicle", async () => {
-      const input = "get signals for vehicle 456";
+      const input = "get signals for vehicle 24316";
       (mockLLMService.fastllm.generate as Mock)
         .mockResolvedValueOnce(
-          '<response>{"tokenIds": ["456"], "intermediateResponse": "", "processingRequired": true}</response>',
+          '<response>{"tokenIds": ["24316"], "intermediateResponse": "", "processingRequired": true}</response>',
         )
-        .mockResolvedValueOnce("Vehicle 456 speed is 60mph, battery is at 80%");
+        .mockResolvedValueOnce("Vehicle 24316 engine speed is 1168rpm, range is 324.21 miles");
 
       const result = await dimoTool.execute(input, mockLLMService);
-      expect(result).toBe("Vehicle 456 speed is 60mph, battery is at 80%");
+      expect(result).toBe("Vehicle 24316 engine speed is 1168rpm, range is 324.21 miles");
       expect(dimoTool["dimo"].telemetry.query).toHaveBeenCalled();
     });
 
@@ -158,10 +158,10 @@ describe("DimoTool", () => {
     });
 
     it("should handle errors in vehicle signal fetching", async () => {
-      const input = "get signals for vehicle 456";
+      const input = "get signals for vehicle 24316";
       (mockLLMService.fastllm.generate as Mock)
         .mockResolvedValueOnce(
-          '<response>{"tokenIds": ["456"], "intermediateResponse": "", "processingRequired": true}</response>',
+          '<response>{"tokenIds": ["24316"], "intermediateResponse": "", "processingRequired": true}</response>',
         )
         .mockResolvedValueOnce("No data available");
 
@@ -178,27 +178,27 @@ describe("DimoTool", () => {
     it("should format accessible vehicles correctly", async () => {
       const vehicles = [
         {
-          tokenId: "456",
-          owner: "0x123",
+          tokenId: "24316",
+          owner: "0x264BC41755BA9F5a00DCEC07F96cB14339dBD970",
           definition: {
-            make: "Tesla",
-            model: "Model 3",
-            year: "2021",
+            make: "BMW",
+            model: "440i", 
+            year: "2023",
           },
         },
       ];
 
       const formatted = dimoTool["formatAccessibleVehicles"](vehicles);
-      expect(formatted).toBe("456 - Tesla Model 3 2021");
+      expect(formatted).toBe("24316 - BMW 440i 2023");
     });
 
     it("should build latest signals query correctly", () => {
-      const tokenId = "456";
-      const signals = ["speed", "battery"];
+      const tokenId = "24316";
+      const signals = ["powertrainCombustionEngineSpeed", "powertrainRange"];
       const query = dimoTool["buildLatestSignalsQuery"](tokenId, signals);
-      expect(query).toContain("signalsLatest(tokenId: 456)");
-      expect(query).toContain("speed {");
-      expect(query).toContain("battery {");
+      expect(query).toContain("signalsLatest(tokenId: 24316)");
+      expect(query).toContain("powertrainCombustionEngineSpeed {");
+      expect(query).toContain("powertrainRange {");
     });
   });
 });
