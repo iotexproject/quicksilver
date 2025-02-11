@@ -9,6 +9,11 @@ import {
   Coordinates,
 } from "../nubila";
 
+const llmServiceParams = {
+  fastLLMProvider: "test-fast-provider",
+  llmProvider: "test-provider",
+};
+
 describe("CurrentWeatherAPITool", () => {
   let tool: CurrentWeatherAPITool;
   let mockFetch: any;
@@ -65,7 +70,10 @@ describe("CurrentWeatherAPITool", () => {
     setupMockLLM(invalidLocation);
     const consoleSpy = vi.spyOn(console, "error");
 
-    const res = await tool.execute("How's the weather is LA", new LLMService());
+    const res = await tool.execute(
+      "How's the weather is LA",
+      new LLMService(llmServiceParams),
+    );
 
     expect(consoleSpy).toHaveBeenCalledWith(
       "Could not extract latitude and longitude from query.",
@@ -91,7 +99,7 @@ describe("CurrentWeatherAPITool", () => {
 
     const result = await tool.execute(
       "How's the weather in SF?",
-      new LLMService(),
+      new LLMService(llmServiceParams),
     );
 
     expect(result).toBe(
@@ -116,7 +124,7 @@ describe("CurrentWeatherAPITool", () => {
 
     const result = await tool.execute(
       "How's the weather in SF?",
-      new LLMService(),
+      new LLMService(llmServiceParams),
     );
 
     expect(consoleSpy).toHaveBeenCalledWith(
@@ -132,7 +140,7 @@ describe("CurrentWeatherAPITool", () => {
 
     const result = await tool.execute(
       "How's the weather in SF?",
-      new LLMService(),
+      new LLMService(llmServiceParams),
     );
 
     expect(result).toBe("Skipping weather currentweatherapitool fetch.");
@@ -183,7 +191,10 @@ describe("ForecastWeatherAPITool", () => {
     setupMockLLM(invalidLocation);
     const consoleSpy = vi.spyOn(console, "error");
 
-    const res = await tool.execute("How's the weather is LA", new LLMService());
+    const res = await tool.execute(
+      "How's the weather is LA",
+      new LLMService(llmServiceParams),
+    );
 
     expect(consoleSpy).toHaveBeenCalledWith(
       "Could not extract latitude and longitude from query.",
@@ -220,7 +231,7 @@ describe("ForecastWeatherAPITool", () => {
         latitude: 37.7749,
         longitude: -122.4194,
       },
-      new LLMService(),
+      new LLMService(llmServiceParams),
     );
 
     expect(result).toContain("Weather Forecast Data for 37.7749, -122.4194:");
@@ -248,7 +259,7 @@ describe("ForecastWeatherAPITool", () => {
         latitude: 37.7749,
         longitude: -122.4194,
       },
-      new LLMService(),
+      new LLMService(llmServiceParams),
     );
     expect(result).toBe("Skipping weather forecastweatherapitool fetch.");
     expect(consoleSpy).toHaveBeenCalledWith(
@@ -266,7 +277,7 @@ describe("ForecastWeatherAPITool", () => {
         latitude: 37.7749,
         longitude: -122.4194,
       },
-      new LLMService(),
+      new LLMService(llmServiceParams),
     );
 
     expect(result).toBe("Skipping weather forecastweatherapitool fetch.");
@@ -293,7 +304,7 @@ describe("Coordinates", () => {
   it("should extract coordinates from query", async () => {
     const coordinates = await Coordinates.extractFromQuery(
       "Current temperature in SF?",
-      new LLMService(),
+      new LLMService(llmServiceParams),
     );
     expect(coordinates).toEqual({ lat: 37.7749, lon: -122.4194 });
     expect(mockLLMInstance.fastllm.generate).toHaveBeenCalled();
@@ -302,7 +313,7 @@ describe("Coordinates", () => {
   it("should throw error for invalid location response", async () => {
     mockLLMInstance.fastllm.generate.mockResolvedValueOnce(invalidLocation);
     await expect(
-      Coordinates.extractFromQuery("Invalid location", new LLMService()),
+      Coordinates.extractFromQuery("Invalid location", new LLMService(llmServiceParams)),
     ).rejects.toThrow("Could not extract latitude and longitude from query.");
   });
 
@@ -311,7 +322,7 @@ describe("Coordinates", () => {
       new Error("LLM error"),
     );
     await expect(
-      Coordinates.extractFromQuery("Error case", new LLMService()),
+      Coordinates.extractFromQuery("Error case", new LLMService(llmServiceParams)),
     ).rejects.toThrow("LLM error");
   });
 });
