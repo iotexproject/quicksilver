@@ -31,7 +31,7 @@ export class DimoTool extends APITool<any> {
     super({
       name: "DIMO",
       description:
-        "Tool for interacting with DIMO network to get vehicle data and signals",
+        "Tool for interacting with personal vehicles data and signals, supports wide range of makes and models",
 
       output:
         "Vehicle list and signanls such as tire pressure, location, vehicle speed, angular velocity, wheel speed, altitude, battery voltage, fuel system, engine load, fuel pressure, engine temperature, fuel trim, powertrain range, traction battery, transmission, service distance",
@@ -63,6 +63,41 @@ export class DimoTool extends APITool<any> {
     The user can specify a single vehicle by token ID or a list of vehicles by token IDs.
     If the user doesn't specify a vehicle, respond with an empty list of token IDs.
     If it's possible to answer the user's query based on the provided input, respond with an empty list of token IDs.
+
+    <example>
+    <user_query>
+    how many vehicles do i have
+    </user_query>
+    <vehicles>
+    117315 - Lexus NX 2021
+    107505 - Tesla Model 3 2019
+    24316 - BMW 440i 2023
+    135 - Tesla Model 3 2023
+    17 - Hyundai Tucson 2022
+    3 - Cadillac ATS-V 2019
+    </vehicles>
+    <response>
+    {
+      "tokenIds": [],
+      "intermediateResponse": "You have 6 vehicles in total: a Lexus NX 2021, a Tesla Model 3 2019, a BMW 440i 2023, another Tesla Model 3 2023, a Hyundai Tucson 2022, and a Cadillac ATS-V 2019.",
+      "processingRequired": false
+    }
+    </response>
+    <user_query>
+    get me the speed of vehicle 107505
+    </user_query>
+    <vehicles>
+    ...
+    </vehicles>
+    <response>
+    {
+      "tokenIds": ["107505"],
+      "intermediateResponse": "Need to fetch the latest signals for vehicle 107505",
+      "processingRequired": true
+    }
+    </response>
+    </example>
+
     respond in the following format:
     <response>
     {
@@ -72,11 +107,11 @@ export class DimoTool extends APITool<any> {
     }
     </response>
     user query: ${input}
+
+    Put your response in the response tag.
     `;
 
     const response = await llmService.fastllm.generate(prompt);
-    console.log("response: ", response);
-
     const extractedResponse = extractContentFromTags(response, "response");
 
     if (!extractedResponse) {
@@ -98,7 +133,13 @@ export class DimoTool extends APITool<any> {
 
     if (tokenIds.length > 0) {
       const vehiclesSignals = await this.getVehiclesSignals(tokenIds);
-      return this.cleanData(vehiclesSignals, input, llmService);
+      const cleanedData = await this.cleanData(
+        vehiclesSignals,
+        input,
+        llmService,
+      );
+      console.log("cleanedData: ", cleanedData);
+      return cleanedData;
     } else {
       return intermediateResponse;
     }
