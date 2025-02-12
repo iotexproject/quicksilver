@@ -8,3 +8,4 @@ vi.stubEnv("CLIENT_ID", "0x7D066b353E4cA88C35D51f8c4b03f79b27037ab6");
 vi.stubEnv("REDIRECT_URI", "www.google.com");
 vi.stubEnv("API_KEY", "your_dimo_api_key");
 vi.stubEnv("PRIVILEGED_ADDRESS", "0x7D066b353E4cA88C35D51f8c4b03f79b27037ab6");
+vi.stubEnv("EIA_API_KEY", "your_eia_api_key");

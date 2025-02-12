@@ -5,6 +5,8 @@ import { LLMService } from "./services/llm-service";
 import { DePINScanMetricsTool, DePINScanProjectsTool } from "./tools/depinscan";
 import { L1DataTool } from "./tools/l1data";
 import DimoTool from "./tools/dimo";
+import { NuclearOutagesTool } from "./tools/gov";
+
 export class SentientAI {
   orchestrator: QueryOrchestrator;
 
@@ -21,6 +23,7 @@ export class SentientAI {
         new DePINScanProjectsTool(),
         new L1DataTool(),
         new DimoTool(),
+        new NuclearOutagesTool(),
       ],
       llmService: new LLMService({
         fastLLMProvider: process.env.FAST_LLM_PROVIDER,
