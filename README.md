@@ -124,6 +124,37 @@ bun run example/demo_agent.ts
     curl http://localhost:8000/ask -X POST -H "Content-Type: application/json" -d '{"q": "What is the weather in San Francisco?"}'
    ```
 
+7. Access raw tool data:
+
+   ```bash
+   # Get raw weather data for San Francisco
+   curl "http://localhost:8000/raw?tool=weather-current&lat=37.7749&lon=-122.4194"
+
+   # Get raw news data
+   curl "http://localhost:8000/raw?tool=news"
+
+   # Get raw DePIN metrics
+   curl "http://localhost:8000/raw?tool=depin-metrics&isLatest=true"
+   ```
+
+The `/raw` endpoint allows direct access to tool data without LLM processing. This is useful for:
+- Debugging tool responses
+- Building custom integrations
+- Reducing API costs by skipping LLM processing
+- Accessing structured data formats
+- Context providing for agents
+
+Available tools and their parameters:
+| Tool | Parameters | Description |
+|------|------------|-------------|
+| `weather-current` | `lat`, `lon` | Current weather data |
+| `weather-forecast` | `lat`, `lon` | Weather forecast |
+| `news` | none | Latest news headlines |
+| `depin-metrics` | `isLatest` | DePIN network metrics |
+| `depin-projects` | none | DePIN project data |
+| `l1data` | none | L1 blockchain statistics |
+| `nuclear` | `start`, `end` | Nuclear outage data |
+
 ---
 
 ## What's next?
