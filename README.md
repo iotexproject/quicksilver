@@ -128,14 +128,14 @@ bun run example/demo_agent.ts
 
 ## What's next?
 
-Quicksilver is just getting started, and there’s immense potential for growth. We’re inviting contributors to join us in building the future of AI agents and DePIN integration. Here are some areas where you can make a difference:
+Quicksilver is just getting started, and there's immense potential for growth. We're inviting contributors to join us in building the future of AI agents and DePIN integration. Here are some areas where you can make a difference:
 
 - **Integrate DePIN network**: Be part of Quicksilver’s core vision by researching and integrating a Decentralized Physical Infrastructure Network (DePIN). This is an opportunity to demonstrate how DePINs can act as the “sensorial” layer for AI agents.
 - **Implement advanced memory types**: Help Quicksilver remember more effectively! Experiment with innovative memory systems like conversation buffers or vector databases to enhance context retention and agent intelligence.
 - **Develop custom tools**: Bring your creativity to life by building tools for new functionalities, such as calendar access, task management, or data analysis. Your contributions can significantly expand the agent’s utility.
 - **Enhance workflow logic**: Improve the agent’s decision-making capabilities to make better use of the tools and resources available. Collaborate to create smarter, more adaptable workflows.
 
-Have an idea outside of this list? We’d love to hear it!
+Have an idea outside of this list? We'd love to hear it!
 
 ## Quicksilver works with Eliza
 
@@ -174,6 +174,166 @@ new SentientAI({
   llmProvider: "deepseek", // For main reasoning
 });
 ```
+
+## Managing Multiple Instances
+
+Quicksilver supports running multiple instances with different tool configurations. This is useful when you want to:
+- Run specialized instances for different use cases
+- Isolate tool sets for different environments
+- Manage resource usage by enabling only necessary tools
+- Test different tool combinations
+
+### Configuration Structure
+
+```bash
+configs/
+└── instances/           # Your instance-specific configurations (gitignored)
+    ├── weather.env      # Instance with only weather-related tools
+    ├── news.env         # Instance with news and analytics tools
+    └── full.env         # Instance with all tools enabled
+```
+
+### Creating a New Instance
+
+1. Copy the template configuration:
+   ```bash
+   cp .env.template configs/instances/myinstance.env
+   ```
+
+2. Edit the configuration file:
+   ```env
+   # configs/instances/myinstance.env
+   
+   # Enable only required tools
+   ENABLED_TOOLS=weather-current,weather-forecast,news
+   
+   # Configure instance-specific API keys
+   NUBILA_API_KEY=your_key
+   NEWSAPI_API_KEY=your_key
+   
+   # Other configuration...
+   PORT=8001
+   ```
+
+### Running Instances
+
+Using Docker Compose:
+
+```bash
+# Start a specific instance
+CONFIG_PATH=configs/instances/weather.env docker compose up instance1
+
+# Run multiple instances
+CONFIG_PATH=configs/instances/weather.env docker compose up instance1 & \
+CONFIG_PATH=configs/instances/news.env docker compose up instance2
+```
+
+Using environment files directly:
+
+```bash
+# Start with specific config
+bun run start --env-file configs/instances/weather.env
+
+# Or using environment variable
+CONFIG_PATH=configs/instances/weather.env bun run start
+```
+
+### Example Configurations
+
+1. Weather-focused Instance:
+```env
+# configs/instances/weather.env
+ENABLED_TOOLS=weather-current,weather-forecast
+NUBILA_API_KEY=your_key
+PORT=8001
+```
+
+2. News and Analytics Instance:
+```env
+# configs/instances/news.env
+ENABLED_TOOLS=news,depin-metrics,depin-projects
+NEWSAPI_API_KEY=your_key
+DEPIN_API_KEY=your_key
+PORT=8002
+```
+
+3. IoT Data Instance:
+```env
+# configs/instances/iot.env
+ENABLED_TOOLS=dimo,l1data
+CLIENT_ID=your_client_id
+REDIRECT_URI=your_uri
+API_KEY=your_key
+PORT=8003
+```
+
+### Docker Compose Example
+
+```yaml
+version: '3'
+
+services:
+  # Weather instance
+  weather:
+    image: qs:main
+    env_file: ${CONFIG_PATH:-configs/instances/weather.env}
+    ports:
+      - "8001:8000"
+    restart: always
+
+  # News instance
+  news:
+    image: qs:main
+    env_file: ${CONFIG_PATH:-configs/instances/news.env}
+    ports:
+      - "8002:8000"
+    restart: always
+
+  # IoT instance
+  iot:
+    image: qs:main
+    env_file: ${CONFIG_PATH:-configs/instances/iot.env}
+    ports:
+      - "8003:8000"
+    restart: always
+```
+
+### Available Tools
+
+The following tools can be enabled in your configuration:
+
+| Tool Name | Description | Required Environment Variables |
+|-----------|-------------|------------------------------|
+| `news` | News API integration | `NEWSAPI_API_KEY` |
+| `weather-current` | Current weather data | `NUBILA_API_KEY` |
+| `weather-forecast` | Weather forecasts | `NUBILA_API_KEY` |
+| `depin-metrics` | DePIN network metrics | `DEPIN_API_KEY` |
+| `depin-projects` | DePIN project data | `DEPIN_API_KEY` |
+| `l1data` | L1 blockchain data | - |
+| `dimo` | Vehicle IoT data | `CLIENT_ID`, `REDIRECT_URI`, `API_KEY` |
+| `nuclear` | Nuclear outage data | `EIA_API_KEY` |
+
+### Best Practices
+
+1. **Configuration Management**:
+   - Keep sensitive data out of version control
+   - Use descriptive names for config files
+   - Document required environment variables
+
+2. **Resource Optimization**:
+   - Enable only necessary tools per instance
+   - Monitor resource usage
+   - Use appropriate container resources
+
+3. **Deployment**:
+   - Use different ports for different instances
+   - Set up health checks
+   - Implement proper logging
+
+4. **Security**:
+   - Don't commit API keys
+   - Use separate API keys per instance
+   - Implement rate limiting
 
 ## Contributing
 
