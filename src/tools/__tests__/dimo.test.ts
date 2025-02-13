@@ -218,4 +218,34 @@ describe("DimoTool", () => {
       expect(query).toContain("powertrainRange {");
     });
   });
+
+  describe("getRawData", () => {
+    it("should fetch raw signals data for all accessible vehicles", async () => {
+      const expectedSignals = {
+        tokenId: "24316",
+        latestSignals: {
+          signalsLatest: {
+            powertrainCombustionEngineSpeed: {
+              value: 1168,
+              timestamp: "2025-01-17T16:44:29Z",
+            },
+            powertrainRange: {
+              value: 324.21,
+              timestamp: "2025-02-11T10:00:21.56234Z",
+            },
+            currentLocationLatitude: {
+              value: 42.5525551,
+              timestamp: "2025-02-11T10:00:21.56234Z",
+            },
+          },
+        },
+      };
+
+      const result = await dimoTool.getRawData();
+
+      expect(result).toEqual([expectedSignals]);
+      expect(dimoTool["dimo"].identity.query).toHaveBeenCalled();
+      expect(dimoTool["dimo"].telemetry.query).toHaveBeenCalled();
+    });
+  });
 });
