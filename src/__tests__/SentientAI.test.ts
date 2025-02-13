@@ -72,6 +72,7 @@ describe("SentientAI", () => {
   });
 
   it("should return a response", async () => {
+    process.env.ENABLED_TOOLS = "weather-current";
     const sentai = new SentientAI();
     const response = await sentai.execute("Current temperature in SF?");
     expect(response).toBe("+10 C");

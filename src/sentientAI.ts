@@ -1,11 +1,6 @@
 import { QueryOrchestrator } from "./workflow";
-import { NewsAPITool } from "./tools/newsapi";
-import { CurrentWeatherAPITool, ForecastWeatherAPITool } from "./tools/nubila";
 import { LLMService } from "./llm/llm-service";
-import { DePINScanMetricsTool, DePINScanProjectsTool } from "./tools/depinscan";
-import { L1DataTool } from "./tools/l1data";
-import DimoTool from "./tools/dimo";
-import { NuclearOutagesTool } from "./tools/gov";
+import { ToolRegistry } from "./tools/registry";
 
 export class SentientAI {
   orchestrator: QueryOrchestrator;
@@ -14,17 +9,12 @@ export class SentientAI {
     if (!process.env.FAST_LLM_MODEL || !process.env.LLM_MODEL) {
       throw new Error("FAST_LLM_MODEL and LLM_MODEL must be set");
     }
+
+    const enabledTools = ToolRegistry.getEnabledTools();
+    console.log("Enabled tools:", enabledTools.map((t) => t.name).join(", "));
+
     this.orchestrator = new QueryOrchestrator({
-      tools: [
-        new NewsAPITool(),
-        new CurrentWeatherAPITool(),
-        new ForecastWeatherAPITool(),
-        new DePINScanMetricsTool(),
-        new DePINScanProjectsTool(),
-        new L1DataTool(),
-        // new DimoTool(),
-        // new NuclearOutagesTool(),
-      ],
+      tools: enabledTools,
       llmService: new LLMService({
         fastLLMModel: process.env.FAST_LLM_MODEL,
         LLMModel: process.env.LLM_MODEL,
