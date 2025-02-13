@@ -55,54 +55,59 @@ export class L1DataTool extends APITool<void> {
 
   async execute(): Promise<string> {
     try {
-      const [
-        tvl,
-        contracts,
-        totalStaked,
-        nodes,
-        dapps,
-        crossChainTx,
-        v2ChainStats,
-      ] = await Promise.all([
-        this.fetchTvl(),
-        this.fetchContractsNumber(),
-        this.fetchTotalStaked(),
-        this.fetchNodesCount(),
-        this.fetchDappsCount(),
-        this.fetchCrossChainTx(),
-        this.fetchAnalyticsV2Stats(),
-      ]);
-
-      const [
-        totalSupply,
-        totalNumberOfHolders,
-        totalNumberOfXrc20,
-        totalNumberOfXrc721,
-        tps,
-      ] = this.processV2Stats(v2ChainStats);
-
-      const stakingRatio = this.calcStakingRatio(totalStaked, totalSupply);
-
-      const stats: L1Stats = {
-        tvl,
-        contracts,
-        totalStaked,
-        nodes,
-        dapps,
-        crossChainTx,
-        totalSupply,
-        totalNumberOfHolders,
-        totalNumberOfXrc20,
-        totalNumberOfXrc721,
-        stakingRatio,
-        tps,
-      };
-
+      const stats = await this.getRawData();
       return JSON.stringify(stats);
     } catch (error) {
       console.error("L1Data Error:", error);
       return `Error fetching L1 data: ${error}`;
     }
+  }
+
+  async getRawData(): Promise<L1Stats> {
+    const [
+      tvl,
+      contracts,
+      totalStaked,
+      nodes,
+      dapps,
+      crossChainTx,
+      v2ChainStats,
+    ] = await Promise.all([
+      this.fetchTvl(),
+      this.fetchContractsNumber(),
+      this.fetchTotalStaked(),
+      this.fetchNodesCount(),
+      this.fetchDappsCount(),
+      this.fetchCrossChainTx(),
+      this.fetchAnalyticsV2Stats(),
+    ]);
+
+    const [
+      totalSupply,
+      totalNumberOfHolders,
+      totalNumberOfXrc20,
+      totalNumberOfXrc721,
+      tps,
+    ] = this.processV2Stats(v2ChainStats);
+
+    const stakingRatio = this.calcStakingRatio(totalStaked, totalSupply);
+
+    const stats: L1Stats = {
+      tvl,
+      contracts,
+      totalStaked,
+      nodes,
+      dapps,
+      crossChainTx,
+      totalSupply,
+      totalNumberOfHolders,
+      totalNumberOfXrc20,
+      totalNumberOfXrc721,
+      stakingRatio,
+      tps,
+    };
+
+    return stats;
   }
 
   private async fetchTvl(): Promise<number> {
