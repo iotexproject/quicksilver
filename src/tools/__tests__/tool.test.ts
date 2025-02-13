@@ -16,6 +16,10 @@ class TestAPITool extends APITool<ToolInput> {
   async parseInput(input: string): Promise<ToolInput> {
     return { lat: 0, lon: 0 };
   }
+
+  async getRawData(params: ToolInput): Promise<string> {
+    return `Raw data for input: ${JSON.stringify(params)}`;
+  }
 }
 
 describe("APITool", () => {
@@ -64,5 +68,11 @@ describe("APITool", () => {
     const query = "What is the weather in SF?";
     const result = await tool.parseInput(query);
     expect(result).toEqual({ lat: 0, lon: 0 });
+  });
+
+  it("should return raw data for input", async () => {
+    const params = { lat: 37.7749, lon: -122.4194 };
+    const result = await tool.getRawData(params);
+    expect(result).toBe('Raw data for input: {"lat":37.7749,"lon":-122.4194}');
   });
 });

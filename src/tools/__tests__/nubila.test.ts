@@ -163,6 +163,32 @@ Wet Bulb: 20°C,
     expect(result).toBe("Skipping weather currentweatherapitool fetch.");
     expect(consoleSpy).toHaveBeenCalledWith("Network error");
   });
+
+  it("should handle missing optional weather data fields", async () => {
+    setupMockLLM(validLocation);
+    const mockWeatherData = {
+      data: {
+        condition: "Sunny",
+        temperature: 25,
+        humidity: 60,
+        pressure: 1013,
+        wind_speed: 5,
+        location_name: "San Francisco",
+        // Missing: feels_like, wind_direction, uv, luminance, elevation, rain, wet_bulb
+      },
+    };
+
+    mockWeatherAPIResponse(mockWeatherData);
+
+    const result = await tool.execute(
+      "How's the weather in SF?",
+      new LLMService(llmServiceParams),
+    );
+
+    expect(result).toContain("The current weather in San Francisco");
+    expect(result).toContain("Temperature: 25°C");
+    expect(result).not.toContain("Feels like");
+  });
 });
 
 describe("ForecastWeatherAPITool", () => {
@@ -372,6 +398,48 @@ describe("Coordinates", () => {
         new LLMService(llmServiceParams)
       )
     ).rejects.toThrow("LLM error");
+  });
+});
+
+describe("BaseWeatherAPITool", () => {
+  let tool: CurrentWeatherAPITool;
+  let mockFetch: any;
+
+  beforeEach(() => {
+    process.env.NUBILA_API_KEY = "test-api-key";
+    tool = new CurrentWeatherAPITool();
+    mockFetch = vi.fn();
+    global.fetch = mockFetch;
+  });
+
+  describe("getRawData", () => {
+    it("should make API request with correct parameters", async () => {
+      const coords = { lat: 37.7749, lon: -122.4194 };
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ data: {} }),
+      });
+
+      await tool.getRawData(coords);
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${tool.baseUrl}?lat=37.7749&lon=-122.4194`,
+        {
+          headers: { "x-api-key": "test-api-key" },
+          signal: expect.any(AbortSignal),
+        },
+      );
+    });
+
+    it("should handle malformed API response", async () => {
+      const coords = { lat: 37.7749, lon: -122.4194 };
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({}), // Missing data property
+      });
+
+      await expect(tool.getRawData(coords)).resolves.toBeUndefined();
+    });
   });
 });
 

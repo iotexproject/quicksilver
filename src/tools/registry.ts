@@ -59,4 +59,28 @@ export class ToolRegistry {
       })
       .filter((tool): tool is Tool => tool !== null);
   }
+
+  static getTool(name: string): Tool | undefined {
+    const tool = this.tools.get(name);
+    if (!tool) {
+      return undefined;
+    }
+    try {
+      return tool();
+    } catch (error) {
+      console.error(`Failed to initialize tool ${name}:`, error);
+      return undefined;
+    }
+  }
+
+  static isEnabled(name: string): boolean {
+    const enabledToolsEnv = process.env.ENABLED_TOOLS;
+    if (!enabledToolsEnv) {
+      return false;
+    }
+    return enabledToolsEnv
+      .split(",")
+      .map((t) => t.trim())
+      .includes(name);
+  }
 }

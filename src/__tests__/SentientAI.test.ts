@@ -38,6 +38,16 @@ describe("SentientAI", () => {
         execute: vi.fn().mockResolvedValue("+10 C"),
       })),
     }));
+    vi.mock("../raw-data-provider", () => ({
+      RawDataProvider: vi.fn().mockImplementation(() => ({
+        process: vi.fn().mockImplementation((tool, params) => {
+          if (tool.name === "CurrentWeatherAPITool") {
+            return Promise.resolve("+10 C");
+          }
+          return Promise.reject(new Error(`Unknown tool ${tool.name}`));
+        }),
+      })),
+    }));
   });
 
   afterEach(() => {
@@ -76,5 +86,31 @@ describe("SentientAI", () => {
     const sentai = new SentientAI();
     const response = await sentai.execute("Current temperature in SF?");
     expect(response).toBe("+10 C");
+  });
+
+  describe("getRawData", () => {
+    it("should return raw data for an enabled tool", async () => {
+      process.env.ENABLED_TOOLS = "weather-current";
+      const sentai = new SentientAI();
+      const params = { latitude: 37.7749, longitude: -122.4194 };
+      const result = await sentai.getRawData("weather-current", params);
+      expect(result).toBe("+10 C");
+    });
+
+    it("should throw when tool is not found", async () => {
+      process.env.ENABLED_TOOLS = "weather-current";
+      const sentai = new SentientAI();
+      await expect(sentai.getRawData("non-existent-tool", {})).rejects.toThrow(
+        "Tool 'non-existent-tool' not found",
+      );
+    });
+
+    it("should throw when tool is not enabled", async () => {
+      process.env.ENABLED_TOOLS = "weather-current";
+      const sentai = new SentientAI();
+      await expect(sentai.getRawData("weather-forecast", {})).rejects.toThrow(
+        "Tool 'weather-forecast' is not enabled",
+      );
+    });
   });
 });

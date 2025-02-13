@@ -35,7 +35,7 @@ abstract class BaseWeatherAPITool extends APITool<CoordinatesInput> {
   async execute(userInput: any, llmService: LLMService): Promise<string> {
     try {
       const parsedInput = await this.parseInput(userInput, llmService);
-      const weatherData = await this.fetchWeatherData(parsedInput);
+      const weatherData = await this.getRawData(parsedInput);
       return this.formatWeatherData(parsedInput, weatherData);
     } catch (error: any) {
       console.error("Error fetching weather data, skipping...");
@@ -51,7 +51,7 @@ abstract class BaseWeatherAPITool extends APITool<CoordinatesInput> {
     return Coordinates.extractFromQuery(userInput, llmService);
   }
 
-  protected async fetchWeatherData(coords: CoordinatesInput): Promise<any> {
+  public async getRawData(coords: CoordinatesInput): Promise<any> {
     const url = `${this.baseUrl}?lat=${coords.lat}&lon=${coords.lon}`;
     const apiKey = process.env.NUBILA_API_KEY as string;
     const response = await fetch(url, {

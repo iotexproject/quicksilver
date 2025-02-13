@@ -50,7 +50,7 @@ describe("ToolRegistry", () => {
       expect(ToolRegistry.getAvailableTools()).toContain("mock-a");
     });
   });
-  
+
   describe("getEnabledTools", () => {
     beforeEach(() => {
       ToolRegistry.register("mock-a", () => new MockToolA());
@@ -128,6 +128,58 @@ describe("ToolRegistry", () => {
       expect(enabled).toHaveLength(2);
       expect(enabled[0]).toBeInstanceOf(MockToolA);
       expect(enabled[1]).toBeInstanceOf(MockToolB);
+    });
+  });
+
+  describe("getTool", () => {
+    beforeEach(() => {
+      ToolRegistry.register("mock-a", () => new MockToolA());
+      ToolRegistry.register("failing", () => new FailingTool());
+    });
+
+    it("should return an instance of the requested tool", () => {
+      const tool = ToolRegistry.getTool("mock-a");
+      expect(tool).toBeInstanceOf(MockToolA);
+    });
+
+    it("should return undefined for unknown tool", () => {
+      const tool = ToolRegistry.getTool("unknown-tool");
+      expect(tool).toBeUndefined();
+    });
+
+    it("should return undefined when tool initialization fails", () => {
+      const tool = ToolRegistry.getTool("failing");
+      expect(tool).toBeUndefined();
+      expect(console.error).toHaveBeenCalledWith(
+        expect.stringContaining("Failed to initialize tool failing"),
+        expect.any(Error),
+      );
+    });
+  });
+
+  describe("isEnabled", () => {
+    beforeEach(() => {
+      ToolRegistry.register("mock-a", () => new MockToolA());
+    });
+
+    it("should return true for enabled tool", () => {
+      process.env.ENABLED_TOOLS = "mock-a,mock-b";
+      expect(ToolRegistry.isEnabled("mock-a")).toBe(true);
+    });
+
+    it("should return false for non-enabled tool", () => {
+      process.env.ENABLED_TOOLS = "mock-b";
+      expect(ToolRegistry.isEnabled("mock-a")).toBe(false);
+    });
+
+    it("should return false when ENABLED_TOOLS is not set", () => {
+      delete process.env.ENABLED_TOOLS;
+      expect(ToolRegistry.isEnabled("mock-a")).toBe(false);
+    });
+
+    it("should handle spaces in ENABLED_TOOLS", () => {
+      process.env.ENABLED_TOOLS = "mock-b, mock-a";
+      expect(ToolRegistry.isEnabled("mock-a")).toBe(true);
     });
   });
 });

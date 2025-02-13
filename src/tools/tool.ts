@@ -25,4 +25,6 @@ export abstract class APITool<T> implements Tool {
   abstract execute(input: string, llmService: LLMService): Promise<string>;
 
   abstract parseInput(input: string, llmService: LLMService): Promise<T>;
+
+  abstract getRawData(params: T): Promise<string>;
 }
