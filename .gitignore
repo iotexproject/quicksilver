@@ -24,6 +24,7 @@ yarn-error.log*
 .env
 configs/*.env
 !configs/template.env
+configs/.env.*
 
 # Temporary files
 *~
