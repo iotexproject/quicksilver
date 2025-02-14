@@ -117,6 +117,10 @@ export class NuclearOutagesTool extends APITool<DateRange> {
   }
 
   async getRawData(params: DateRange): Promise<NuclearOutageData[]> {
+    const { start, end } = params;
+    if (!start || !end) {
+      throw new Error("Start and end dates are required.");
+    }
     const url = new URL(this.baseUrl);
     const searchParams = new URLSearchParams({
       frequency: "daily",
