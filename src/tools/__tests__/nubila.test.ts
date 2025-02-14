@@ -399,6 +399,16 @@ describe("Coordinates", () => {
       )
     ).rejects.toThrow("LLM error");
   });
+
+  it("should throw error when extracted coordinates are undefined", async () => {
+    mockLLMInstance.fastllm.generate.mockResolvedValueOnce("");
+    await expect(
+      Coordinates.extractFromQuery(
+        "Current temperature in SF?",
+        new LLMService(llmServiceParams),
+      ),
+    ).rejects.toThrow("Could not extract latitude and longitude from query.");
+  });
 });
 
 describe("BaseWeatherAPITool", () => {
@@ -413,6 +423,20 @@ describe("BaseWeatherAPITool", () => {
   });
 
   describe("getRawData", () => {
+    it("should throw error when latitude or longitude is missing", async () => {
+      const invalidCoords = { lat: undefined, lon: -122.4194 };
+      // @ts-ignore: check the behavior in runtime
+      await expect(tool.getRawData(invalidCoords)).rejects.toThrow(
+        "Latitude and longitude are required.",
+      );
+
+      const invalidCoords2 = { lat: 37.7749, lon: undefined };
+      // @ts-ignore: check the behavior in runtime
+      await expect(tool.getRawData(invalidCoords2)).rejects.toThrow(
+        "Latitude and longitude are required.",
+      );
+    });
+
     it("should make API request with correct parameters", async () => {
       const coords = { lat: 37.7749, lon: -122.4194 };
       mockFetch.mockResolvedValueOnce({

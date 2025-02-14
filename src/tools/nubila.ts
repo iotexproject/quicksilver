@@ -52,7 +52,11 @@ abstract class BaseWeatherAPITool extends APITool<CoordinatesInput> {
   }
 
   public async getRawData(coords: CoordinatesInput): Promise<any> {
-    const url = `${this.baseUrl}?lat=${coords.lat}&lon=${coords.lon}`;
+    const { lat, lon } = coords;
+    if (!lat || !lon) {
+      throw new Error("Latitude and longitude are required.");
+    }
+    const url = `${this.baseUrl}?lat=${lat}&lon=${lon}`;
     const apiKey = process.env.NUBILA_API_KEY as string;
     const response = await fetch(url, {
       headers: {
