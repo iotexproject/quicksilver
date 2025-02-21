@@ -1,4 +1,3 @@
-
 # Quicksilver: Sentient AI Framework
 
 [![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -9,7 +8,7 @@
 
 **Quicksilver** is an open-source framework that bridges the capabilities of **Large Language Models (LLMs)** with **Decentralized Physical Infrastructure Networks (DePINs)** to create **advanced AI agents**.
 
->By leveraging DePINs as the "_sensorial component_", Quicksilver enables AI agents to interact with the physical world, gather real-time data, and respond contextually.
+> By leveraging DePINs as the "_sensorial component_", Quicksilver enables AI agents to interact with the physical world, gather real-time data, and respond contextually.
 
 <details>
   <summary>Read more</summary>
@@ -24,7 +23,7 @@ The QuickSilver framework empowers developers to build intelligent agents that:
 
 ---
 
-![Preview](./images/preview.gif)
+![Preview](./assets/preview.gif)
 
 ## Features
 
@@ -54,7 +53,7 @@ graph TD
 
 
     A <--> B
-    A --> C    
+    A --> C
     C --> E
     C --> D
     D --> F
@@ -73,9 +72,11 @@ graph TD
 5. **LLM Integration**: Interfaces with language models for intelligent responses.
 
 ---
+
 ## Getting Started
 
 ### Prerequisites
+
 - [Node.js](https://nodejs.org/) (v22)
 - [bun](https://bun.sh/)
 - Docker (optional, for containerized environments)
@@ -106,10 +107,10 @@ graph TD
 4. Run example agents:
 
 Some example agents are located in the `example` folder. Run an example with:
-  
-   ```bash
-   bun run example/demo_agent.ts
-   ```
+
+```bash
+bun run example/demo_agent.ts
+```
 
 5. Run the server:
 
@@ -120,22 +121,18 @@ Some example agents are located in the `example` folder. Run an example with:
 6. Test API query:
 
    ```bash
-    curl http://localhost:8000/ask -X POST -H "Content-Type: application/json" -d '{"q": "What is the weather in San Francisco?"}' 
+    curl http://localhost:8000/ask -X POST -H "Content-Type: application/json" -d '{"q": "What is the weather in San Francisco?"}'
    ```
 
 ---
-
 
 ## What's next?
 
 Quicksilver is just getting started, and there’s immense potential for growth. We’re inviting contributors to join us in building the future of AI agents and DePIN integration. Here are some areas where you can make a difference:
 
 - **Integrate DePIN network**: Be part of Quicksilver’s core vision by researching and integrating a Decentralized Physical Infrastructure Network (DePIN). This is an opportunity to demonstrate how DePINs can act as the “sensorial” layer for AI agents.
-  
 - **Implement advanced memory types**: Help Quicksilver remember more effectively! Experiment with innovative memory systems like conversation buffers or vector databases to enhance context retention and agent intelligence.
-  
 - **Develop custom tools**: Bring your creativity to life by building tools for new functionalities, such as calendar access, task management, or data analysis. Your contributions can significantly expand the agent’s utility.
-  
 - **Enhance workflow logic**: Improve the agent’s decision-making capabilities to make better use of the tools and resources available. Collaborate to create smarter, more adaptable workflows.
 
 Have an idea outside of this list? We’d love to hear it!
@@ -163,10 +160,8 @@ LLM_MODEL=deepseek-chat       # Model for primary reasoning
 
 - **OpenAI**: Use OpenAI's models by setting the provider to `openai`
   - Default model: `gpt-4o-mini`
-  
 - **Anthropic**: Use Claude models by setting the provider to `anthropic`
   - Default model: `claude-3-5-haiku-latest`
-  
 - **DeepSeek**: Use DeepSeek's models by setting the provider to `deepseek`
   - Default model: `deepseek-chat`
   - Note: DeepSeek uses OpenAI-compatible API endpoints
@@ -175,14 +170,15 @@ You can configure both the fast LLM and primary LLM providers in the SentientAI 
 
 ```typescript
 new SentientAI({
-  fastLLMProvider: "openai",    // For quick processing
-  llmProvider: "deepseek"       // For main reasoning
+  fastLLMProvider: "openai", // For quick processing
+  llmProvider: "deepseek", // For main reasoning
 });
 ```
 
 ## Contributing
 
 We welcome contributions! To contribute:
+
 1. Fork the repository.
 2. Create a new branch:
    ```bash

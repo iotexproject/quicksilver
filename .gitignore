@@ -10,6 +10,7 @@ node_modules/
 *.swp
 *.swo
 .metadata/ # Eclipse metadata
+.editorconfig
 
 # OS-specific files
 .DS_Store
@@ -33,5 +34,6 @@ build/
 out/
 bun.lockb
 *.db
+package-lock.json
 
 /coverage/
