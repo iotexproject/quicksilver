@@ -15,7 +15,7 @@ vi.mock("../../utils/stream_utils", () => ({
 const llmServiceParams = {
   fastLLMProvider: "test-fast-provider",
   llmProvider: "test-provider",
-}
+};
 
 describe("DePINTool", () => {
   let tool: DePINTool;
@@ -65,7 +65,10 @@ describe("DePINTool", () => {
         return Promise.resolve(undefined);
       });
 
-      const result = await tool.execute(mockInput, new LLMService(llmServiceParams));
+      const result = await tool.execute(
+        mockInput,
+        new LLMService(llmServiceParams),
+      );
 
       expect(result).toBe("There are 1000 dimo vehicles");
       expect(axios.post).toHaveBeenCalledWith(
@@ -121,7 +124,10 @@ describe("DePINTool", () => {
     it("should return query from LLM response", async () => {
       const input = "test input";
       setupMockLLM("<query>How many dimo vehicles?</query>");
-      const result = await tool.parseInput(input, new LLMService(llmServiceParams));
+      const result = await tool.parseInput(
+        input,
+        new LLMService(llmServiceParams),
+      );
       expect(result).toBe("How many dimo vehicles?");
     });
   });

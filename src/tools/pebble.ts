@@ -6,7 +6,7 @@ export class PebbleTool implements Tool {
   Gets the current temperature, gas resistance, pressure, humidity from Pebble API. 
   Input is the location address that user want to retrieve data.
     `;
-  
+
   geocodingAPI: string = "https://maps.googleapis.com/maps/api/geocode/json";
   googleAPIKey: string;
   pebbleAPI: string = "https://pebble-server.mainnet.iotex.io/v2/device_record";
@@ -31,16 +31,22 @@ export class PebbleTool implements Tool {
       return "Invalid input. Please provide a text for location address.";
     }
     try {
-      let response = await fetch(`${this.geocodingAPI}?address=${encodeURIComponent(userInput.location)}&key=${this.googleAPIKey}`, {
-        signal: AbortSignal.timeout(5000),
-      });
+      let response = await fetch(
+        `${this.geocodingAPI}?address=${encodeURIComponent(userInput.location)}&key=${this.googleAPIKey}`,
+        {
+          signal: AbortSignal.timeout(5000),
+        },
+      );
       const location = await response.json();
       if (location.status !== "OK") {
         return "coding address error. need check google service";
       }
-      response = await fetch(`${this.pebbleAPI}?lat=${location.results[0].geometry.location.lat}&lon=${location.results[0].geometry.location.lng}`, {
-        signal: AbortSignal.timeout(5000),
-      });
+      response = await fetch(
+        `${this.pebbleAPI}?lat=${location.results[0].geometry.location.lat}&lon=${location.results[0].geometry.location.lng}`,
+        {
+          signal: AbortSignal.timeout(5000),
+        },
+      );
       if (!response.ok) {
         const errorMessage = `Pebble API request failed with status: ${response.status} ${response.statusText}`;
         return `Pebble API Error: ${errorMessage}`;

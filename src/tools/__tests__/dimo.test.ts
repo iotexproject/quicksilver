@@ -62,15 +62,28 @@ describe("DimoTool", () => {
     vi.spyOn(dimoTool["dimo"].telemetry, "query")
       .mockResolvedValueOnce({
         data: {
-          availableSignals: ["powertrainCombustionEngineSpeed", "powertrainRange", "currentLocationLatitude"],
+          availableSignals: [
+            "powertrainCombustionEngineSpeed",
+            "powertrainRange",
+            "currentLocationLatitude",
+          ],
         },
       })
       .mockResolvedValueOnce({
         data: {
           signalsLatest: {
-            powertrainCombustionEngineSpeed: { value: 1168, timestamp: "2025-01-17T16:44:29Z" },
-            powertrainRange: { value: 324.21, timestamp: "2025-02-11T10:00:21.56234Z" },
-            currentLocationLatitude: { value: 42.5525551, timestamp: "2025-02-11T10:00:21.56234Z" },
+            powertrainCombustionEngineSpeed: {
+              value: 1168,
+              timestamp: "2025-01-17T16:44:29Z",
+            },
+            powertrainRange: {
+              value: 324.21,
+              timestamp: "2025-02-11T10:00:21.56234Z",
+            },
+            currentLocationLatitude: {
+              value: 42.5525551,
+              timestamp: "2025-02-11T10:00:21.56234Z",
+            },
           },
         },
       });
@@ -139,10 +152,14 @@ describe("DimoTool", () => {
         .mockResolvedValueOnce(
           '<response>{"tokenIds": ["24316"], "intermediateResponse": "", "processingRequired": true}</response>',
         )
-        .mockResolvedValueOnce("Vehicle 24316 engine speed is 1168rpm, range is 324.21 miles");
+        .mockResolvedValueOnce(
+          "Vehicle 24316 engine speed is 1168rpm, range is 324.21 miles",
+        );
 
       const result = await dimoTool.execute(input, mockLLMService);
-      expect(result).toBe("Vehicle 24316 engine speed is 1168rpm, range is 324.21 miles");
+      expect(result).toBe(
+        "Vehicle 24316 engine speed is 1168rpm, range is 324.21 miles",
+      );
       expect(dimoTool["dimo"].telemetry.query).toHaveBeenCalled();
     });
 
@@ -182,7 +199,7 @@ describe("DimoTool", () => {
           owner: "0x264BC41755BA9F5a00DCEC07F96cB14339dBD970",
           definition: {
             make: "BMW",
-            model: "440i", 
+            model: "440i",
             year: "2023",
           },
         },

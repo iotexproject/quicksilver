@@ -3,4 +3,3 @@ export interface Memory {
   saveContext(input: string, output: string): void;
   clear(): void;
 }
-
