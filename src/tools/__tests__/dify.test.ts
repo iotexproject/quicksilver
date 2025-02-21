@@ -5,7 +5,7 @@ import axios from "axios";
 
 import { DePINTool } from "../dify";
 import { handleStreamResponse } from "../../utils/stream_utils";
-import { LLMService } from "../../services/llm-service";
+import { LLMService } from "../../llm/llm-service";
 
 vi.mock("axios");
 vi.mock("../../utils/stream_utils", () => ({
@@ -13,8 +13,8 @@ vi.mock("../../utils/stream_utils", () => ({
 }));
 
 const llmServiceParams = {
-  fastLLMProvider: "test-fast-provider",
-  llmProvider: "test-provider",
+  fastLLMModel: "fast-test-model",
+  LLMModel: "test-model",
 };
 
 describe("DePINTool", () => {

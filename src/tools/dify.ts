@@ -3,7 +3,7 @@ import axios from "axios";
 import { APITool } from "./tool";
 import { handleStreamResponse } from "../utils/stream_utils";
 import { extractContentFromTags } from "../utils/parsers";
-import { LLMService } from "../services/llm-service";
+import { LLMService } from "../llm/llm-service";
 
 export class DePINTool extends APITool<any> {
   constructor() {

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterAll } from "vitest";
 
 import { LLMService } from "./llm-service";
-import { AnthropicLLM, OpenAILLM, DummyLLM } from "../llm";
+import { AnthropicLLM, OpenAILLM, DummyLLM } from "./llm";
 
 // Mock environment variables
 const originalEnv = process.env;

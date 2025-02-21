@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 
 import { QueryOrchestrator } from "../workflow";
 import { CurrentWeatherAPITool, ForecastWeatherAPITool } from "../tools/nubila";
-import { LLMService } from "../services/llm-service";
+import { LLMService } from "../llm/llm-service";
 import { APITool } from "../tools/tool";
 
 class TestAPITool extends APITool<any> {
@@ -57,8 +57,8 @@ describe("Workflow", () => {
       const workflow = new QueryOrchestrator({
         tools: [tool],
         llmService: new LLMService({
-          fastLLMProvider: "anthropic",
-          llmProvider: "anthropic",
+          fastLLMModel: "claude-3-5-haiku-latest",
+          LLMModel: "claude-3-5-haiku-latest",
         }),
       });
       const res = await workflow.process("Current temperature in SF?");
@@ -78,8 +78,8 @@ describe("Workflow", () => {
       const workflow = new QueryOrchestrator({
         tools: [new CurrentWeatherAPITool()],
         llmService: new LLMService({
-          fastLLMProvider: "deepseek",
-          llmProvider: "deepseek",
+          fastLLMModel: "deepseek-chat",
+          LLMModel: "deepseek-chat",
         }),
       });
       const res = await workflow.process(
@@ -93,8 +93,8 @@ describe("Workflow", () => {
       const workflow = new QueryOrchestrator({
         tools: [tool],
         llmService: new LLMService({
-          fastLLMProvider: "deepseek",
-          llmProvider: "deepseek",
+          fastLLMModel: "deepseek-chat",
+          LLMModel: "deepseek-chat",
         }),
       });
       const res = await workflow.selectTools("Current temperature in SF?");
@@ -117,8 +117,8 @@ describe("Workflow", () => {
       const workflow = new QueryOrchestrator({
         tools: [new CurrentWeatherAPITool(), new ForecastWeatherAPITool()],
         llmService: new LLMService({
-          fastLLMProvider: "deepseek",
-          llmProvider: "deepseek",
+          fastLLMModel: "deepseek-chat",
+          LLMModel: "deepseek-chat",
         }),
       });
       const res = await workflow.selectTools("Current temperature in SF?");

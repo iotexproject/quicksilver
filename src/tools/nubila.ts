@@ -1,4 +1,4 @@
-import { LLMService } from "../services/llm-service";
+import { LLMService } from "../llm/llm-service";
 import { APITool } from "./tool";
 import { extractContentFromTags } from "../utils/parsers";
 import { WeatherData, WeatherForecast } from "./types/nubila";

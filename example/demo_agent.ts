@@ -1,5 +1,5 @@
 import * as dotenv from "dotenv";
-import { SentientAI } from "../src/SentientAI"; // Import SentientAI
+import { SentientAI } from "../src/sentientAI"; // Import SentientAI
 
 dotenv.config();
 

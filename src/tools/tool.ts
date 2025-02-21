@@ -1,4 +1,4 @@
-import { LLMService } from "../services/llm-service";
+import { LLMService } from "../llm/llm-service";
 import { Tool } from "../types";
 
 export abstract class APITool<T> implements Tool {

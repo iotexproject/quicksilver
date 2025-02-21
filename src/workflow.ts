@@ -1,5 +1,5 @@
 import { finalResponseTemplate, toolSelectionTemplate } from "./templates";
-import { LLMService } from "./services/llm-service";
+import { LLMService } from "./llm/llm-service";
 import { Tool } from "./types";
 import { extractContentFromTags } from "./utils/parsers";
 

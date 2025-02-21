@@ -1,4 +1,4 @@
-import { LLMService } from "../services/llm-service";
+import { LLMService } from "../llm/llm-service";
 import { depinScanProjectsTemplate } from "./templates";
 import { APITool } from "./tool";
 

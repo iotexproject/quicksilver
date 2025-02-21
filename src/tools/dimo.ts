@@ -1,7 +1,7 @@
 const { DIMO } = require("@dimo-network/data-sdk");
 
 import { extractContentFromTags } from "../utils/parsers";
-import { LLMService } from "../services/llm-service";
+import { LLMService } from "../llm/llm-service";
 import { APITool } from "./tool";
 
 interface Vehicle {

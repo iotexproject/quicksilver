@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { DummyLLM } from "../llm";
+import { DummyLLM } from "../llm/llm";
 
 describe("LLM", () => {
   describe("DummyLLM", () => {
