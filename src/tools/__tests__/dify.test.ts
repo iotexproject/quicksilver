@@ -12,6 +12,11 @@ vi.mock("../../utils/stream_utils", () => ({
   handleStreamResponse: vi.fn(),
 }));
 
+const llmServiceParams = {
+  fastLLMProvider: "test-fast-provider",
+  llmProvider: "test-provider",
+}
+
 describe("DePINTool", () => {
   let tool: DePINTool;
   const mockApiKey = "test-api-key";
@@ -60,7 +65,7 @@ describe("DePINTool", () => {
         return Promise.resolve(undefined);
       });
 
-      const result = await tool.execute(mockInput, new LLMService());
+      const result = await tool.execute(mockInput, new LLMService(llmServiceParams));
 
       expect(result).toBe("There are 1000 dimo vehicles");
       expect(axios.post).toHaveBeenCalledWith(
@@ -88,7 +93,7 @@ describe("DePINTool", () => {
       const consoleSpy = vi.spyOn(console, "error");
 
       await expect(
-        tool.execute("test query", new LLMService()),
+        tool.execute("test query", new LLMService(llmServiceParams)),
       ).rejects.toThrow("API Error");
       expect(consoleSpy).toHaveBeenCalledWith(
         "DifyTool Streaming Error:",
@@ -103,7 +108,7 @@ describe("DePINTool", () => {
 
       const consoleSpy = vi.spyOn(console, "error");
       await expect(
-        tool.execute("test query", new LLMService()),
+        tool.execute("test query", new LLMService(llmServiceParams)),
       ).rejects.toThrow("Streaming Error");
       expect(consoleSpy).toHaveBeenCalledWith(
         "DifyTool Streaming Error:",
@@ -116,7 +121,7 @@ describe("DePINTool", () => {
     it("should return query from LLM response", async () => {
       const input = "test input";
       setupMockLLM("<query>How many dimo vehicles?</query>");
-      const result = await tool.parseInput(input, new LLMService());
+      const result = await tool.parseInput(input, new LLMService(llmServiceParams));
       expect(result).toBe("How many dimo vehicles?");
     });
   });

@@ -14,6 +14,7 @@
   "license": "ISC",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.36.2",
+    "@dimo-network/data-sdk": "^1.2.3",
     "axios": "^1.7.9",
     "chalk": "^4.1.2",
     "dotenv": "^16.4.7",
