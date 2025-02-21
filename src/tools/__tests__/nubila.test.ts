@@ -2,7 +2,7 @@ import { mockLLMService } from "../../__tests__/mocks";
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
-import { LLMService } from "../../services/llm-service";
+import { LLMService } from "../../llm/llm-service";
 import {
   CurrentWeatherAPITool,
   ForecastWeatherAPITool,
@@ -10,8 +10,8 @@ import {
 } from "../nubila";
 
 const llmServiceParams = {
-  fastLLMProvider: "test-fast-provider",
-  llmProvider: "test-provider",
+  fastLLMModel: "fast-test-model",
+  LLMModel: "test-model",
 };
 
 describe("CurrentWeatherAPITool", () => {

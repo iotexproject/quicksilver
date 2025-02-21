@@ -1,7 +1,7 @@
 import { QueryOrchestrator } from "./workflow";
 import { NewsAPITool } from "./tools/newsapi";
 import { CurrentWeatherAPITool, ForecastWeatherAPITool } from "./tools/nubila";
-import { LLMService } from "./services/llm-service";
+import { LLMService } from "./llm/llm-service";
 import { DePINScanMetricsTool, DePINScanProjectsTool } from "./tools/depinscan";
 import { L1DataTool } from "./tools/l1data";
 import DimoTool from "./tools/dimo";
@@ -11,8 +11,8 @@ export class SentientAI {
   orchestrator: QueryOrchestrator;
 
   constructor() {
-    if (!process.env.FAST_LLM_PROVIDER || !process.env.LLM_PROVIDER) {
-      throw new Error("FAST_LLM_PROVIDER and LLM_PROVIDER must be set");
+    if (!process.env.FAST_LLM_MODEL || !process.env.LLM_MODEL) {
+      throw new Error("FAST_LLM_MODEL and LLM_MODEL must be set");
     }
     this.orchestrator = new QueryOrchestrator({
       tools: [
@@ -22,12 +22,12 @@ export class SentientAI {
         new DePINScanMetricsTool(),
         new DePINScanProjectsTool(),
         new L1DataTool(),
-        new DimoTool(),
-        new NuclearOutagesTool(),
+        // new DimoTool(),
+        // new NuclearOutagesTool(),
       ],
       llmService: new LLMService({
-        fastLLMProvider: process.env.FAST_LLM_PROVIDER,
-        llmProvider: process.env.LLM_PROVIDER,
+        fastLLMModel: process.env.FAST_LLM_MODEL,
+        LLMModel: process.env.LLM_MODEL,
       }),
     });
   }

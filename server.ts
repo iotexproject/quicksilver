@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 
-import { SentientAI } from "./src/SentientAI";
+import { SentientAI } from "./src/sentientAI";
 
 const app = new Hono();
 

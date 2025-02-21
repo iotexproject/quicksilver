@@ -1,4 +1,4 @@
-import { LLMService } from "../services/llm-service";
+import { LLMService } from "../llm/llm-service";
 
 export interface PromptContext {
   tools: Tool[];

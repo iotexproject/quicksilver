@@ -1,6 +1,6 @@
 import { describe, vi, beforeEach, it, expect, Mock } from "vitest";
 import { DimoTool } from "../dimo";
-import { LLMService } from "../../services/llm-service";
+import { LLMService } from "../../llm/llm-service";
 
 // Mock environment variables
 const mockEnv = {

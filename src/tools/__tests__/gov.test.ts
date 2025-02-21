@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach, Mock } from "vitest";
 import { NuclearOutagesTool } from "../gov";
-import { LLMService } from "../../services/llm-service";
+import { LLMService } from "../../llm/llm-service";
 
 describe("NuclearOutagesTool", () => {
   let nuclearTool: NuclearOutagesTool;
