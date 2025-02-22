@@ -10,11 +10,12 @@ const currentWeatherOutput = `
 
 describe("SentientAI", () => {
   beforeEach(() => {
-    // Save original env vars
-    process.env.FAST_LLM_PROVIDER = "test-fast-provider";
-    process.env.LLM_PROVIDER = "test-provider";
+    process.env.FAST_LLM_MODEL = "test-fast-model";
+    process.env.LLM_MODEL = "test-model";
+    process.env.FAST_LLM_API_KEY = "test-key-1";
+    process.env.LLM_API_KEY = "test-key-2";
 
-    vi.mock("../services/llm-service", () => ({
+    vi.mock("../llm/llm-service", () => ({
       LLMService: vi.fn().mockImplementation(() => ({
         fastllm: {
           generate: vi.fn().mockResolvedValue(currentWeatherOutput),
@@ -43,30 +44,32 @@ describe("SentientAI", () => {
 
   afterEach(() => {
     // Clean up env vars
-    delete process.env.FAST_LLM_PROVIDER;
-    delete process.env.LLM_PROVIDER;
+    delete process.env.FAST_LLM_MODEL;
+    delete process.env.LLM_MODEL;
+    delete process.env.FAST_LLM_API_KEY;
+    delete process.env.LLM_API_KEY;
     vi.clearAllMocks();
   });
 
-  it("should throw if FAST_LLM_PROVIDER is not set", () => {
-    delete process.env.FAST_LLM_PROVIDER;
+  it("should throw if FAST_LLM_MODEL is not set", () => {
+    delete process.env.FAST_LLM_MODEL;
     expect(() => new SentientAI()).toThrow(
-      "FAST_LLM_PROVIDER and LLM_PROVIDER must be set",
+      "FAST_LLM_MODEL and LLM_MODEL must be set"
     );
   });
 
-  it("should throw if LLM_PROVIDER is not set", () => {
-    delete process.env.LLM_PROVIDER;
+  it("should throw if LLM_MODEL is not set", () => {
+    delete process.env.LLM_MODEL;
     expect(() => new SentientAI()).toThrow(
-      "FAST_LLM_PROVIDER and LLM_PROVIDER must be set",
+      "FAST_LLM_MODEL and LLM_MODEL must be set"
     );
   });
 
-  it("should throw if both providers are not set", () => {
-    delete process.env.FAST_LLM_PROVIDER;
-    delete process.env.LLM_PROVIDER;
+  it("should throw if both models are not set", () => {
+    delete process.env.FAST_LLM_MODEL;
+    delete process.env.LLM_MODEL;
     expect(() => new SentientAI()).toThrow(
-      "FAST_LLM_PROVIDER and LLM_PROVIDER must be set",
+      "FAST_LLM_MODEL and LLM_MODEL must be set"
     );
   });
 

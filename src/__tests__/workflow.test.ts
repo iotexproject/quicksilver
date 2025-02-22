@@ -44,7 +44,7 @@ describe("Workflow", () => {
       baseUrl,
       twitterAccount,
     });
-    vi.mock("../services/llm-service", () => mockLLMService);
+    vi.mock("../llm/llm-service", () => mockLLMService);
   });
 
   afterEach(() => {
@@ -83,7 +83,7 @@ describe("Workflow", () => {
         }),
       });
       const res = await workflow.process(
-        "Rephrase the following sentence'Current temperature in SF?'",
+        "Rephrase the following sentence'Current temperature in SF?'"
       );
       expect(res).toBe("What is the weather in SF?");
     });
