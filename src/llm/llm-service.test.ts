@@ -32,8 +32,7 @@ describe("LLMService", () => {
     });
 
     it("should initialize with OpenAI models", () => {
-      process.env.FAST_LLM_API_KEY = "test-key-1";
-      process.env.LLM_API_KEY = "test-key-2";
+      process.env.OPENAI_API_KEY = "test-key";
       const service = new LLMService({
         fastLLMModel: "gpt-4o",
         LLMModel: "gpt-4o-mini",
@@ -46,8 +45,7 @@ describe("LLMService", () => {
     });
 
     it("should initialize with Deepseek models", () => {
-      process.env.FAST_LLM_API_KEY = "test-key-1";
-      process.env.LLM_API_KEY = "test-key-2";
+      process.env.OPENAI_API_KEY = "test-key";
       const service = new LLMService({
         fastLLMModel: "deepseek-chat",
         LLMModel: "deepseek-reasoner",

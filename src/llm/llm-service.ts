@@ -14,30 +14,28 @@ export class LLMService {
   constructor(params: { fastLLMModel?: string; LLMModel?: string }) {
     this.fastllm = this.initLLM({
       model: params.fastLLMModel,
-      key: process.env.FAST_LLM_API_KEY,
     });
 
     this.llm = this.initLLM({
       model: params.LLMModel,
-      key: process.env.LLM_API_KEY,
     });
   }
 
-  providerMap: Record<string, (model?: string, key?: string) => LLM> = {
+  providerMap: Record<string, (model?: string) => LLM> = {
     anthropic: (model) =>
       new AnthropicLLM({
         model: model || "claude-3-5-haiku-latest",
       }),
-    deepseek: (model, key) =>
+    deepseek: (model) =>
       new OpenAILLM({
         model: model || "deepseek-chat",
-        apiKey: key || "",
+        apiKey: process.env.DEEPSEEK_API_KEY || "",
         baseURL: "https://api.deepseek.com",
       }),
-    openai: (model, key) =>
+    openai: (model) =>
       new OpenAILLM({
         model: model || "gpt-4o-mini",
-        apiKey: key || "",
+        apiKey: process.env.OPENAI_API_KEY || "",
       }),
   };
 
@@ -49,10 +47,10 @@ export class LLMService {
     return "";
   }
 
-  private initLLM(params: { model?: string; key?: string }): LLM {
+  private initLLM(params: { model?: string }): LLM {
     if (!params.model) return new DummyLLM();
     const provider = this.getProviderFromModel(params.model);
     const factory = this.providerMap[provider];
-    return factory?.(params.model, params.key) ?? new DummyLLM();
+    return factory?.(params.model) ?? new DummyLLM();
   }
 }

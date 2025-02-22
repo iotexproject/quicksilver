@@ -12,8 +12,6 @@ describe("SentientAI", () => {
   beforeEach(() => {
     process.env.FAST_LLM_MODEL = "test-fast-model";
     process.env.LLM_MODEL = "test-model";
-    process.env.FAST_LLM_API_KEY = "test-key-1";
-    process.env.LLM_API_KEY = "test-key-2";
 
     vi.mock("../llm/llm-service", () => ({
       LLMService: vi.fn().mockImplementation(() => ({
