@@ -42,14 +42,15 @@ export class LLMService {
   };
 
   private getProviderFromModel(model?: string): string {
-    if (!model) return "openai"; // default provider
+    if (!model) return ""; // default provider
     if (OPENAI_MODELS.has(model)) return "openai";
     if (DEEPSEEK_MODELS.has(model)) return "deepseek";
     if (ANTHROPIC_MODELS.has(model)) return "anthropic";
-    return "openai";
+    return "";
   }
 
   private initLLM(params: { model?: string; key?: string }): LLM {
+    if (!params.model) return new DummyLLM();
     const provider = this.getProviderFromModel(params.model);
     const factory = this.providerMap[provider];
     return factory?.(params.model, params.key) ?? new DummyLLM();

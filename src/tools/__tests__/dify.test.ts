@@ -36,13 +36,13 @@ describe("DePINTool", () => {
   beforeEach(() => {
     process.env.DEPIN_API_KEY = mockApiKey;
     tool = new DePINTool();
-    vi.mock("../../services/llm-service", () => mockLLMService);
+    vi.mock("../../llm/llm-service", () => mockLLMService);
   });
 
   it("should initialize with correct properties", () => {
     expect(tool.name).toBe("DePIN Tool");
     expect(tool.description).toContain(
-      "A tool for querying DePIN project token",
+      "A tool for querying DePIN project token"
     );
     expect(tool.baseUrl).toBe("https://dify.iotex.one/v1");
   });
@@ -50,7 +50,7 @@ describe("DePINTool", () => {
   it("should return error message when API key is not set", () => {
     delete process.env.DEPIN_API_KEY;
     expect(() => new DePINTool()).toThrow(
-      "Please set the DEPIN_API_KEY environment variable.",
+      "Please set the DEPIN_API_KEY environment variable."
     );
   });
 
@@ -67,7 +67,7 @@ describe("DePINTool", () => {
 
       const result = await tool.execute(
         mockInput,
-        new LLMService(llmServiceParams),
+        new LLMService(llmServiceParams)
       );
 
       expect(result).toBe("There are 1000 dimo vehicles");
@@ -86,7 +86,7 @@ describe("DePINTool", () => {
             "Content-Type": "application/json",
           },
           responseType: "stream",
-        },
+        }
       );
     });
 
@@ -96,11 +96,11 @@ describe("DePINTool", () => {
       const consoleSpy = vi.spyOn(console, "error");
 
       await expect(
-        tool.execute("test query", new LLMService(llmServiceParams)),
+        tool.execute("test query", new LLMService(llmServiceParams))
       ).rejects.toThrow("API Error");
       expect(consoleSpy).toHaveBeenCalledWith(
         "DifyTool Streaming Error:",
-        mockError.message,
+        mockError.message
       );
     });
 
@@ -111,11 +111,11 @@ describe("DePINTool", () => {
 
       const consoleSpy = vi.spyOn(console, "error");
       await expect(
-        tool.execute("test query", new LLMService(llmServiceParams)),
+        tool.execute("test query", new LLMService(llmServiceParams))
       ).rejects.toThrow("Streaming Error");
       expect(consoleSpy).toHaveBeenCalledWith(
         "DifyTool Streaming Error:",
-        mockError.message,
+        mockError.message
       );
     });
   });
@@ -126,7 +126,7 @@ describe("DePINTool", () => {
       setupMockLLM("<query>How many dimo vehicles?</query>");
       const result = await tool.parseInput(
         input,
-        new LLMService(llmServiceParams),
+        new LLMService(llmServiceParams)
       );
       expect(result).toBe("How many dimo vehicles?");
     });

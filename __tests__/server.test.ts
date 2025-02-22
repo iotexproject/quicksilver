@@ -6,7 +6,7 @@ describe("Server", () => {
   let testApp = app.fetch;
 
   beforeEach(() => {
-    vi.mock("../src/SentientAI", () => ({
+    vi.mock("../src/sentientAI", () => ({
       SentientAI: vi.fn().mockImplementation(() => ({
         async execute(_: string): Promise<string> {
           return "mocked response";

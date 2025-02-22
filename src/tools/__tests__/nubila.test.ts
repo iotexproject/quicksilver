@@ -46,13 +46,13 @@ describe("CurrentWeatherAPITool", () => {
     mockFetch = vi.fn();
     global.fetch = mockFetch;
 
-    vi.mock("../../services/llm-service", () => mockLLMService);
+    vi.mock("../../llm/llm-service", () => mockLLMService);
   });
 
   it("should initialize with correct properties", () => {
     expect(tool.name).toBe("CurrentWeatherAPITool");
     expect(tool.description).toContain(
-      "Gets the current weather from Nubila API",
+      "Gets the current weather from Nubila API"
     );
     expect(tool.twitterAccount).toBe("nubilanetwork");
   });
@@ -62,7 +62,7 @@ describe("CurrentWeatherAPITool", () => {
     const consoleSpy = vi.spyOn(console, "error");
     new CurrentWeatherAPITool();
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Please set the NUBILA_API_KEY environment variable.",
+      "Please set the NUBILA_API_KEY environment variable."
     );
   });
 
@@ -72,11 +72,11 @@ describe("CurrentWeatherAPITool", () => {
 
     const res = await tool.execute(
       "How's the weather is LA",
-      new LLMService(llmServiceParams),
+      new LLMService(llmServiceParams)
     );
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Could not extract latitude and longitude from query.",
+      "Could not extract latitude and longitude from query."
     );
     expect(res).toBe("Skipping weather currentweatherapitool fetch.");
   });
@@ -105,7 +105,7 @@ describe("CurrentWeatherAPITool", () => {
 
     const result = await tool.execute(
       "How's the weather in SF?",
-      new LLMService(llmServiceParams),
+      new LLMService(llmServiceParams)
     );
 
     expect(result).toBe(`
@@ -126,7 +126,7 @@ Wet Bulb: 20°C,
       expect.stringContaining("lat=37.7749&lon=-122.4194"),
       expect.objectContaining({
         headers: { "x-api-key": "test-api-key" },
-      }),
+      })
     );
   });
 
@@ -141,11 +141,11 @@ Wet Bulb: 20°C,
 
     const result = await tool.execute(
       "How's the weather in SF?",
-      new LLMService(llmServiceParams),
+      new LLMService(llmServiceParams)
     );
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Weather API Error: API request failed with status: 404 Not Found",
+      "Weather API Error: API request failed with status: 404 Not Found"
     );
     expect(result).toBe("Skipping weather currentweatherapitool fetch.");
   });
@@ -157,7 +157,7 @@ Wet Bulb: 20°C,
 
     const result = await tool.execute(
       "How's the weather in SF?",
-      new LLMService(llmServiceParams),
+      new LLMService(llmServiceParams)
     );
 
     expect(result).toBe("Skipping weather currentweatherapitool fetch.");
@@ -191,7 +191,7 @@ describe("ForecastWeatherAPITool", () => {
   it("should initialize with correct properties", () => {
     expect(tool.name).toBe("ForecastWeatherAPITool");
     expect(tool.description).toContain(
-      "Get weather forecast data from the Nubila API",
+      "Get weather forecast data from the Nubila API"
     );
   });
 
@@ -200,7 +200,7 @@ describe("ForecastWeatherAPITool", () => {
     const consoleSpy = vi.spyOn(console, "error");
     new ForecastWeatherAPITool();
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Please set the NUBILA_API_KEY environment variable.",
+      "Please set the NUBILA_API_KEY environment variable."
     );
   });
 
@@ -210,11 +210,11 @@ describe("ForecastWeatherAPITool", () => {
 
     const res = await tool.execute(
       "How's the weather is LA",
-      new LLMService(llmServiceParams),
+      new LLMService(llmServiceParams)
     );
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Could not extract latitude and longitude from query.",
+      "Could not extract latitude and longitude from query."
     );
     expect(res).toBe("Skipping weather forecastweatherapitool fetch.");
   });
@@ -264,26 +264,26 @@ describe("ForecastWeatherAPITool", () => {
         latitude: 37.7749,
         longitude: -122.4194,
       },
-      new LLMService(llmServiceParams),
+      new LLMService(llmServiceParams)
     );
 
     expect(result).toContain(
-      "Weather Forecast Data for San Francisco (37.7749, -122.4194):",
+      "Weather Forecast Data for San Francisco (37.7749, -122.4194):"
     );
     expect(result).toContain(
-      "temperature,condition,condition_desc,wind_speed,pressure,humidity,uv,luminance,rain,wet_bulb",
+      "temperature,condition,condition_desc,wind_speed,pressure,humidity,uv,luminance,rain,wet_bulb"
     );
     expect(result).toContain(
-      "25°C, Clear, Sunny, 5 m/s, 1013 hPa, 60%, 5, 50000, 0, 20°C",
+      "25°C, Clear, Sunny, 5 m/s, 1013 hPa, 60%, 5, 50000, 0, 20°C"
     );
     expect(result).toContain(
-      "23°C, Clouds, Cloudy, 6 m/s, 1015 hPa, 65%, 3, 30000, 0, 19°C",
+      "23°C, Clouds, Cloudy, 6 m/s, 1015 hPa, 65%, 3, 30000, 0, 19°C"
     );
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("lat=37.7749&lon=-122.4194"),
       expect.objectContaining({
         headers: { "x-api-key": "test-api-key" },
-      }),
+      })
     );
   });
 
@@ -301,11 +301,11 @@ describe("ForecastWeatherAPITool", () => {
         latitude: 37.7749,
         longitude: -122.4194,
       },
-      new LLMService(llmServiceParams),
+      new LLMService(llmServiceParams)
     );
     expect(result).toBe("Skipping weather forecastweatherapitool fetch.");
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Weather API Error: API request failed with status: 404 Not Found",
+      "Weather API Error: API request failed with status: 404 Not Found"
     );
   });
 
@@ -319,7 +319,7 @@ describe("ForecastWeatherAPITool", () => {
         latitude: 37.7749,
         longitude: -122.4194,
       },
-      new LLMService(llmServiceParams),
+      new LLMService(llmServiceParams)
     );
 
     expect(result).toBe("Skipping weather forecastweatherapitool fetch.");
@@ -331,7 +331,7 @@ describe("Coordinates", () => {
   let mockLLMInstance: any;
 
   beforeEach(() => {
-    vi.mock("../../../services/llm-service", () => mockLLMService);
+    vi.mock("../../../llm/llm-service", () => mockLLMService);
     mockLLMInstance = {
       fastllm: {
         generate: vi.fn().mockResolvedValue(validLocation),
@@ -346,7 +346,7 @@ describe("Coordinates", () => {
   it("should extract coordinates from query", async () => {
     const coordinates = await Coordinates.extractFromQuery(
       "Current temperature in SF?",
-      new LLMService(llmServiceParams),
+      new LLMService(llmServiceParams)
     );
     expect(coordinates).toEqual({ lat: 37.7749, lon: -122.4194 });
     expect(mockLLMInstance.fastllm.generate).toHaveBeenCalled();
@@ -357,20 +357,20 @@ describe("Coordinates", () => {
     await expect(
       Coordinates.extractFromQuery(
         "Invalid location",
-        new LLMService(llmServiceParams),
-      ),
+        new LLMService(llmServiceParams)
+      )
     ).rejects.toThrow("Could not extract latitude and longitude from query.");
   });
 
   it("should throw error when LLM fails", async () => {
     mockLLMInstance.fastllm.generate.mockRejectedValueOnce(
-      new Error("LLM error"),
+      new Error("LLM error")
     );
     await expect(
       Coordinates.extractFromQuery(
         "Error case",
-        new LLMService(llmServiceParams),
-      ),
+        new LLMService(llmServiceParams)
+      )
     ).rejects.toThrow("LLM error");
   });
 });
