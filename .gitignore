@@ -20,8 +20,11 @@ node_modules/
 npm-debug.log*
 yarn-error.log*
 
-# Environment files (sensitive data)
+# Environment files
 .env
+configs/*.env
+!configs/template.env
+configs/.env.*
 
 # Temporary files
 *~

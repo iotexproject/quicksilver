@@ -33,6 +33,34 @@ app.post("/ask", async (c) => {
   }
 });
 
+app.get("/raw", async (c) => {
+  const apiKey = c.req.header("API-KEY");
+  if (!apiKey) {
+    console.warn("no SENTAI API-KEY provided");
+  }
+
+  try {
+    const toolName = c.req.query("tool");
+    if (!toolName) {
+      return c.json({ error: "tool parameter is required" }, 400);
+    }
+
+    // Get all query parameters and pass them as params
+    const params: Record<string, any> = {};
+    for (const [key, value] of Object.entries(c.req.query())) {
+      if (key !== "tool") {
+        params[key] = value;
+      }
+    }
+
+    const rawData = await sentai.getRawData(toolName, params);
+    return c.json({ data: rawData });
+  } catch (e: any) {
+    console.error(e);
+    return c.json({ error: e.message || "Internal server error" }, 500);
+  }
+});
+
 export default {
   port: process.env.PORT || 8000,
   fetch: app.fetch,

@@ -1,8 +1,27 @@
 services:
-  app:
+  # Example of running multiple instances with different configurations
+  # To start a specific instance:
+  # CONFIG_PATH=configs/instance1.env docker compose up instance1
+  
+  # Instance with all tools enabled (for testing)
+  test:
     image: qs:main
+    env_file: configs/.env.test
     ports:
       - "8000:8000"
-    environment:
-      - PORT=8000
     restart: always
+
+  # Template for production instances (commented out)
+  latest:
+    image: qs:latest
+    env_file: configs/.env.latest
+    ports:
+      - "8000:8000"
+    restart: always
+  
+  # instance2:
+  #   image: qs:main
+  #   env_file: ${CONFIG_PATH}
+  #   ports:
+  #     - "8002:8000"
+  #   restart: always

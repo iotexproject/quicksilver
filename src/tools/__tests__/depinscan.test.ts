@@ -1,3 +1,5 @@
+import { mockLLMService } from "../../__tests__/mocks";
+
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   DePINScanMetricsTool,
@@ -5,13 +7,32 @@ import {
   DEPIN_METRICS_URL,
   DEPIN_PROJECTS_URL,
 } from "../depinscan";
+import { LLMService } from "../../services/llm-service";
+
+const llmServiceParams = {
+  fastLLMProvider: "test-fast-provider",
+  llmProvider: "test-provider",
+};
 
 describe("DePINMetricsTool", () => {
   let metricsTool: DePINScanMetricsTool;
 
+  const setupMockLLM = (secondResponse: string) => {
+    // @ts-ignore no need to mock private methods
+    vi.mocked(LLMService).mockImplementation(() => ({
+      fastllm: {
+        generate: vi
+          .fn()
+          .mockResolvedValueOnce('<response>{"isLatest": false}</response>')
+          .mockResolvedValueOnce(secondResponse),
+      },
+    }));
+  };
+
   beforeEach(() => {
     metricsTool = new DePINScanMetricsTool();
     vi.stubGlobal("fetch", vi.fn());
+    vi.mock("../../services/llm-service", () => mockLLMService);
   });
 
   it("should initialize with correct properties", () => {
@@ -38,6 +59,7 @@ describe("DePINMetricsTool", () => {
         total_projects: "310",
       },
     ];
+    setupMockLLM(JSON.stringify(mockMetrics));
 
     vi.mocked(fetch).mockImplementationOnce(() =>
       Promise.resolve({
@@ -45,7 +67,10 @@ describe("DePINMetricsTool", () => {
       } as Response),
     );
 
-    const result = await metricsTool.execute("");
+    const result = await metricsTool.execute(
+      "",
+      new LLMService(llmServiceParams),
+    );
 
     expect(result).toBe(JSON.stringify(mockMetrics));
   });
@@ -55,7 +80,10 @@ describe("DePINMetricsTool", () => {
     vi.mocked(fetch).mockRejectedValueOnce(error);
 
     const consoleSpy = vi.spyOn(console, "error");
-    const result = await metricsTool.execute("");
+    const result = await metricsTool.execute(
+      "",
+      new LLMService(llmServiceParams),
+    );
 
     expect(result).toBe("Error fetching DePIN metrics: Error: API Error");
     expect(consoleSpy).toHaveBeenCalledWith("DePINMetrics Error:", error);
@@ -68,9 +96,26 @@ describe("DePINMetricsTool", () => {
       } as Response),
     );
 
-    await metricsTool.execute("");
+    await metricsTool.execute("", new LLMService(llmServiceParams));
 
     expect(fetch).toHaveBeenCalledWith(DEPIN_METRICS_URL);
+  });
+
+  it("should handle invalid LLM response during parsing", async () => {
+    // Setup LLM to return an invalid response without tags
+    // @ts-ignore no need to mock private methods
+    vi.mocked(LLMService).mockImplementation(() => ({
+      fastllm: {
+        generate: vi.fn().mockResolvedValue("invalid response without tags"),
+      },
+    }));
+
+    const result = await metricsTool.execute(
+      "",
+      new LLMService(llmServiceParams),
+    );
+
+    expect(result).toMatch(/Error fetching DePIN metrics/);
   });
 });
 

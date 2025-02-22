@@ -108,7 +108,7 @@ export class NuclearOutagesTool extends APITool<DateRange> {
   async execute(input: string, llmService: LLMService): Promise<string> {
     try {
       const dateRange = await this.parseInput(input, llmService);
-      const data = await this.fetchOutageData(dateRange);
+      const data = await this.getRawData(dateRange);
       return this.formatResponse(data, dateRange, llmService);
     } catch (error: any) {
       console.error("Error fetching nuclear outage data:", error);
@@ -116,24 +116,26 @@ export class NuclearOutagesTool extends APITool<DateRange> {
     }
   }
 
-  private async fetchOutageData(
-    dateRange: DateRange,
-  ): Promise<NuclearOutageData[]> {
+  async getRawData(params: DateRange): Promise<NuclearOutageData[]> {
+    const { start, end } = params;
+    if (!start || !end) {
+      throw new Error("Start and end dates are required.");
+    }
     const url = new URL(this.baseUrl);
-    const params = new URLSearchParams({
+    const searchParams = new URLSearchParams({
       frequency: "daily",
       "data[0]": "outage",
       "data[1]": "capacity",
       "data[2]": "percentOutage",
-      start: dateRange.start,
-      end: dateRange.end,
+      start: params.start,
+      end: params.end,
       "sort[0][column]": "period",
       "sort[0][direction]": "desc",
       offset: "0",
       length: "5000",
     });
 
-    const response = await fetch(`${url}?${params}`, {
+    const response = await fetch(`${url}?${searchParams.toString()}`, {
       headers: {
         "X-Api-Key": process.env.EIA_API_KEY!,
       },

@@ -145,6 +145,13 @@ export class DimoTool extends APITool<any> {
     }
   }
 
+  async getRawData(): Promise<LatestSignals[]> {
+    const vehiclesIcanAccess = await this.getListOfConnectedVehicles();
+    return this.getVehiclesSignals(
+      vehiclesIcanAccess.map((vehicle) => vehicle.tokenId),
+    );
+  }
+
   private formatAccessibleVehicles(vehicles: Vehicle[]): string {
     return vehicles
       .map(
