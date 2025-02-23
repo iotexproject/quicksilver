@@ -6,6 +6,7 @@ import axios from "axios";
 import { DePINTool } from "../dify";
 import { handleStreamResponse } from "../../utils/stream_utils";
 import { LLMService } from "../../llm/llm-service";
+import { logger } from "../../logger/winston";
 
 vi.mock("axios");
 vi.mock("../../utils/stream_utils", () => ({
@@ -42,7 +43,7 @@ describe("DePINTool", () => {
   it("should initialize with correct properties", () => {
     expect(tool.name).toBe("DePIN Tool");
     expect(tool.description).toContain(
-      "A tool for querying DePIN project token"
+      "A tool for querying DePIN project token",
     );
     expect(tool.baseUrl).toBe("https://dify.iotex.one/v1");
   });
@@ -50,7 +51,7 @@ describe("DePINTool", () => {
   it("should return error message when API key is not set", () => {
     delete process.env.DEPIN_API_KEY;
     expect(() => new DePINTool()).toThrow(
-      "Please set the DEPIN_API_KEY environment variable."
+      "Please set the DEPIN_API_KEY environment variable.",
     );
   });
 
@@ -67,7 +68,7 @@ describe("DePINTool", () => {
 
       const result = await tool.execute(
         mockInput,
-        new LLMService(llmServiceParams)
+        new LLMService(llmServiceParams),
       );
 
       expect(result).toBe("There are 1000 dimo vehicles");
@@ -86,21 +87,21 @@ describe("DePINTool", () => {
             "Content-Type": "application/json",
           },
           responseType: "stream",
-        }
+        },
       );
     });
 
     it("should handle API error", async () => {
       const mockError = new Error("API Error");
       vi.mocked(axios.post).mockRejectedValueOnce(mockError);
-      const consoleSpy = vi.spyOn(console, "error");
+      const consoleSpy = vi.spyOn(logger, "error");
 
       await expect(
-        tool.execute("test query", new LLMService(llmServiceParams))
+        tool.execute("test query", new LLMService(llmServiceParams)),
       ).rejects.toThrow("API Error");
       expect(consoleSpy).toHaveBeenCalledWith(
         "DifyTool Streaming Error:",
-        mockError.message
+        mockError.message,
       );
     });
 
@@ -109,13 +110,13 @@ describe("DePINTool", () => {
       vi.mocked(axios.post).mockResolvedValueOnce({ data: "stream" });
       vi.mocked(handleStreamResponse).mockRejectedValueOnce(mockError);
 
-      const consoleSpy = vi.spyOn(console, "error");
+      const consoleSpy = vi.spyOn(logger, "error");
       await expect(
-        tool.execute("test query", new LLMService(llmServiceParams))
+        tool.execute("test query", new LLMService(llmServiceParams)),
       ).rejects.toThrow("Streaming Error");
       expect(consoleSpy).toHaveBeenCalledWith(
         "DifyTool Streaming Error:",
-        mockError.message
+        mockError.message,
       );
     });
   });
@@ -126,7 +127,7 @@ describe("DePINTool", () => {
       setupMockLLM("<query>How many dimo vehicles?</query>");
       const result = await tool.parseInput(
         input,
-        new LLMService(llmServiceParams)
+        new LLMService(llmServiceParams),
       );
       expect(result).toBe("How many dimo vehicles?");
     });

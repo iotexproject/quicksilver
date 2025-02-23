@@ -24,10 +24,10 @@ describe("LLMService", () => {
       expect(service.fastllm).toBeInstanceOf(AnthropicLLM);
       expect(service.llm).toBeInstanceOf(AnthropicLLM);
       expect((service.fastllm as AnthropicLLM).model).toBe(
-        "claude-3-5-haiku-latest"
+        "claude-3-5-haiku-latest",
       );
       expect((service.llm as AnthropicLLM).model).toBe(
-        "claude-3-5-sonnet-latest"
+        "claude-3-5-sonnet-latest",
       );
     });
 
@@ -67,7 +67,7 @@ describe("LLMService", () => {
       expect(service.fastllm).toBeInstanceOf(AnthropicLLM);
       expect(service.llm).toBeInstanceOf(OpenAILLM);
       expect((service.fastllm as AnthropicLLM).model).toBe(
-        "claude-3-5-haiku-latest"
+        "claude-3-5-haiku-latest",
       );
       expect((service.llm as OpenAILLM).model).toBe("gpt-4o");
     });

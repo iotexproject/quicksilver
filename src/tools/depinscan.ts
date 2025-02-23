@@ -2,6 +2,7 @@ import { extractContentFromTags } from "../utils/parsers";
 import { LLMService } from "../llm/llm-service";
 import { depinScanProjectsTemplate } from "./templates";
 import { APITool } from "./tool";
+import { logger } from "../logger/winston";
 
 export const DEPIN_METRICS_URL = "https://gateway1.iotex.io/depinscan/explorer";
 export const DEPIN_PROJECTS_URL = "https://metrics-api.w3bstream.com/project";
@@ -54,14 +55,14 @@ export class DePINScanMetricsTool extends APITool<DepinScanMetricsParams> {
       const response = await llmService.fastllm.generate(metrics);
       return response;
     } catch (error) {
-      console.error("DePINMetrics Error:", error);
+      logger.error("DePINMetrics Error:", error);
       return `Error fetching DePIN metrics: ${error}`;
     }
   }
 
   async parseInput(
     input: string,
-    llmService: LLMService
+    llmService: LLMService,
   ): Promise<DepinScanMetricsParams> {
     const prompt = `
     You are a helpful assistant that parses the user's query and returns the parameters for the DePINScanMetricsTool.
@@ -96,7 +97,7 @@ export class DePINScanMetricsTool extends APITool<DepinScanMetricsParams> {
 
   async getRawData(params: DepinScanMetricsParams): Promise<string> {
     const res = await fetch(
-      DEPIN_METRICS_URL + `${params.isLatest ? "?is_latest=true" : ""}`
+      DEPIN_METRICS_URL + `${params.isLatest ? "?is_latest=true" : ""}`,
     );
     const metricsArray: DepinScanMetrics[] = await res.json();
     return JSON.stringify(metricsArray);
@@ -126,7 +127,7 @@ export class DePINScanProjectsTool extends APITool<void> {
       const response = await llmService.fastllm.generate(prompt);
       return response;
     } catch (error) {
-      console.error("DePINProjects Error:", error);
+      logger.error("DePINProjects Error:", error);
       return `Error fetching DePIN projects: ${error}`;
     }
   }

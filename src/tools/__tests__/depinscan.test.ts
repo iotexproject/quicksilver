@@ -7,11 +7,12 @@ import {
   DEPIN_METRICS_URL,
   DEPIN_PROJECTS_URL,
 } from "../depinscan";
-import { LLMService } from "../../services/llm-service";
+import { LLMService } from "../../llm/llm-service";
+import { logger } from "../../logger/winston";
 
 const llmServiceParams = {
-  fastLLMProvider: "test-fast-provider",
-  llmProvider: "test-provider",
+  fastLLMModel: "test-fast-provider",
+  llmModel: "test-provider",
 };
 
 describe("DePINMetricsTool", () => {
@@ -32,7 +33,7 @@ describe("DePINMetricsTool", () => {
   beforeEach(() => {
     metricsTool = new DePINScanMetricsTool();
     vi.stubGlobal("fetch", vi.fn());
-    vi.mock("../../services/llm-service", () => mockLLMService);
+    vi.mock("../../llm/llm-service", () => mockLLMService);
   });
 
   it("should initialize with correct properties", () => {
@@ -79,7 +80,7 @@ describe("DePINMetricsTool", () => {
     const error = new Error("API Error");
     vi.mocked(fetch).mockRejectedValueOnce(error);
 
-    const consoleSpy = vi.spyOn(console, "error");
+    const consoleSpy = vi.spyOn(logger, "error");
     const result = await metricsTool.execute(
       "",
       new LLMService(llmServiceParams),
@@ -192,7 +193,7 @@ describe("DePINProjectsTool", () => {
     const error = new Error("API Error");
     vi.mocked(fetch).mockRejectedValueOnce(error);
 
-    const consoleSpy = vi.spyOn(console, "error");
+    const consoleSpy = vi.spyOn(logger, "error");
     const result = await projectsTool.execute("query", mockLLMService as any);
 
     expect(result).toBe("Error fetching DePIN projects: Error: API Error");

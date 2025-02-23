@@ -5,6 +5,7 @@ import { DePINScanMetricsTool, DePINScanProjectsTool } from "./depinscan";
 import { L1DataTool } from "./l1data";
 import DimoTool from "./dimo";
 import { NuclearOutagesTool } from "./gov";
+import { logger } from "../logger/winston";
 
 export class ToolRegistry {
   private static tools = new Map<string, () => Tool>();
@@ -33,7 +34,7 @@ export class ToolRegistry {
     const enabledToolsEnv = process.env.ENABLED_TOOLS;
 
     if (!enabledToolsEnv) {
-      console.warn(
+      logger.warn(
         "No tools enabled. Please set ENABLED_TOOLS environment variable.",
       );
       return [];
@@ -43,7 +44,7 @@ export class ToolRegistry {
 
     const invalidTools = enabledTools.filter((tool) => !this.tools.has(tool));
     if (invalidTools.length > 0) {
-      console.warn(
+      logger.warn(
         `Warning: Unknown tools configured: ${invalidTools.join(", ")}`,
       );
     }
@@ -53,7 +54,7 @@ export class ToolRegistry {
         try {
           return this.tools.get(tool)!();
         } catch (error) {
-          console.error(`Failed to initialize tool ${tool}:`, error);
+          logger.error(`Failed to initialize tool ${tool}:`, error);
           return null;
         }
       })
@@ -68,7 +69,7 @@ export class ToolRegistry {
     try {
       return tool();
     } catch (error) {
-      console.error(`Failed to initialize tool ${name}:`, error);
+      logger.error(`Failed to initialize tool ${name}:`, error);
       return undefined;
     }
   }

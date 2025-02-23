@@ -13,7 +13,7 @@ export class PebbleTool implements Tool {
 
   constructor() {
     if (!process.env.GOOGLE_APIKEY) {
-      console.error("Please set the GOOGLE_APIKEY environment variable.");
+      logger.error("Please set the GOOGLE_APIKEY environment variable.");
       return;
     }
     this.googleAPIKey = process.env.GOOGLE_APIKEY;
@@ -55,7 +55,7 @@ export class PebbleTool implements Tool {
       const data = await response.json();
       return `The current temperature in ${userInput} is ${data.temperature} with humidity ${data.humidity}, pressure ${data.pressure}, gas resistance ${data.gasResistance}`;
     } catch (e) {
-      console.error("Error fetch pebble data:", e);
+      logger.error("Error fetch pebble data:", e);
       return "Could fetch pebble data.";
     }
   }

@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 
 import { SentientAI } from "./src/sentientAI";
+import { logger } from "./src/logger/winston";
 
 const app = new Hono();
 
@@ -13,7 +14,7 @@ app.get("/", (c) => {
 app.post("/ask", async (c) => {
   const apiKey = c.req.header("API-KEY");
   if (!apiKey) {
-    console.warn("no SENTAI API-KEY provided");
+    logger.warn("no SENTAI API-KEY provided");
   }
   try {
     let content = c.req.query("q") || c.req.query("content");
@@ -28,7 +29,7 @@ app.post("/ask", async (c) => {
     const response = await sentai.execute(content);
     return c.json({ data: response });
   } catch (e) {
-    console.error(e);
+    logger.error(e);
     return c.json({ error: "Internal server error." }, 400);
   }
 });
@@ -36,7 +37,7 @@ app.post("/ask", async (c) => {
 app.get("/raw", async (c) => {
   const apiKey = c.req.header("API-KEY");
   if (!apiKey) {
-    console.warn("no SENTAI API-KEY provided");
+    logger.warn("no SENTAI API-KEY provided");
   }
 
   try {
@@ -56,7 +57,7 @@ app.get("/raw", async (c) => {
     const rawData = await sentai.getRawData(toolName, params);
     return c.json({ data: rawData });
   } catch (e: any) {
-    console.error(e);
+    logger.error(e);
     return c.json({ error: e.message || "Internal server error" }, 500);
   }
 });

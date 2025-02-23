@@ -1,3 +1,4 @@
+import { logger } from "./logger/winston";
 import { finalResponseTemplate, toolSelectionTemplate } from "./templates";
 import { LLMService } from "./llm/llm-service";
 import { Tool } from "./types";
@@ -46,7 +47,7 @@ export class QueryOrchestrator {
     const llmResponse =
       await this.llmService.fastllm.generate(toolSelectionPrompt);
 
-    console.log("llmResponse", llmResponse);
+    logger.info("llmResponse", llmResponse);
 
     const toolNames = extractContentFromTags(llmResponse, "response");
     if (!toolNames) {

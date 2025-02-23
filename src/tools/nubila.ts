@@ -3,6 +3,7 @@ import { APITool } from "./tool";
 import { extractContentFromTags } from "../utils/parsers";
 import { WeatherData, WeatherForecast } from "./types/nubila";
 import { coordinatesTemplate } from "./templates";
+import { logger } from "../logger/winston";
 
 interface CoordinatesInput {
   lat: number;
@@ -27,7 +28,7 @@ abstract class BaseWeatherAPITool extends APITool<CoordinatesInput> {
     });
 
     if (!process.env.NUBILA_API_KEY) {
-      console.error("Please set the NUBILA_API_KEY environment variable.");
+      logger.error("Please set the NUBILA_API_KEY environment variable.");
       return;
     }
   }
@@ -38,8 +39,8 @@ abstract class BaseWeatherAPITool extends APITool<CoordinatesInput> {
       const weatherData = await this.getRawData(parsedInput);
       return this.formatWeatherData(parsedInput, weatherData);
     } catch (error: any) {
-      console.error("Error fetching weather data, skipping...");
-      console.error(error.message);
+      logger.error("Error fetching weather data, skipping...");
+      logger.error(error.message);
       return `Skipping weather ${this.name.toLowerCase()} fetch.`;
     }
   }

@@ -1,5 +1,6 @@
 import { APITool } from "./tool";
 import { formatEther } from "ethers";
+import { logger } from "../logger/winston";
 
 const ANALYTICS_API = "https://gateway1.iotex.me/analyzer";
 const GQL_ANALYTICS = "https://analyser-api.iotex.io/graphql";
@@ -58,7 +59,7 @@ export class L1DataTool extends APITool<void> {
       const stats = await this.getRawData();
       return JSON.stringify(stats);
     } catch (error) {
-      console.error("L1Data Error:", error);
+      logger.error("L1Data Error:", error);
       return `Error fetching L1 data: ${error}`;
     }
   }
@@ -113,21 +114,21 @@ export class L1DataTool extends APITool<void> {
   private async fetchTvl(): Promise<number> {
     const res = await this.sendRestRequest("tvl");
     const tvl = await res.text();
-    console.log("tvl", tvl);
+    logger.info("tvl", tvl);
     return parseInt(tvl);
   }
 
   private async fetchContractsNumber(): Promise<number> {
     const res = await this.sendRestRequest("contractCount");
     const contracts = await res.text();
-    console.log("contractCount", contracts);
+    logger.info("contractCount", contracts);
     return parseInt(contracts);
   }
 
   private async fetchTotalStaked(): Promise<number> {
     const res = await this.sendRestRequest("totalStakedIotx");
     const totalStaked = await res.text();
-    console.log("totalStakedIotx", totalStaked);
+    logger.info("totalStakedIotx", totalStaked);
     // @ts-ignore string has replaceAll method
     const withoutQuotes = totalStaked.replaceAll('"', "");
     const value = formatEther(withoutQuotes);
@@ -137,21 +138,21 @@ export class L1DataTool extends APITool<void> {
   private async fetchNodesCount(): Promise<number> {
     const res = await this.sendRestRequest("nodesCount");
     const nodes = await res.text();
-    console.log("nodesCount", nodes);
+    logger.info("nodesCount", nodes);
     return parseInt(nodes);
   }
 
   private async fetchDappsCount(): Promise<number> {
     const res = await this.sendRestRequest("dappsCount");
     const dapps = await res.text();
-    console.log("dappsCount", dapps);
+    logger.info("dappsCount", dapps);
     return parseInt(dapps);
   }
 
   private async fetchCrossChainTx(): Promise<number> {
     const res = await this.sendRestRequest("totalCrossChainTxCount");
     const crossChainTx = await res.text();
-    console.log("totalCrossChainTxCount", crossChainTx);
+    logger.info("totalCrossChainTxCount", crossChainTx);
     return parseInt(crossChainTx);
   }
 
