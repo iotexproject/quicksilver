@@ -1,3 +1,5 @@
+import { logger } from "../logger/winston";
+
 export async function handleStreamResponse(
   response: any,
   onData: (data: string) => void,
@@ -17,7 +19,7 @@ export async function handleStreamResponse(
             onData(data.answer);
           }
         } catch (e) {
-          console.warn("Failed to parse streaming data:", e);
+          logger.warn("Failed to parse streaming data:", e);
         }
       }
     }

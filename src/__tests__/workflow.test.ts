@@ -62,7 +62,6 @@ describe("Workflow", () => {
         }),
       });
       const res = await workflow.process("Current temperature in SF?");
-      console.log("result is: ", res);
       expect(res).toBe("+10 C");
     });
     it("should process user input without tools if no tools are selected", async () => {
@@ -83,7 +82,7 @@ describe("Workflow", () => {
         }),
       });
       const res = await workflow.process(
-        "Rephrase the following sentence'Current temperature in SF?'"
+        "Rephrase the following sentence'Current temperature in SF?'",
       );
       expect(res).toBe("What is the weather in SF?");
     });

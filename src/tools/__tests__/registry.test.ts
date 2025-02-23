@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { ToolRegistry } from "../registry";
 import { Tool } from "../../types";
+import { logger } from "../../logger/winston";
 
 // Mock tools for testing
 class MockToolA implements Tool {
@@ -34,8 +35,8 @@ describe("ToolRegistry", () => {
     // Reset environment before each test
     process.env = { ...originalEnv };
     // Clear console warnings/errors for clean test output
-    vi.spyOn(console, "warn").mockImplementation(() => {});
-    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(logger, "warn").mockImplementation(() => logger);
+    vi.spyOn(logger, "error").mockImplementation(() => logger);
   });
 
   afterEach(() => {
@@ -81,7 +82,7 @@ describe("ToolRegistry", () => {
       const enabled = ToolRegistry.getEnabledTools();
 
       expect(enabled).toHaveLength(0);
-      expect(console.warn).toHaveBeenCalledWith(
+      expect(logger.warn).toHaveBeenCalledWith(
         expect.stringContaining("No tools enabled"),
       );
     });
@@ -93,7 +94,7 @@ describe("ToolRegistry", () => {
       expect(enabled).toHaveLength(2);
       expect(enabled[0]).toBeInstanceOf(MockToolA);
       expect(enabled[1]).toBeInstanceOf(MockToolB);
-      expect(console.warn).toHaveBeenCalledWith(
+      expect(logger.warn).toHaveBeenCalledWith(
         expect.stringContaining("Unknown tools configured: unknown-tool"),
       );
     });
@@ -105,7 +106,7 @@ describe("ToolRegistry", () => {
       expect(enabled).toHaveLength(2);
       expect(enabled[0]).toBeInstanceOf(MockToolA);
       expect(enabled[1]).toBeInstanceOf(MockToolB);
-      expect(console.error).toHaveBeenCalledWith(
+      expect(logger.error).toHaveBeenCalledWith(
         expect.stringContaining("Failed to initialize tool failing"),
         expect.any(Error),
       );
@@ -116,7 +117,7 @@ describe("ToolRegistry", () => {
       const enabled = ToolRegistry.getEnabledTools();
 
       expect(enabled).toHaveLength(0);
-      expect(console.warn).toHaveBeenCalledWith(
+      expect(logger.warn).toHaveBeenCalledWith(
         expect.stringContaining("No tools enabled"),
       );
     });
@@ -150,7 +151,7 @@ describe("ToolRegistry", () => {
     it("should return undefined when tool initialization fails", () => {
       const tool = ToolRegistry.getTool("failing");
       expect(tool).toBeUndefined();
-      expect(console.error).toHaveBeenCalledWith(
+      expect(logger.error).toHaveBeenCalledWith(
         expect.stringContaining("Failed to initialize tool failing"),
         expect.any(Error),
       );

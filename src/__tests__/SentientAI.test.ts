@@ -62,14 +62,14 @@ describe("SentientAI", () => {
   it("should throw if FAST_LLM_MODEL is not set", () => {
     delete process.env.FAST_LLM_MODEL;
     expect(() => new SentientAI()).toThrow(
-      "FAST_LLM_MODEL and LLM_MODEL must be set"
+      "FAST_LLM_MODEL and LLM_MODEL must be set",
     );
   });
 
   it("should throw if LLM_MODEL is not set", () => {
     delete process.env.LLM_MODEL;
     expect(() => new SentientAI()).toThrow(
-      "FAST_LLM_MODEL and LLM_MODEL must be set"
+      "FAST_LLM_MODEL and LLM_MODEL must be set",
     );
   });
 
@@ -77,7 +77,7 @@ describe("SentientAI", () => {
     delete process.env.FAST_LLM_MODEL;
     delete process.env.LLM_MODEL;
     expect(() => new SentientAI()).toThrow(
-      "FAST_LLM_MODEL and LLM_MODEL must be set"
+      "FAST_LLM_MODEL and LLM_MODEL must be set",
     );
   });
 

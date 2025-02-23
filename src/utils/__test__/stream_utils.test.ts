@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { handleStreamResponse } from "../stream_utils";
+import { logger } from "../../logger/winston";
 
 describe("handleStreamResponse", () => {
   it("should handle empty stream", async () => {
@@ -77,7 +78,9 @@ describe("handleStreamResponse", () => {
   });
 
   it("should handle invalid JSON gracefully", async () => {
-    const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const consoleSpy = vi
+      .spyOn(logger, "warn")
+      .mockImplementation(() => logger);
     const mockResponse = {
       data: [Buffer.from('data: {"invalid json\n')],
     };

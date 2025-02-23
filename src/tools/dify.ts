@@ -1,4 +1,5 @@
 import axios from "axios";
+import { logger } from "../logger/winston";
 
 import { APITool } from "./tool";
 import { handleStreamResponse } from "../utils/stream_utils";
@@ -39,8 +40,8 @@ export class DePINTool extends APITool<any> {
       const apiKey = process.env.DEPIN_API_KEY!;
       return callDify(this.baseUrl, apiKey, parsedInput);
     } catch (e: any) {
-      console.error("Error fetching dify data, skipping...");
-      console.error(e.message);
+      logger.error("Error fetching dify data, skipping...");
+      logger.error(e.message);
       return `Skipping weather ${this.name.toLowerCase()} fetch.`;
     }
   }
@@ -114,7 +115,7 @@ export async function streamResponse(
     await handleStreamResponse(response, onData);
     onComplete?.();
   } catch (error: any) {
-    console.error(
+    logger.error(
       "DifyTool Streaming Error:",
       error.response?.data || error.message,
     );

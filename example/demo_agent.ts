@@ -1,3 +1,4 @@
+import { logger } from "../src/logger/winston";
 import * as dotenv from "dotenv";
 import { SentientAI } from "../src/sentientAI"; // Import SentientAI
 
@@ -23,14 +24,14 @@ async function main() {
           return;
         }
 
-        console.log(`User Input: ${input}`);
+        logger.info(`User Input: ${input}`);
         try {
-          const response = await sentientAI.agent.execute(input);
-          console.log(`Binoai Response:\n${response}`);
+          const response = await sentientAI.execute(input);
+          logger.info(`Binoai Response:\n${response}`);
         } catch (error) {
-          console.error("Binoai Error:", error);
+          logger.error("Binoai Error:", error);
         }
-        console.log("----");
+        logger.info("----");
 
         // Ask for next input
         askQuestion();

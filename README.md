@@ -138,6 +138,7 @@ bun run example/demo_agent.ts
    ```
 
 The `/raw` endpoint allows direct access to tool data without LLM processing. This is useful for:
+
 - Debugging tool responses
 - Building custom integrations
 - Reducing API costs by skipping LLM processing
@@ -209,6 +210,7 @@ new SentientAI({
 ## Managing Multiple Instances
 
 Quicksilver supports running multiple instances with different tool configurations. This is useful when you want to:
+
 - Run specialized instances for different use cases
 - Isolate tool sets for different environments
 - Manage resource usage by enabling only necessary tools
@@ -227,21 +229,23 @@ configs/
 ### Creating a New Instance
 
 1. Copy the template configuration:
+
    ```bash
    cp .env.template configs/instances/myinstance.env
    ```
 
 2. Edit the configuration file:
+
    ```env
    # configs/instances/myinstance.env
-   
+
    # Enable only required tools
    ENABLED_TOOLS=weather-current,weather-forecast,news
-   
+
    # Configure instance-specific API keys
    NUBILA_API_KEY=your_key
    NEWSAPI_API_KEY=your_key
-   
+
    # Other configuration...
    PORT=8001
    ```
@@ -272,6 +276,7 @@ CONFIG_PATH=configs/instances/weather.env bun run start
 ### Example Configurations
 
 1. Weather-focused Instance:
+
 ```env
 # configs/instances/weather.env
 ENABLED_TOOLS=weather-current,weather-forecast
@@ -280,6 +285,7 @@ PORT=8001
 ```
 
 2. News and Analytics Instance:
+
 ```env
 # configs/instances/news.env
 ENABLED_TOOLS=news,depin-metrics,depin-projects
@@ -289,6 +295,7 @@ PORT=8002
 ```
 
 3. IoT Data Instance:
+
 ```env
 # configs/instances/iot.env
 ENABLED_TOOLS=dimo,l1data
@@ -301,7 +308,7 @@ PORT=8003
 ### Docker Compose Example
 
 ```yaml
-version: '3'
+version: "3"
 
 services:
   # Weather instance
@@ -333,30 +340,33 @@ services:
 
 The following tools can be enabled in your configuration:
 
-| Tool Name | Description | Required Environment Variables |
-|-----------|-------------|------------------------------|
-| `news` | News API integration | `NEWSAPI_API_KEY` |
-| `weather-current` | Current weather data | `NUBILA_API_KEY` |
-| `weather-forecast` | Weather forecasts | `NUBILA_API_KEY` |
-| `depin-metrics` | DePIN network metrics | `DEPIN_API_KEY` |
-| `depin-projects` | DePIN project data | `DEPIN_API_KEY` |
-| `l1data` | L1 blockchain data | - |
-| `dimo` | Vehicle IoT data | `CLIENT_ID`, `REDIRECT_URI`, `API_KEY` |
-| `nuclear` | Nuclear outage data | `EIA_API_KEY` |
+| Tool Name          | Description           | Required Environment Variables         |
+| ------------------ | --------------------- | -------------------------------------- |
+| `news`             | News API integration  | `NEWSAPI_API_KEY`                      |
+| `weather-current`  | Current weather data  | `NUBILA_API_KEY`                       |
+| `weather-forecast` | Weather forecasts     | `NUBILA_API_KEY`                       |
+| `depin-metrics`    | DePIN network metrics | `DEPIN_API_KEY`                        |
+| `depin-projects`   | DePIN project data    | `DEPIN_API_KEY`                        |
+| `l1data`           | L1 blockchain data    | -                                      |
+| `dimo`             | Vehicle IoT data      | `CLIENT_ID`, `REDIRECT_URI`, `API_KEY` |
+| `nuclear`          | Nuclear outage data   | `EIA_API_KEY`                          |
 
 ### Best Practices
 
 1. **Configuration Management**:
+
    - Keep sensitive data out of version control
    - Use descriptive names for config files
    - Document required environment variables
 
 2. **Resource Optimization**:
+
    - Enable only necessary tools per instance
    - Monitor resource usage
    - Use appropriate container resources
 
 3. **Deployment**:
+
    - Use different ports for different instances
    - Set up health checks
    - Implement proper logging

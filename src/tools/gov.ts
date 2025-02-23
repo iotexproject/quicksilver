@@ -1,6 +1,7 @@
 import { LLMService } from "../llm/llm-service";
 import { APITool } from "./tool";
 import { extractContentFromTags } from "../utils/parsers";
+import { logger } from "../logger/winston";
 
 interface DateRange {
   start: string; // YYYY-MM-DD format
@@ -111,7 +112,7 @@ export class NuclearOutagesTool extends APITool<DateRange> {
       const data = await this.getRawData(dateRange);
       return this.formatResponse(data, dateRange, llmService);
     } catch (error: any) {
-      console.error("Error fetching nuclear outage data:", error);
+      logger.error("Error fetching nuclear outage data:", error);
       return `Error fetching nuclear outage data: ${error.message}`;
     }
   }

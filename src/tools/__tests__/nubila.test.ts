@@ -1,6 +1,7 @@
 import { mockLLMService } from "../../__tests__/mocks";
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import { logger } from "../../logger/winston";
 
 import { LLMService } from "../../llm/llm-service";
 import {
@@ -52,31 +53,31 @@ describe("CurrentWeatherAPITool", () => {
   it("should initialize with correct properties", () => {
     expect(tool.name).toBe("CurrentWeatherAPITool");
     expect(tool.description).toContain(
-      "Gets the current weather from Nubila API"
+      "Gets the current weather from Nubila API",
     );
     expect(tool.twitterAccount).toBe("nubilanetwork");
   });
 
   it("should return error message when API key is not set", () => {
     delete process.env.NUBILA_API_KEY;
-    const consoleSpy = vi.spyOn(console, "error");
+    const consoleSpy = vi.spyOn(logger, "error");
     new CurrentWeatherAPITool();
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Please set the NUBILA_API_KEY environment variable."
+      "Please set the NUBILA_API_KEY environment variable.",
     );
   });
 
   it("should return error for invalid input", async () => {
     setupMockLLM(invalidLocation);
-    const consoleSpy = vi.spyOn(console, "error");
+    const consoleSpy = vi.spyOn(logger, "error");
 
     const res = await tool.execute(
       "How's the weather is LA",
-      new LLMService(llmServiceParams)
+      new LLMService(llmServiceParams),
     );
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Could not extract latitude and longitude from query."
+      "Could not extract latitude and longitude from query.",
     );
     expect(res).toBe("Skipping weather currentweatherapitool fetch.");
   });
@@ -105,7 +106,7 @@ describe("CurrentWeatherAPITool", () => {
 
     const result = await tool.execute(
       "How's the weather in SF?",
-      new LLMService(llmServiceParams)
+      new LLMService(llmServiceParams),
     );
 
     expect(result).toBe(`
@@ -126,7 +127,7 @@ Wet Bulb: 20°C,
       expect.stringContaining("lat=37.7749&lon=-122.4194"),
       expect.objectContaining({
         headers: { "x-api-key": "test-api-key" },
-      })
+      }),
     );
   });
 
@@ -137,15 +138,15 @@ Wet Bulb: 20°C,
       status: 404,
       statusText: "Not Found",
     });
-    const consoleSpy = vi.spyOn(console, "error");
+    const consoleSpy = vi.spyOn(logger, "error");
 
     const result = await tool.execute(
       "How's the weather in SF?",
-      new LLMService(llmServiceParams)
+      new LLMService(llmServiceParams),
     );
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Weather API Error: API request failed with status: 404 Not Found"
+      "Weather API Error: API request failed with status: 404 Not Found",
     );
     expect(result).toBe("Skipping weather currentweatherapitool fetch.");
   });
@@ -153,11 +154,11 @@ Wet Bulb: 20°C,
   it("should handle network errors", async () => {
     setupMockLLM(validLocation);
     mockFetch.mockRejectedValueOnce(new Error("Network error"));
-    const consoleSpy = vi.spyOn(console, "error");
+    const consoleSpy = vi.spyOn(logger, "error");
 
     const result = await tool.execute(
       "How's the weather in SF?",
-      new LLMService(llmServiceParams)
+      new LLMService(llmServiceParams),
     );
 
     expect(result).toBe("Skipping weather currentweatherapitool fetch.");
@@ -217,30 +218,30 @@ describe("ForecastWeatherAPITool", () => {
   it("should initialize with correct properties", () => {
     expect(tool.name).toBe("ForecastWeatherAPITool");
     expect(tool.description).toContain(
-      "Get weather forecast data from the Nubila API"
+      "Get weather forecast data from the Nubila API",
     );
   });
 
   it("should return error message when API key is not set", () => {
     delete process.env.NUBILA_API_KEY;
-    const consoleSpy = vi.spyOn(console, "error");
+    const consoleSpy = vi.spyOn(logger, "error");
     new ForecastWeatherAPITool();
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Please set the NUBILA_API_KEY environment variable."
+      "Please set the NUBILA_API_KEY environment variable.",
     );
   });
 
   it("should return error for invalid input", async () => {
     setupMockLLM(invalidLocation);
-    const consoleSpy = vi.spyOn(console, "error");
+    const consoleSpy = vi.spyOn(logger, "error");
 
     const res = await tool.execute(
       "How's the weather is LA",
-      new LLMService(llmServiceParams)
+      new LLMService(llmServiceParams),
     );
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Could not extract latitude and longitude from query."
+      "Could not extract latitude and longitude from query.",
     );
     expect(res).toBe("Skipping weather forecastweatherapitool fetch.");
   });
@@ -290,26 +291,26 @@ describe("ForecastWeatherAPITool", () => {
         latitude: 37.7749,
         longitude: -122.4194,
       },
-      new LLMService(llmServiceParams)
+      new LLMService(llmServiceParams),
     );
 
     expect(result).toContain(
-      "Weather Forecast Data for San Francisco (37.7749, -122.4194):"
+      "Weather Forecast Data for San Francisco (37.7749, -122.4194):",
     );
     expect(result).toContain(
-      "temperature,condition,condition_desc,wind_speed,pressure,humidity,uv,luminance,rain,wet_bulb"
+      "temperature,condition,condition_desc,wind_speed,pressure,humidity,uv,luminance,rain,wet_bulb",
     );
     expect(result).toContain(
-      "25°C, Clear, Sunny, 5 m/s, 1013 hPa, 60%, 5, 50000, 0, 20°C"
+      "25°C, Clear, Sunny, 5 m/s, 1013 hPa, 60%, 5, 50000, 0, 20°C",
     );
     expect(result).toContain(
-      "23°C, Clouds, Cloudy, 6 m/s, 1015 hPa, 65%, 3, 30000, 0, 19°C"
+      "23°C, Clouds, Cloudy, 6 m/s, 1015 hPa, 65%, 3, 30000, 0, 19°C",
     );
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("lat=37.7749&lon=-122.4194"),
       expect.objectContaining({
         headers: { "x-api-key": "test-api-key" },
-      })
+      }),
     );
   });
 
@@ -320,32 +321,32 @@ describe("ForecastWeatherAPITool", () => {
       status: 404,
       statusText: "Not Found",
     });
-    const consoleSpy = vi.spyOn(console, "error");
+    const consoleSpy = vi.spyOn(logger, "error");
 
     const result = await tool.execute(
       {
         latitude: 37.7749,
         longitude: -122.4194,
       },
-      new LLMService(llmServiceParams)
+      new LLMService(llmServiceParams),
     );
     expect(result).toBe("Skipping weather forecastweatherapitool fetch.");
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Weather API Error: API request failed with status: 404 Not Found"
+      "Weather API Error: API request failed with status: 404 Not Found",
     );
   });
 
   it("should handle network errors", async () => {
     setupMockLLM(validLocation);
     mockFetch.mockRejectedValueOnce(new Error("Network error"));
-    const consoleSpy = vi.spyOn(console, "error");
+    const consoleSpy = vi.spyOn(logger, "error");
 
     const result = await tool.execute(
       {
         latitude: 37.7749,
         longitude: -122.4194,
       },
-      new LLMService(llmServiceParams)
+      new LLMService(llmServiceParams),
     );
 
     expect(result).toBe("Skipping weather forecastweatherapitool fetch.");
@@ -372,7 +373,7 @@ describe("Coordinates", () => {
   it("should extract coordinates from query", async () => {
     const coordinates = await Coordinates.extractFromQuery(
       "Current temperature in SF?",
-      new LLMService(llmServiceParams)
+      new LLMService(llmServiceParams),
     );
     expect(coordinates).toEqual({ lat: 37.7749, lon: -122.4194 });
     expect(mockLLMInstance.fastllm.generate).toHaveBeenCalled();
@@ -383,20 +384,20 @@ describe("Coordinates", () => {
     await expect(
       Coordinates.extractFromQuery(
         "Invalid location",
-        new LLMService(llmServiceParams)
-      )
+        new LLMService(llmServiceParams),
+      ),
     ).rejects.toThrow("Could not extract latitude and longitude from query.");
   });
 
   it("should throw error when LLM fails", async () => {
     mockLLMInstance.fastllm.generate.mockRejectedValueOnce(
-      new Error("LLM error")
+      new Error("LLM error"),
     );
     await expect(
       Coordinates.extractFromQuery(
         "Error case",
-        new LLMService(llmServiceParams)
-      )
+        new LLMService(llmServiceParams),
+      ),
     ).rejects.toThrow("LLM error");
   });
 

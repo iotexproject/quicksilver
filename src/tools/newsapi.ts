@@ -1,4 +1,5 @@
 import axios from "axios";
+import { logger } from "../logger/winston";
 
 import { APITool } from "./tool";
 
@@ -38,7 +39,7 @@ export class NewsAPITool extends APITool<any> {
         return `Error fetching headlines: ${response.status}`; // Return error as string
       }
     } catch (error) {
-      console.error("NewsAPI Error", error);
+      logger.error("NewsAPI Error", error);
       return `Error fetching headlines: ${error}`; // More robust error handling
     }
   }

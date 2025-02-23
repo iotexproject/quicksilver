@@ -3,6 +3,7 @@ import { LLMService } from "./llm/llm-service";
 import { ToolRegistry } from "./tools/registry";
 import { Tool } from "./types";
 import { RawDataProvider } from "./raw-data-provider";
+import { logger } from "./logger/winston";
 
 export class SentientAI {
   orchestrator: QueryOrchestrator;
@@ -15,7 +16,7 @@ export class SentientAI {
     }
 
     this.tools = ToolRegistry.getEnabledTools();
-    console.log("Enabled tools:", this.tools.map((t) => t.name).join(", "));
+    logger.info("Enabled tools:", this.tools.map((t) => t.name).join(", "));
 
     this.orchestrator = new QueryOrchestrator({
       tools: this.tools,

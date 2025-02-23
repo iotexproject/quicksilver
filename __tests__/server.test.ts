@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 import app from "../server";
+import { logger } from "../src/logger/winston";
 
 describe("Server", () => {
   let testApp = app.fetch;
@@ -80,7 +81,7 @@ describe("Server", () => {
   }, 10000);
 
   it("should log warning when no API key provided", async () => {
-    const consoleSpy = vi.spyOn(console, "warn");
+    const consoleSpy = vi.spyOn(logger, "warn");
     const req = new Request("http://localhost/ask?q=test", {
       method: "POST",
     });

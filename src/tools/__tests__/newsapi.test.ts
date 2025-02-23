@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import axios from "axios";
 import { NewsAPITool } from "../newsapi";
+import { logger } from "../../logger/winston";
 
 vi.mock("axios");
 
@@ -69,7 +70,7 @@ describe("NewsAPITool", () => {
     };
 
     vi.mocked(axios.get).mockResolvedValueOnce(mockResponse);
-    const consoleSpy = vi.spyOn(console, "error");
+    const consoleSpy = vi.spyOn(logger, "error");
 
     const result = await tool.execute("any input");
 
@@ -80,7 +81,7 @@ describe("NewsAPITool", () => {
   it("should handle network errors", async () => {
     const networkError = new Error("Network error");
     vi.mocked(axios.get).mockRejectedValueOnce(networkError);
-    const consoleSpy = vi.spyOn(console, "error");
+    const consoleSpy = vi.spyOn(logger, "error");
 
     const result = await tool.execute("any input");
 

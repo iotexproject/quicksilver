@@ -3,6 +3,7 @@ const { DIMO } = require("@dimo-network/data-sdk");
 import { extractContentFromTags } from "../utils/parsers";
 import { LLMService } from "../llm/llm-service";
 import { APITool } from "./tool";
+import { logger } from "../logger/winston";
 
 interface Vehicle {
   tokenId: string;
@@ -138,7 +139,7 @@ export class DimoTool extends APITool<any> {
         input,
         llmService,
       );
-      console.log("cleanedData: ", cleanedData);
+      logger.info("cleanedData: ", cleanedData);
       return cleanedData;
     } else {
       return intermediateResponse;

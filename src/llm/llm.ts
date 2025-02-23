@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
+import { logger } from "../logger/winston";
 
 export interface LLM {
   generate(prompt: string): Promise<string>;
@@ -38,7 +39,7 @@ export class AnthropicLLM implements LLM {
       // @ts-ignore property text does exist
       return response.content[0]?.text || "No content in response";
     } catch (error: any) {
-      console.error("Anthropic API Error:", error.message);
+      logger.error("Anthropic API Error:", error.message);
       return `Anthropic API Error: ${error.message}`;
     }
   }

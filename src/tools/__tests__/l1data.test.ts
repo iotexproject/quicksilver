@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-
+import { logger } from "../../logger/winston";
 import { L1DataTool } from "../l1data";
 
 describe("L1DataTool", () => {
@@ -88,7 +88,7 @@ describe("L1DataTool", () => {
       Promise.reject(new Error("Network error")),
     );
 
-    const consoleSpy = vi.spyOn(console, "error");
+    const consoleSpy = vi.spyOn(logger, "error");
     const result = await l1DataTool.execute();
 
     expect(result).toContain("Error fetching L1 data");
@@ -127,7 +127,7 @@ describe("L1DataTool", () => {
       // Failed GraphQL response
       .mockImplementationOnce(() => Promise.reject(new Error("GraphQL Error")));
 
-    const consoleSpy = vi.spyOn(console, "error");
+    const consoleSpy = vi.spyOn(logger, "error");
     const result = await l1DataTool.execute();
 
     expect(result).toContain("Error fetching L1 data");
@@ -141,7 +141,7 @@ describe("L1DataTool", () => {
       } as Response),
     );
 
-    const consoleSpy = vi.spyOn(console, "error");
+    const consoleSpy = vi.spyOn(logger, "error");
     const result = await l1DataTool.execute();
 
     expect(result).toContain("Error fetching L1 data");
