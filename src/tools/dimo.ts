@@ -1,10 +1,58 @@
 const { DIMO } = require("@dimo-network/data-sdk");
+import { z } from "zod";
+import { tool } from "ai";
 
 import { extractContentFromTags } from "../utils/parsers";
 import { LLMService } from "../llm/llm-service";
 import { APITool } from "./tool";
 import { logger } from "../logger/winston";
 
+const ListVehiclesToolSchema = {
+  name: "list_vehicles",
+  description: "Lists all vehicles accessible to the user",
+  parameters: z.object({}),
+  execute: async () => {
+    const tool = new DimoTool();
+    return await tool.getListOfConnectedVehicles();
+  },
+};
+
+const GetVehicleSignalsToolSchema = {
+  name: "get_vehicle_signals",
+  description: "Gets available signals for a specific vehicle",
+  parameters: z.object({
+    tokenId: z.string().describe("Vehicle token ID to fetch signals for"),
+  }),
+  execute: async (input: { tokenId: string }) => {
+    const tool = new DimoTool();
+    const jwt = await tool.getDevJwt();
+    const vehicleJwt = await tool.getVehicleJwt(input.tokenId, jwt);
+    return await tool.getVehicleAvailableSignals(input.tokenId, vehicleJwt);
+  },
+};
+
+const GetLatestSignalsToolSchema = {
+  name: "get_latest_signals",
+  description: "Gets latest signal values for a specific vehicle",
+  parameters: z.object({
+    tokenId: z
+      .string()
+      .describe("Vehicle token ID to fetch latest signals for"),
+    signals: z.array(z.string()).describe("List of signals to fetch"),
+  }),
+  execute: async (input: { tokenId: string; signals: string[] }) => {
+    const tool = new DimoTool();
+    const jwt = await tool.getDevJwt();
+    const vehicleJwt = await tool.getVehicleJwt(input.tokenId, jwt);
+    return await tool.getVehicleLatestSignals(
+      input.tokenId,
+      vehicleJwt,
+      input.signals
+    );
+  },
+};
+
+// Interfaces
 interface Vehicle {
   tokenId: string;
   owner: string;
@@ -28,18 +76,27 @@ interface LatestSignals {
 export class DimoTool extends APITool<any> {
   private dimo: typeof DIMO;
 
+  schema = [
+    { name: "list_vehicles", tool: tool(ListVehiclesToolSchema) },
+    { name: "get_vehicle_signals", tool: tool(GetVehicleSignalsToolSchema) },
+    { name: "get_latest_signals", tool: tool(GetLatestSignalsToolSchema) },
+  ];
+
   constructor() {
     super({
       name: "DIMO",
       description:
         "Tool for interacting with personal vehicles data and signals, supports wide range of makes and models",
-
       output:
-        "Vehicle list and signanls such as tire pressure, location, vehicle speed, angular velocity, wheel speed, altitude, battery voltage, fuel system, engine load, fuel pressure, engine temperature, fuel trim, powertrain range, traction battery, transmission, service distance",
-      baseUrl: "https://api.dimo.zone", // This is a placeholder, actual SDK uses internal endpoints
+        "Vehicle list and signals such as tire pressure, location, vehicle speed, angular velocity, wheel speed, altitude, battery voltage, fuel system, engine load, fuel pressure, engine temperature, fuel trim, powertrain range, traction battery, transmission, service distance",
+      baseUrl: "https://api.dimo.zone",
       twitterAccount: "@DIMO_Network",
     });
 
+    this.initializeDimo();
+  }
+
+  private initializeDimo() {
     const client_id = process.env.CLIENT_ID;
     const domain = process.env.REDIRECT_URI;
     const private_key = process.env.API_KEY;
@@ -47,16 +104,40 @@ export class DimoTool extends APITool<any> {
 
     if (!client_id || !domain || !private_key || !privileged_address) {
       throw new Error(
-        "Missing one of the following environment variables for DIMO tool: CLIENT_ID, REDIRECT_URI, API_KEY, PRIVILEGED_ADDRESS",
+        "Missing one of the following environment variables for DIMO tool: CLIENT_ID, REDIRECT_URI, API_KEY, PRIVILEGED_ADDRESS"
       );
     }
 
     this.dimo = new DIMO("Production");
   }
 
+  async execute(input: string, llmService: LLMService): Promise<string> {
+    const vehiclesIcanAccess = await this.getListOfConnectedVehicles();
+    this.printAccessibleVehicles(vehiclesIcanAccess);
+    const formattedVehicles = this.formatAccessibleVehicles(vehiclesIcanAccess);
+
+    const { tokenIds, intermediateResponse } = await this.parseInput(
+      input + "\n" + formattedVehicles,
+      llmService
+    );
+
+    if (tokenIds.length > 0) {
+      const vehiclesSignals = await this.getVehiclesSignals(tokenIds);
+      const cleanedData = await this.cleanData(
+        vehiclesSignals,
+        input,
+        llmService
+      );
+      logger.info("cleanedData: ", cleanedData);
+      return cleanedData;
+    } else {
+      return intermediateResponse;
+    }
+  }
+
   async parseInput(
     input: string,
-    llmService: LLMService,
+    llmService: LLMService
   ): Promise<{ tokenIds: string[]; intermediateResponse: string }> {
     const prompt = `
     You are a helpful assistant that parses user queries for DIMO tool.
@@ -122,50 +203,10 @@ export class DimoTool extends APITool<any> {
     return JSON.parse(extractedResponse);
   }
 
-  async execute(input: string, llmService: LLMService): Promise<string> {
-    const vehiclesIcanAccess = await this.getListOfConnectedVehicles();
-    this.printAccessibleVehicles(vehiclesIcanAccess);
-    const formattedVehicles = this.formatAccessibleVehicles(vehiclesIcanAccess);
-
-    const { tokenIds, intermediateResponse } = await this.parseInput(
-      input + "\n" + formattedVehicles,
-      llmService,
-    );
-
-    if (tokenIds.length > 0) {
-      const vehiclesSignals = await this.getVehiclesSignals(tokenIds);
-      const cleanedData = await this.cleanData(
-        vehiclesSignals,
-        input,
-        llmService,
-      );
-      logger.info("cleanedData: ", cleanedData);
-      return cleanedData;
-    } else {
-      return intermediateResponse;
-    }
-  }
-
-  async getRawData(): Promise<LatestSignals[]> {
-    const vehiclesIcanAccess = await this.getListOfConnectedVehicles();
-    return this.getVehiclesSignals(
-      vehiclesIcanAccess.map((vehicle) => vehicle.tokenId),
-    );
-  }
-
-  private formatAccessibleVehicles(vehicles: Vehicle[]): string {
-    return vehicles
-      .map(
-        (vehicle) =>
-          `${vehicle.tokenId} - ${vehicle.definition.make} ${vehicle.definition.model} ${vehicle.definition.year}`,
-      )
-      .join("\n");
-  }
-
   private async cleanData(
     data: LatestSignals[],
     input: string,
-    llmService: LLMService,
+    llmService: LLMService
   ): Promise<string> {
     const prompt = `
     You are a helpful assistant that cleans data based on the user's query.
@@ -177,41 +218,13 @@ export class DimoTool extends APITool<any> {
     return llmService.fastllm.generate(prompt);
   }
 
-  private async getVehiclesSignals(
-    vehicles: string[],
-  ): Promise<LatestSignals[]> {
-    const jwt = await this.getDevJwt();
-    const vehicleData: LatestSignals[] = [];
-
-    await Promise.all(
-      vehicles.map(async (id) => {
-        try {
-          const latestSignals = await this.getVehicleSignals(id, jwt);
-          vehicleData.push(latestSignals);
-        } catch (_) {}
-      }),
-    );
-    return vehicleData;
-  }
-
-  private async getVehicleSignals(
-    tokenId: string,
-    devJwt: any,
-  ): Promise<LatestSignals> {
-    const vehicleJwt = await this.getVehicleJwt(tokenId, devJwt);
-    const { availableSignals } = await this.getVehicleAvailableSignals(
-      tokenId,
-      vehicleJwt,
-    );
-    const latestSignals = await this.getVehicleLatestSignals(
-      tokenId,
-      vehicleJwt,
-      availableSignals,
-    );
-    return {
-      tokenId,
-      latestSignals,
-    };
+  private formatAccessibleVehicles(vehicles: Vehicle[]): string {
+    return vehicles
+      .map(
+        (vehicle) =>
+          `${vehicle.tokenId} - ${vehicle.definition.make} ${vehicle.definition.model} ${vehicle.definition.year}`
+      )
+      .join("\n");
   }
 
   private printAccessibleVehicles(vehicles: Vehicle[]) {
@@ -222,11 +235,12 @@ export class DimoTool extends APITool<any> {
         make: vehicle.definition?.make || "N/A",
         model: vehicle.definition?.model || "N/A",
         year: vehicle.definition?.year || "N/A",
-      })),
+      }))
     );
   }
 
-  private async getListOfConnectedVehicles(): Promise<Vehicle[]> {
+  // Public methods that can be called by subtools
+  async getListOfConnectedVehicles(): Promise<Vehicle[]> {
     const privelegedAddress = process.env.PRIVILEGED_ADDRESS;
     const response = (await this.dimo.identity.query({
       query: `{
@@ -251,9 +265,9 @@ export class DimoTool extends APITool<any> {
     return response.data.vehicles.nodes as Vehicle[];
   }
 
-  private async getVehicleAvailableSignals(
+  async getVehicleAvailableSignals(
     tokenId: string,
-    vehicleJwt: any,
+    vehicleJwt: any
   ): Promise<Signal> {
     const query = `{ availableSignals(tokenId: ${tokenId}) }`;
     const response = (await this.dimo.telemetry.query({
@@ -263,10 +277,10 @@ export class DimoTool extends APITool<any> {
     return response.data;
   }
 
-  private async getVehicleLatestSignals(
+  async getVehicleLatestSignals(
     tokenId: string,
     vehicleJwt: any,
-    signals: string[],
+    signals: string[]
   ): Promise<Signal> {
     const query = this.buildLatestSignalsQuery(tokenId, signals);
     const response = (await this.dimo.telemetry.query({
@@ -276,7 +290,7 @@ export class DimoTool extends APITool<any> {
     return response.data;
   }
 
-  private async getVehicleJwt(tokenId: string, devJwt: any): Promise<any> {
+  async getVehicleJwt(tokenId: string, devJwt: any): Promise<any> {
     return this.dimo.tokenexchange.exchange({
       ...devJwt,
       privileges: [1, 3, 4, 5],
@@ -284,17 +298,45 @@ export class DimoTool extends APITool<any> {
     });
   }
 
-  private async getDevJwt(): Promise<any> {
+  async getDevJwt(): Promise<any> {
     const client_id = process.env.CLIENT_ID;
     const domain = process.env.REDIRECT_URI;
     const private_key = process.env.API_KEY;
 
-    const developerJwt = await this.dimo.auth.getToken({
+    return this.dimo.auth.getToken({
       client_id,
       domain,
       private_key,
     });
-    return developerJwt;
+  }
+
+  private async getVehiclesSignals(
+    vehicles: string[]
+  ): Promise<LatestSignals[]> {
+    const jwt = await this.getDevJwt();
+    const vehicleData: LatestSignals[] = [];
+
+    await Promise.all(
+      vehicles.map(async (id) => {
+        try {
+          const vehicleJwt = await this.getVehicleJwt(id, jwt);
+          const { availableSignals } = await this.getVehicleAvailableSignals(
+            id,
+            vehicleJwt
+          );
+          const latestSignals = await this.getVehicleLatestSignals(
+            id,
+            vehicleJwt,
+            availableSignals
+          );
+          vehicleData.push({
+            tokenId: id,
+            latestSignals,
+          });
+        } catch (_) {}
+      })
+    );
+    return vehicleData;
   }
 
   private buildLatestSignalsQuery(tokenId: string, signals: string[]) {
@@ -304,10 +346,17 @@ export class DimoTool extends APITool<any> {
             (signal) => `${signal} {
           value
           timestamp
-        }`,
+        }`
           )
           .join("\n")}
       } }`;
+  }
+
+  async getRawData(): Promise<LatestSignals[]> {
+    const vehiclesIcanAccess = await this.getListOfConnectedVehicles();
+    return this.getVehiclesSignals(
+      vehiclesIcanAccess.map((vehicle) => vehicle.tokenId)
+    );
   }
 }
 
