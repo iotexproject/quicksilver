@@ -6,6 +6,7 @@ import { L1DataTool } from "./l1data";
 import DimoTool from "./dimo";
 import { NuclearOutagesTool } from "./gov";
 import { logger } from "../logger/winston";
+import { MapboxGeocodingTool } from "./mapbox";
 
 export class ToolRegistry {
   private static tools = new Map<string, () => Tool>();
@@ -20,6 +21,7 @@ export class ToolRegistry {
     this.register("l1data", () => new L1DataTool());
     this.register("dimo", () => new DimoTool());
     this.register("nuclear", () => new NuclearOutagesTool());
+    this.register("mapbox", () => new MapboxGeocodingTool());
   }
 
   static register(name: string, factory: () => Tool) {
