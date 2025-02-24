@@ -47,7 +47,7 @@ const ForecastWeatherToolSchema = {
 };
 
 abstract class BaseWeatherAPITool extends APITool<CoordinatesInput> {
-  abstract schema: Tool;
+  abstract schema: { name: string; tool: Tool }[];
 
   constructor(
     name: string,
@@ -117,8 +117,10 @@ abstract class BaseWeatherAPITool extends APITool<CoordinatesInput> {
 }
 
 export class CurrentWeatherAPITool extends BaseWeatherAPITool {
-  schema = tool(CurrentWeatherToolSchema);
-  
+  schema = [
+    { name: "CurrentWeatherAPITool", tool: tool(CurrentWeatherToolSchema) },
+  ];
+
   constructor() {
     super(
       "CurrentWeatherAPITool",
@@ -166,7 +168,9 @@ Wet Bulb: ${wet_bulb}°C,
 }
 
 export class ForecastWeatherAPITool extends BaseWeatherAPITool {
-  schema = tool(ForecastWeatherToolSchema);
+  schema = [
+    { name: "ForecastWeatherAPITool", tool: tool(ForecastWeatherToolSchema) },
+  ];
 
   constructor() {
     super(
