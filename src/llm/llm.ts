@@ -1,4 +1,4 @@
-import { generateText, LanguageModel } from "ai";
+import { generateText, LanguageModel, ToolSet } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { deepseek } from "@ai-sdk/deepseek";
@@ -6,7 +6,7 @@ import { deepseek } from "@ai-sdk/deepseek";
 import { logger } from "../logger/winston";
 
 export interface LLM {
-  generate(prompt: string): Promise<string>;
+  generate(prompt: string, tools?: ToolSet): Promise<string>;
 }
 
 export class DummyLLM implements LLM {
@@ -34,15 +34,18 @@ export class ModelAdapter implements LLM {
     }
   }
 
-  async generate(prompt: string): Promise<string> {
+  async generate(prompt: string, tools?: ToolSet): Promise<string> {
     try {
       console.time(`generation with model: ${this.model.modelId}`);
-      const { text } = await generateText({
+      const response = await generateText({
         model: this.model,
         prompt,
+        tools,
+        maxSteps: 10,
       });
       console.timeEnd(`generation with model: ${this.model.modelId}`);
-      return text;
+
+      return response.text;
     } catch (error) {
       logger.error(
         `Error generating text with model ${this.model.modelId}:`,

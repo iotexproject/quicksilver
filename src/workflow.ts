@@ -1,8 +1,8 @@
+import { ToolSet } from "ai";
+
 import { logger } from "./logger/winston";
-import { finalResponseTemplate, toolSelectionTemplate } from "./templates";
 import { LLMService } from "./llm/llm-service";
 import { Tool } from "./types";
-import { extractContentFromTags } from "./utils/parsers";
 
 export class QueryOrchestrator {
   llmService: LLMService;
@@ -22,59 +22,20 @@ export class QueryOrchestrator {
   // TODO: input should include user query and context
   async process(input: string): Promise<string> {
     try {
-      const selectedTools = await this.selectTools(input);
-      if (!selectedTools.length) {
-        return this.proceedWithoutTools(input);
-      }
-      return this.proceedWithTools(input, selectedTools);
+      const toolSet = this.buildToolSet();
+      const response = await this.llmService.llm.generate(input, toolSet);
+      return response;
     } catch (error) {
-      return "Processing Error: " + error;
+      logger.error("Error processing query", error);
+      return "Processing Error, please try again later.";
     }
   }
 
-  async selectTools(input: string): Promise<Tool[]> {
-    const availableTools = this.tools.map((tool) => ({
-      name: tool.name,
-      description: tool.description,
-      output: tool.output,
-    }));
-
-    if (!availableTools.length) {
-      return [];
-    }
-
-    const toolSelectionPrompt = toolSelectionTemplate(input, availableTools);
-    const llmResponse =
-      await this.llmService.fastllm.generate(toolSelectionPrompt);
-
-    logger.info("llmResponse", llmResponse);
-
-    const toolNames = extractContentFromTags(llmResponse, "response");
-    if (!toolNames) {
-      return [];
-    }
-    const toolNamesParsed = JSON.parse(toolNames);
-    return toolNamesParsed.map((toolName: string) =>
-      this.tools.find((t) => t.name === toolName),
-    );
-  }
-
-  async proceedWithoutTools(input: string): Promise<string> {
-    const llmResponse = await this.llmService.llm.generate(input);
-    return llmResponse;
-  }
-
-  async proceedWithTools(input: string, tools: Tool[]): Promise<string> {
-    const toolOutputs = await Promise.all(
-      tools.map((tool) => tool.execute(input, this.llmService)),
-    );
-    const finalPrompt = finalResponseTemplate({
-      input,
-      tools,
-      toolOutputs,
+  buildToolSet(): ToolSet {
+    const toolSet: ToolSet = {};
+    this.tools.forEach((tool) => {
+      toolSet[tool.name] = tool.schema;
     });
-    const output = await this.llmService.llm.generate(finalPrompt);
-    const parsedOutput = extractContentFromTags(output, "response");
-    return parsedOutput || "Could not generate response";
+    return toolSet;
   }
 }

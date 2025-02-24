@@ -19,7 +19,7 @@ describe("SentientAI", () => {
           generate: vi.fn().mockResolvedValue(currentWeatherOutput),
         },
         llm: {
-          generate: vi.fn().mockResolvedValue("<response>+10 C</response>"),
+          generate: vi.fn().mockResolvedValue("+10 C"),
         },
       })),
     }));
