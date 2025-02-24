@@ -32,7 +32,7 @@ export class NewsAPITool extends APITool<any> {
       if (response.status === "ok") {
         const headlines = response.articles.map(
           (article) =>
-            `- [${article.title}](${article.url}) - ${article.source.name}`,
+            `- [${article.title}](${article.url}) - ${article.source.name}`
         ); // Markdown links
         return headlines.slice(0, NUMBER_OF_HEADLINES).join("\n");
       } else {

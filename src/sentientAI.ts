@@ -16,7 +16,7 @@ export class SentientAI {
     }
 
     this.tools = ToolRegistry.getEnabledTools();
-    logger.info("Enabled tools:", this.tools.map((t) => t.name).join(", "));
+    logger.info("Enabled tools: %s", this.tools.map((t) => t.name).join(", "));
 
     this.orchestrator = new QueryOrchestrator({
       tools: this.tools,
@@ -31,7 +31,7 @@ export class SentientAI {
 
   async getRawData(
     toolName: string,
-    params: Record<string, any>,
+    params: Record<string, any>
   ): Promise<any> {
     const tool = this.getTool(toolName);
     return this.rawDataProvider.process(tool, params);
