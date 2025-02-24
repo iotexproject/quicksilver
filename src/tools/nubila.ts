@@ -1,9 +1,12 @@
+import { z } from "zod";
+
 import { LLMService } from "../llm/llm-service";
 import { APITool } from "./tool";
 import { extractContentFromTags } from "../utils/parsers";
 import { WeatherData, WeatherForecast } from "./types/nubila";
 import { coordinatesTemplate } from "./templates";
 import { logger } from "../logger/winston";
+import { Tool, tool } from "ai";
 
 interface CoordinatesInput {
   lat: number;
@@ -12,12 +15,45 @@ interface CoordinatesInput {
 
 const NUBILA_URL = "https://api.nubila.ai/api/v1/";
 
+const NubilaCoordinatesSchema = z.object({
+  lat: z
+    .number()
+    .min(-90)
+    .max(90)
+    .describe("Latitude coordinate between -90 and 90 degrees"),
+  lon: z
+    .number()
+    .min(-180)
+    .max(180)
+    .describe("Longitude coordinate between -180 and 180 degrees"),
+});
+
+const CurrentWeatherToolSchema = {
+  description: "Gets the current weather conditions for a specific location",
+  parameters: NubilaCoordinatesSchema,
+  execute: async (input: CoordinatesInput) => {
+    const tool = new CurrentWeatherAPITool();
+    return await tool.getRawData(input);
+  },
+};
+
+const ForecastWeatherToolSchema = {
+  description: "Gets the weather forecast for a specific location",
+  parameters: NubilaCoordinatesSchema,
+  execute: async (input: CoordinatesInput) => {
+    const tool = new ForecastWeatherAPITool();
+    return await tool.getRawData(input);
+  },
+};
+
 abstract class BaseWeatherAPITool extends APITool<CoordinatesInput> {
+  abstract schema: Tool;
+
   constructor(
     name: string,
     description: string,
     endpoint: string,
-    output: string,
+    output: string
   ) {
     super({
       name,
@@ -26,7 +62,6 @@ abstract class BaseWeatherAPITool extends APITool<CoordinatesInput> {
       baseUrl: NUBILA_URL + endpoint,
       twitterAccount: "nubilanetwork",
     });
-
     if (!process.env.NUBILA_API_KEY) {
       logger.error("Please set the NUBILA_API_KEY environment variable.");
       return;
@@ -47,7 +82,7 @@ abstract class BaseWeatherAPITool extends APITool<CoordinatesInput> {
 
   async parseInput(
     userInput: any,
-    llmService: LLMService,
+    llmService: LLMService
   ): Promise<CoordinatesInput> {
     return Coordinates.extractFromQuery(userInput, llmService);
   }
@@ -77,23 +112,25 @@ abstract class BaseWeatherAPITool extends APITool<CoordinatesInput> {
 
   protected abstract formatWeatherData(
     coords: CoordinatesInput,
-    data: any,
+    data: any
   ): Promise<string>;
 }
 
 export class CurrentWeatherAPITool extends BaseWeatherAPITool {
+  schema = tool(CurrentWeatherToolSchema);
+  
   constructor() {
     super(
       "CurrentWeatherAPITool",
       "Gets the current weather from Nubila API.",
       "weather",
-      "temperature,condition,pressure,humidity,wind,uv,luminance,elevation,rain,wet_bulb",
+      "temperature,condition,pressure,humidity,wind,uv,luminance,elevation,rain,wet_bulb"
     );
   }
 
   protected async formatWeatherData(
     coords: CoordinatesInput,
-    weatherData: WeatherData,
+    weatherData: WeatherData
   ): Promise<string> {
     const {
       condition,
@@ -129,18 +166,20 @@ Wet Bulb: ${wet_bulb}°C,
 }
 
 export class ForecastWeatherAPITool extends BaseWeatherAPITool {
+  schema = tool(ForecastWeatherToolSchema);
+
   constructor() {
     super(
       "ForecastWeatherAPITool",
       "Get weather forecast data from the Nubila API.",
       "forecast",
-      "Array of: temperature,condition,pressure,humidity,wind,uv,luminance,rain,wet_bulb",
+      "Array of: temperature,condition,pressure,humidity,wind,uv,luminance,rain,wet_bulb"
     );
   }
 
   protected async formatWeatherData(
     coords: CoordinatesInput,
-    forecastData: WeatherForecast,
+    forecastData: WeatherForecast
   ): Promise<string> {
     const summaries = forecastData.map((item) => {
       const {
@@ -172,10 +211,10 @@ export class Coordinates {
 
   static async extractFromQuery(
     query: string,
-    llmService: LLMService,
+    llmService: LLMService
   ): Promise<CoordinatesInput> {
     const llmResponse = await llmService.fastllm.generate(
-      coordinatesTemplate(query),
+      coordinatesTemplate(query)
     );
     const extractedCoords = extractContentFromTags(llmResponse, "response");
     if (!extractedCoords) {
