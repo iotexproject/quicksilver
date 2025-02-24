@@ -1,49 +1,80 @@
-import { APITool } from "./tool";
+import { z } from "zod";
+import { tool } from "ai";
 import { formatEther } from "ethers";
+
+import { APITool } from "./tool";
 import { logger } from "../logger/winston";
 
 const ANALYTICS_API = "https://gateway1.iotex.me/analyzer";
 const GQL_ANALYTICS = "https://analyser-api.iotex.io/graphql";
 
-// Types
-interface L1Stats {
-  tvl: number;
-  contracts: number;
-  totalStaked: number;
-  nodes: number;
-  dapps: number;
-  crossChainTx: number;
-  totalSupply: number;
-  totalNumberOfHolders: number;
-  totalNumberOfXrc20: number;
-  totalNumberOfXrc721: number;
-  stakingRatio: number;
-  tps: number;
-}
+// Zod Schemas
+const L1StatsSchema = z.object({
+  tvl: z.number().describe("Total Value Locked in the chain"),
+  contracts: z.number().describe("Number of deployed contracts"),
+  totalStaked: z.number().describe("Total amount of IOTX staked"),
+  nodes: z.number().describe("Number of active nodes"),
+  dapps: z.number().describe("Number of decentralized applications"),
+  crossChainTx: z.number().describe("Number of cross-chain transactions"),
+  totalSupply: z.number().describe("Total supply of IOTX tokens"),
+  totalNumberOfHolders: z.number().describe("Total number of IOTX holders"),
+  totalNumberOfXrc20: z.number().describe("Total number of XRC20 tokens"),
+  totalNumberOfXrc721: z.number().describe("Total number of XRC721 tokens"),
+  stakingRatio: z.number().describe("Ratio of staked IOTX to total supply"),
+  tps: z.number().describe("Transactions per second"),
+});
 
-interface ChainStats {
-  Chain: {
-    totalSupply: string;
-  };
-  TotalNumberOfHolders: {
-    totalNumberOfHolders: number;
-  };
-  XRC20Addresses: {
-    count: number;
-  };
-  XRC721Addresses: {
-    count: number;
-  };
-  MostRecentTPS: {
-    mostRecentTPS: number;
-  };
-}
+const ChainStatsSchema = z.object({
+  Chain: z.object({
+    totalSupply: z
+      .string()
+      .describe("Total supply in smallest unit (18 decimals)"),
+  }),
+  TotalNumberOfHolders: z.object({
+    totalNumberOfHolders: z
+      .number()
+      .describe("Total number of unique addresses holding IOTX"),
+  }),
+  XRC20Addresses: z.object({
+    count: z.number().describe("Total count of XRC20 token contracts"),
+  }),
+  XRC721Addresses: z.object({
+    count: z.number().describe("Total count of XRC721 token contracts"),
+  }),
+  MostRecentTPS: z.object({
+    mostRecentTPS: z
+      .number()
+      .describe("Most recent transactions per second calculation"),
+  }),
+});
+
+const GetL1StatsToolSchema = {
+  name: "get_l1_stats",
+  description: "Fetches IoTeX L1 chain statistics and metrics",
+  parameters: z.object({}),
+  execute: async () => {
+    const tool = new L1DataTool();
+    const stats = await tool.getRawData();
+    return {
+      ...stats,
+      totalStaked: Number(stats.totalStaked.toFixed(2)),
+      stakingRatio: Number((stats.stakingRatio * 100).toFixed(2)), // Convert to percentage
+      tps: Number(stats.tps.toFixed(4)),
+    };
+  },
+};
+
+// Types
+type L1Stats = z.infer<typeof L1StatsSchema>;
+type ChainStats = z.infer<typeof ChainStatsSchema>;
 
 interface GraphQLResponse {
   data: ChainStats;
 }
 
 export class L1DataTool extends APITool<void> {
+  schema = [{ name: "get_l1_stats", tool: tool(GetL1StatsToolSchema) }];
+
   constructor() {
     super({
       name: "L1Data",
@@ -57,7 +88,9 @@ export class L1DataTool extends APITool<void> {
   async execute(): Promise<string> {
     try {
       const stats = await this.getRawData();
-      return JSON.stringify(stats);
+      // Validate the stats against the schema
+      const validatedStats = L1StatsSchema.parse(stats);
+      return JSON.stringify(validatedStats, null, 2);
     } catch (error) {
       logger.error("L1Data Error:", error);
       return `Error fetching L1 data: ${error}`;
@@ -187,7 +220,9 @@ export class L1DataTool extends APITool<void> {
     });
 
     const { data } = (await response.json()) as GraphQLResponse;
-    return data;
+    // Validate the GraphQL response data
+    const validatedData = ChainStatsSchema.parse(data);
+    return validatedData;
   }
 
   private async sendRestRequest(path: string): Promise<Response> {
@@ -195,10 +230,10 @@ export class L1DataTool extends APITool<void> {
   }
 
   private processV2Stats(
-    stats: ChainStats,
+    stats: ChainStats
   ): [number, number, number, number, number] {
     const totalSupply = Number(
-      BigInt(stats.Chain.totalSupply) / BigInt("1000000000000000000"),
+      BigInt(stats.Chain.totalSupply) / BigInt("1000000000000000000")
     );
     const totalNumberOfHolders =
       stats.TotalNumberOfHolders.totalNumberOfHolders;
