@@ -44,6 +44,11 @@ export class ModelAdapter implements LLM {
         maxSteps: 10,
       });
       console.timeEnd(`generation with model: ${this.model.modelId}`);
+      const allToolCalls = response.steps.flatMap(
+        (step: any) => step.toolCalls
+      );
+      console.log("allToolCalls: ", allToolCalls);
+      console.log("usage: ", response.usage);
 
       return response.text;
     } catch (error) {
