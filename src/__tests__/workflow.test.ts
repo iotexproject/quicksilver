@@ -8,7 +8,7 @@ import { APITool } from "../tools/tool";
 import { Tool } from "ai";
 
 class TestAPITool extends APITool<any> {
-  schema: Tool;
+  schema: { name: string; tool: Tool }[] = [];
 
   async execute(_: string): Promise<string> {
     return "<response>test</response>";

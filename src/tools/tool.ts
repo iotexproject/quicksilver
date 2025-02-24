@@ -1,3 +1,5 @@
+import { Tool as AITool } from "ai";
+
 import { LLMService } from "../llm/llm-service";
 import { Tool } from "../types";
 
@@ -7,6 +9,7 @@ export abstract class APITool<T> implements Tool {
   output: string; // what the tool returns, used in tool selection
   twitterAccount: string; // used to tag the tool in tweets
   baseUrl: string; // used to fetch data from the tool
+  schema: { name: string; tool: AITool }[];
 
   constructor(params: {
     name: string;

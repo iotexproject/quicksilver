@@ -19,7 +19,6 @@ export class QueryOrchestrator {
     this.llmService = llmService;
   }
 
-  // TODO: input should include user query and context
   async process(input: string): Promise<string> {
     try {
       const toolSet = this.buildToolSet();
@@ -34,7 +33,9 @@ export class QueryOrchestrator {
   buildToolSet(): ToolSet {
     const toolSet: ToolSet = {};
     this.tools.forEach((tool) => {
-      toolSet[tool.name] = tool.schema;
+      tool.schema.forEach((schema) => {
+        toolSet[schema.name] = schema.tool;
+      });
     });
     return toolSet;
   }
