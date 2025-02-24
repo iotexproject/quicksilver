@@ -2,23 +2,86 @@ import { LLMService } from "../llm/llm-service";
 import { APITool } from "./tool";
 import { extractContentFromTags } from "../utils/parsers";
 import { logger } from "../logger/winston";
+import { z } from "zod";
+import { tool } from "ai";
 
-interface DateRange {
-  start: string; // YYYY-MM-DD format
-  end: string; // YYYY-MM-DD format
-}
+// Zod Schemas
+const DateRangeSchema = z
+  .object({
+    start: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .describe("Start date in YYYY-MM-DD format"),
+    end: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .describe("End date in YYYY-MM-DD format"),
+  })
+  .refine(
+    (data) => new Date(data.start) <= new Date(data.end),
+    "Start date must be before or equal to end date"
+  );
 
-interface NuclearOutageData {
-  period: string;
-  outage: string;
-  capacity: string;
-  percentOutage: string;
-  "outage-units": string;
-  "capacity-units": string;
-  "percentOutage-units": string;
-}
+const NuclearOutageDataSchema = z.object({
+  period: z.string().describe("The date of the measurement"),
+  outage: z.string().describe("Amount of nuclear power plant outage"),
+  capacity: z.string().describe("Total nuclear power plant capacity"),
+  percentOutage: z.string().describe("Percentage of capacity that is out"),
+  "outage-units": z.string().describe("Units for outage measurement"),
+  "capacity-units": z.string().describe("Units for capacity measurement"),
+  "percentOutage-units": z
+    .string()
+    .describe("Units for percentage measurement"),
+});
+
+const GetNuclearOutagesToolSchema = {
+  name: "get_nuclear_outages",
+  description:
+    "Fetches nuclear power plant outage data in the United States for a specified date range",
+  parameters: z.object({
+    dateRange: DateRangeSchema.describe(
+      "Date range for fetching nuclear outage data"
+    ),
+  }),
+  execute: async (args: { dateRange: { start: string; end: string } }) => {
+    const tool = new NuclearOutagesTool();
+    const data = await tool.getRawData(args.dateRange);
+
+    // Calculate summary statistics
+    const outages = data.map((d) => parseFloat(d.percentOutage));
+    const avgOutage = outages.reduce((a, b) => a + b, 0) / outages.length;
+    const maxOutage = Math.max(...outages);
+    const minOutage = Math.min(...outages);
+    const latestCapacity = parseFloat(data[0].capacity);
+
+    return {
+      dateRange: args.dateRange,
+      summary: {
+        averageOutagePercentage: Number(avgOutage.toFixed(2)),
+        maxOutagePercentage: Number(maxOutage.toFixed(2)),
+        minOutagePercentage: Number(minOutage.toFixed(2)),
+        totalCapacity: Number(latestCapacity.toFixed(2)),
+        capacityUnits: data[0]["capacity-units"],
+        numberOfDays: data.length,
+      },
+      dailyData: data.map((d) => ({
+        date: d.period,
+        outagePercentage: Number(parseFloat(d.percentOutage).toFixed(2)),
+        capacity: Number(parseFloat(d.capacity).toFixed(2)),
+      })),
+    };
+  },
+};
+
+// Types
+type DateRange = z.infer<typeof DateRangeSchema>;
+type NuclearOutageData = z.infer<typeof NuclearOutageDataSchema>;
 
 export class NuclearOutagesTool extends APITool<DateRange> {
+  schema = [
+    { name: "get_nuclear_outages", tool: tool(GetNuclearOutagesToolSchema) },
+  ];
+
   constructor() {
     super({
       name: "NuclearOutages",
@@ -87,30 +150,37 @@ export class NuclearOutagesTool extends APITool<DateRange> {
   }
 
   private validateDates(dates: DateRange): DateRange {
+    // Validate against the schema
+    const validatedDates = DateRangeSchema.parse(dates);
+
     const currentDate = new Date();
-    const startDate = new Date(dates.start);
-    const endDate = new Date(dates.end);
+    const startDate = new Date(validatedDates.start);
+    const endDate = new Date(validatedDates.end);
 
     // Ensure end date is not in the future
     if (endDate > currentDate) {
-      dates.end = currentDate.toISOString().split("T")[0];
+      validatedDates.end = currentDate.toISOString().split("T")[0];
     }
 
     // Ensure start date is before end date
     if (startDate > endDate) {
-      const newStartDate = new Date(dates.end);
+      const newStartDate = new Date(validatedDates.end);
       newStartDate.setDate(newStartDate.getDate() - 7);
-      dates.start = newStartDate.toISOString().split("T")[0];
+      validatedDates.start = newStartDate.toISOString().split("T")[0];
     }
 
-    return dates;
+    return validatedDates;
   }
 
   async execute(input: string, llmService: LLMService): Promise<string> {
     try {
       const dateRange = await this.parseInput(input, llmService);
       const data = await this.getRawData(dateRange);
-      return this.formatResponse(data, dateRange, llmService);
+
+      // Validate the data against the schema
+      const validatedData = z.array(NuclearOutageDataSchema).parse(data);
+
+      return this.formatResponse(validatedData, dateRange, llmService);
     } catch (error: any) {
       logger.error("Error fetching nuclear outage data:", error);
       return `Error fetching nuclear outage data: ${error.message}`;
@@ -118,18 +188,16 @@ export class NuclearOutagesTool extends APITool<DateRange> {
   }
 
   async getRawData(params: DateRange): Promise<NuclearOutageData[]> {
-    const { start, end } = params;
-    if (!start || !end) {
-      throw new Error("Start and end dates are required.");
-    }
+    const { start, end } = DateRangeSchema.parse(params);
+
     const url = new URL(this.baseUrl);
     const searchParams = new URLSearchParams({
       frequency: "daily",
       "data[0]": "outage",
       "data[1]": "capacity",
       "data[2]": "percentOutage",
-      start: params.start,
-      end: params.end,
+      start,
+      end,
       "sort[0][column]": "period",
       "sort[0][direction]": "desc",
       offset: "0",
@@ -147,13 +215,13 @@ export class NuclearOutagesTool extends APITool<DateRange> {
     }
 
     const data = await response.json();
-    return data.response.data;
+    return z.array(NuclearOutageDataSchema).parse(data.response.data);
   }
 
   private async formatResponse(
     data: NuclearOutageData[],
     dateRange: DateRange,
-    llmService: LLMService,
+    llmService: LLMService
   ): Promise<string> {
     const prompt = `
     You are a helpful assistant that summarizes nuclear outage data.
