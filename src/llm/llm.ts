@@ -1,5 +1,8 @@
-import Anthropic from "@anthropic-ai/sdk";
-import OpenAI from "openai";
+import { generateText, LanguageModel } from "ai";
+import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { deepseek } from "@ai-sdk/deepseek";
+
 import { logger } from "../logger/winston";
 
 export interface LLM {
@@ -7,7 +10,7 @@ export interface LLM {
 }
 
 export class DummyLLM implements LLM {
-  async generate(prompt: string): Promise<string> {
+  async generate(_: string): Promise<string> {
     const response = `Dummy LLM Response to the user's request.`; // A fixed response
     return JSON.stringify({
       tool: null,
@@ -16,55 +19,36 @@ export class DummyLLM implements LLM {
   }
 }
 
-export class AnthropicLLM implements LLM {
-  private anthropic: Anthropic;
-  model: string;
+export class ModelAdapter implements LLM {
+  model: LanguageModel;
 
-  constructor(params: { model: string }) {
-    this.model = params.model;
-    const anthropic = new Anthropic();
-    this.anthropic = anthropic;
+  constructor({ provider, model }: { provider: string; model: string }) {
+    if (provider === "anthropic") {
+      this.model = anthropic(model);
+    } else if (provider === "openai") {
+      this.model = openai(model);
+    } else if (provider === "deepseek") {
+      this.model = deepseek(model);
+    } else {
+      throw new Error(`Unsupported provider: ${provider}`);
+    }
   }
 
   async generate(prompt: string): Promise<string> {
     try {
-      console.time("called with model: " + this.model);
-      const response = await this.anthropic.messages.create({
-        messages: [{ role: "user", content: prompt }],
+      console.time(`generation with model: ${this.model.modelId}`);
+      const { text } = await generateText({
         model: this.model,
-        max_tokens: 1000,
-        temperature: 0,
+        prompt,
       });
-      console.timeEnd("called with model: " + this.model);
-      // @ts-ignore property text does exist
-      return response.content[0]?.text || "No content in response";
-    } catch (error: any) {
-      logger.error("Anthropic API Error:", error.message);
-      return `Anthropic API Error: ${error.message}`;
+      console.timeEnd(`generation with model: ${this.model.modelId}`);
+      return text;
+    } catch (error) {
+      logger.error(
+        `Error generating text with model ${this.model.modelId}:`,
+        error
+      );
+      throw new Error("Error generating response");
     }
-  }
-}
-
-export class OpenAILLM implements LLM {
-  private openai: OpenAI;
-  model: string;
-
-  constructor(params: { model: string; apiKey: string; baseURL?: string }) {
-    this.model = params.model;
-    const openai = new OpenAI({
-      apiKey: params.apiKey,
-      baseURL: params.baseURL || "https://api.openai.com/v1",
-    });
-    this.openai = openai;
-  }
-
-  async generate(prompt: string): Promise<string> {
-    console.time("called with model: " + this.model);
-    const response = await this.openai.chat.completions.create({
-      model: this.model,
-      messages: [{ role: "user", content: prompt }],
-    });
-    console.timeEnd("called with model: " + this.model);
-    return response.choices[0]?.message.content || "No content in response";
   }
 }

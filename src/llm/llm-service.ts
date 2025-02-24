@@ -1,4 +1,4 @@
-import { LLM, AnthropicLLM, OpenAILLM, DummyLLM } from "./llm";
+import { LLM, ModelAdapter, DummyLLM } from "./llm";
 
 const OPENAI_MODELS = new Set(["gpt-4o", "gpt-4o-mini", "o3-mini", "o1-mini"]);
 const DEEPSEEK_MODELS = new Set(["deepseek-chat", "deepseek-reasoner"]);
@@ -23,19 +23,19 @@ export class LLMService {
 
   providerMap: Record<string, (model?: string) => LLM> = {
     anthropic: (model) =>
-      new AnthropicLLM({
+      new ModelAdapter({
+        provider: "anthropic",
         model: model || "claude-3-5-haiku-latest",
       }),
     deepseek: (model) =>
-      new OpenAILLM({
+      new ModelAdapter({
+        provider: "deepseek",
         model: model || "deepseek-chat",
-        apiKey: process.env.DEEPSEEK_API_KEY || "",
-        baseURL: "https://api.deepseek.com",
       }),
     openai: (model) =>
-      new OpenAILLM({
+      new ModelAdapter({
+        provider: "openai",
         model: model || "gpt-4o-mini",
-        apiKey: process.env.OPENAI_API_KEY || "",
       }),
   };
 
