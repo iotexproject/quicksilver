@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { tool } from "ai";
+import { Tool, tool } from "ai";
 import { formatEther } from "ethers";
 
 import { APITool } from "./tool";
@@ -50,7 +50,8 @@ const ChainStatsSchema = z.object({
 
 const GetL1StatsToolSchema = {
   name: "get_l1_stats",
-  description: "Fetches IoTeX L1 chain statistics and metrics",
+  description:
+    "Fetches IoTeX L1 chain statistics and metrics: TVL, contracts, staking, nodes, dapps, tps, transactions, supply, holders, xrc20, xrc721",
   parameters: z.object({}),
   execute: async () => {
     const tool = new L1DataTool();
@@ -73,28 +74,16 @@ interface GraphQLResponse {
 }
 
 export class L1DataTool extends APITool<void> {
-  schema = [{ name: "get_l1_stats", tool: tool(GetL1StatsToolSchema) }];
+  schema = [
+    { name: GetL1StatsToolSchema.name, tool: tool(GetL1StatsToolSchema) },
+  ];
 
   constructor() {
     super({
-      name: "L1Data",
-      description: "Fetches IoTeX L1 chain statistics and metrics",
-      output:
-        "Chain statistics including TVL, contracts, staking, nodes, dapps, tps, transactions, supply, holders, xrc20, xrc721",
+      name: GetL1StatsToolSchema.name,
+      description: GetL1StatsToolSchema.description,
       baseUrl: ANALYTICS_API,
     });
-  }
-
-  async execute(): Promise<string> {
-    try {
-      const stats = await this.getRawData();
-      // Validate the stats against the schema
-      const validatedStats = L1StatsSchema.parse(stats);
-      return JSON.stringify(validatedStats, null, 2);
-    } catch (error) {
-      logger.error("L1Data Error:", error);
-      return `Error fetching L1 data: ${error}`;
-    }
   }
 
   async getRawData(): Promise<L1Stats> {
@@ -210,23 +199,33 @@ export class L1DataTool extends APITool<void> {
       }
     `;
 
-    const response = await fetch(GQL_ANALYTICS, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.API_V2_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ query }),
-    });
+    try {
+      const response = await fetch(GQL_ANALYTICS, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.API_V2_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query }),
+      });
 
-    const { data } = (await response.json()) as GraphQLResponse;
-    // Validate the GraphQL response data
-    const validatedData = ChainStatsSchema.parse(data);
-    return validatedData;
+      const { data } = (await response.json()) as GraphQLResponse;
+      return data;
+    } catch (error: any) {
+      throw new Error(`Failed to fetch analytics v2 stats: ${error.message}`);
+    }
   }
 
   private async sendRestRequest(path: string): Promise<Response> {
-    return fetch(`${ANALYTICS_API}/${path}`);
+    try {
+      const res = await fetch(`${ANALYTICS_API}/${path}`);
+      if (!res.ok) {
+        throw new Error(`Response status: ${res.status}`);
+      }
+      return res;
+    } catch (error: any) {
+      throw new Error(`Failed to fetch ${path}: ${error.message}`);
+    }
   }
 
   private processV2Stats(
@@ -252,9 +251,5 @@ export class L1DataTool extends APITool<void> {
 
   private calcStakingRatio(totalStaked: number, totalSupply: number): number {
     return totalStaked / totalSupply;
-  }
-
-  async parseInput(_: any): Promise<void> {
-    return;
   }
 }
