@@ -9,6 +9,7 @@ import {
 } from "../depinscan";
 import { LLMService } from "../../llm/llm-service";
 import { logger } from "../../logger/winston";
+import { ZodError } from "zod";
 
 const llmServiceParams = {
   fastLLMModel: "test-fast-provider",
@@ -37,13 +38,15 @@ describe("DePINMetricsTool", () => {
   });
 
   it("should initialize with correct properties", () => {
-    expect(metricsTool.name).toBe("DePINScanMetrics");
+    expect(metricsTool.name).toBe("get_depin_metrics");
     expect(metricsTool.description).toBe(
-      "Fetches Global DePINScan (Decentralized Physical Infrastructure) metrics",
+      "Fetches Global DePINScan metrics for market analysis"
     );
+    expect(metricsTool.schema).toHaveLength(1);
+    expect(metricsTool.schema[0].name).toBe("get_depin_metrics");
   });
 
-  it("should handle successful API response", async () => {
+  describe("getRawData", () => {
     const mockMetrics = [
       {
         date: "2025-01-27",
@@ -60,63 +63,53 @@ describe("DePINMetricsTool", () => {
         total_projects: "310",
       },
     ];
-    setupMockLLM(JSON.stringify(mockMetrics));
 
-    vi.mocked(fetch).mockImplementationOnce(() =>
-      Promise.resolve({
+    it("should fetch and validate metrics data", async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
         json: () => Promise.resolve(mockMetrics),
-      } as Response),
-    );
+      } as Response);
 
-    const result = await metricsTool.execute(
-      "",
-      new LLMService(llmServiceParams),
-    );
+      const result = await metricsTool.getRawData({ isLatest: true });
+      expect(result).toEqual(mockMetrics);
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining(DEPIN_METRICS_URL + "?is_latest=true")
+      );
+    });
 
-    expect(result).toBe(JSON.stringify(mockMetrics));
-  });
+    it("should handle API errors", async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+      } as Response);
 
-  it("should handle API error", async () => {
-    const error = new Error("API Error");
-    vi.mocked(fetch).mockRejectedValueOnce(error);
+      await expect(metricsTool.getRawData({})).rejects.toThrow(
+        "API request failed with status: 404"
+      );
+    });
 
-    const consoleSpy = vi.spyOn(logger, "error");
-    const result = await metricsTool.execute(
-      "",
-      new LLMService(llmServiceParams),
-    );
+    it("should validate response data against schema", async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () =>
+          Promise.resolve([
+            {
+              date: "2025-01-27",
+              // Missing required fields
+            },
+          ]),
+      } as Response);
 
-    expect(result).toBe("Error fetching DePIN metrics: Error: API Error");
-    expect(consoleSpy).toHaveBeenCalledWith("DePINMetrics Error:", error);
-  });
+      await expect(metricsTool.getRawData({})).rejects.toThrow(ZodError);
+    });
 
-  it("should make request to correct endpoint", async () => {
-    vi.mocked(fetch).mockImplementationOnce(() =>
-      Promise.resolve({
-        json: () => Promise.resolve({}),
-      } as Response),
-    );
+    it("should handle network errors", async () => {
+      vi.mocked(fetch).mockRejectedValueOnce(new Error("Network error"));
 
-    await metricsTool.execute("", new LLMService(llmServiceParams));
-
-    expect(fetch).toHaveBeenCalledWith(DEPIN_METRICS_URL);
-  });
-
-  it("should handle invalid LLM response during parsing", async () => {
-    // Setup LLM to return an invalid response without tags
-    // @ts-ignore no need to mock private methods
-    vi.mocked(LLMService).mockImplementation(() => ({
-      fastllm: {
-        generate: vi.fn().mockResolvedValue("invalid response without tags"),
-      },
-    }));
-
-    const result = await metricsTool.execute(
-      "",
-      new LLMService(llmServiceParams),
-    );
-
-    expect(result).toMatch(/Error fetching DePIN metrics/);
+      await expect(metricsTool.getRawData({})).rejects.toThrow(
+        "Network error"
+      );
+    });
   });
 });
 
@@ -137,13 +130,15 @@ describe("DePINProjectsTool", () => {
   });
 
   it("should initialize with correct properties", () => {
-    expect(projectsTool.name).toBe("DePINScanProjects");
+    expect(projectsTool.name).toBe("get_depin_projects");
     expect(projectsTool.description).toBe(
-      "Fetches DePINScan (Decentralized Physical Infrastructure) projects metrics. You can ask about specific projects, categories, or metrics.",
+      "Fetches DePINScan projects and their metrics"
     );
+    expect(projectsTool.schema).toHaveLength(1);
+    expect(projectsTool.schema[0].name).toBe("get_depin_projects");
   });
 
-  it("should handle successful API response and LLM processing", async () => {
+  describe("getRawData", () => {
     const mockProjects = [
       {
         project_name: "Project 1",
@@ -164,53 +159,49 @@ describe("DePINProjectsTool", () => {
       },
     ];
 
-    const mockLLMResponse = JSON.stringify({
-      name: "Project 1",
-      market_cap: "$500,000,000",
-      categories: ["IoT", "Mining"],
+    it("should fetch and validate projects data", async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockProjects),
+      } as Response);
+
+      const result = await projectsTool.getRawData();
+      expect(result).toEqual(mockProjects);
+      expect(fetch).toHaveBeenCalledWith(DEPIN_PROJECTS_URL);
     });
 
-    vi.mocked(fetch).mockImplementationOnce(() =>
-      Promise.resolve({
-        json: () => Promise.resolve(mockProjects),
-      } as Response),
-    );
+    it("should handle API errors", async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+      } as Response);
 
-    mockLLMService.fastllm.generate.mockResolvedValueOnce(mockLLMResponse);
+      await expect(projectsTool.getRawData()).rejects.toThrow(
+        "API request failed with status: 404"
+      );
+    });
 
-    const result = await projectsTool.execute(
-      "Tell me about Project 1",
-      mockLLMService as any,
-    );
+    it("should validate response data against schema", async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () =>
+          Promise.resolve([
+            {
+              project_name: "Project 1",
+              // Missing required fields
+            },
+          ]),
+      } as Response);
 
-    expect(result).toBe(mockLLMResponse);
-    expect(mockLLMService.fastllm.generate).toHaveBeenCalledWith(
-      expect.stringContaining("Tell me about Project 1"),
-    );
-  });
+      await expect(projectsTool.getRawData()).rejects.toThrow(ZodError);
+    });
 
-  it("should handle API error", async () => {
-    const error = new Error("API Error");
-    vi.mocked(fetch).mockRejectedValueOnce(error);
+    it("should handle network errors", async () => {
+      vi.mocked(fetch).mockRejectedValueOnce(new Error("Network error"));
 
-    const consoleSpy = vi.spyOn(logger, "error");
-    const result = await projectsTool.execute("query", mockLLMService as any);
-
-    expect(result).toBe("Error fetching DePIN projects: Error: API Error");
-    expect(consoleSpy).toHaveBeenCalledWith("DePINProjects Error:", error);
-  });
-
-  it("should make request to correct endpoint", async () => {
-    vi.mocked(fetch).mockImplementationOnce(() =>
-      Promise.resolve({
-        json: () => Promise.resolve([]),
-      } as Response),
-    );
-
-    mockLLMService.fastllm.generate.mockResolvedValueOnce("{}");
-
-    await projectsTool.execute("query", mockLLMService as any);
-
-    expect(fetch).toHaveBeenCalledWith(DEPIN_PROJECTS_URL);
+      await expect(projectsTool.getRawData()).rejects.toThrow(
+        "Network error"
+      );
+    });
   });
 });
