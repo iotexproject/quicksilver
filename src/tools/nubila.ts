@@ -1,12 +1,63 @@
 import { z } from "zod";
-
-import { LLMService } from "../llm/llm-service";
-import { APITool } from "./tool";
-import { extractContentFromTags } from "../utils/parsers";
-import { WeatherData, WeatherForecast } from "./types/nubila";
-import { coordinatesTemplate } from "./templates";
-import { logger } from "../logger/winston";
 import { Tool, tool } from "ai";
+
+import { APITool } from "./tool";
+import { logger } from "../logger/winston";
+
+type WeatherData = {
+  latitude: number;
+  longitude: number;
+  temperature: number;
+  condition: string;
+  condition_desc: string;
+  condition_code: number;
+  temperature_min: number;
+  temperature_max: number;
+  feels_like: number;
+  pressure: number;
+  humidity: number;
+  wind_speed: number;
+  wind_scale: number;
+  wind_direction: number;
+  uv: number;
+  luminance: number;
+  elevation: number;
+  rain: number;
+  wet_bulb: number;
+  timestamp: number;
+  timezone: number;
+  location_name: string;
+  address: string;
+  source: string;
+  tag: string;
+};
+
+type WeatherForecast = WeatherForecastDP[];
+type WeatherForecastDP = {
+  latitude: number;
+  longitude: number;
+  temperature: number;
+  condition: string;
+  condition_desc: string;
+  condition_code: number;
+  temperature_min: number;
+  temperature_max: number;
+  feels_like: number;
+  pressure: number;
+  humidity: number;
+  wind_speed: number;
+  wind_direction: number;
+  uv: number;
+  luminance: number;
+  sea_level: number;
+  rain: number;
+  wet_bulb: number;
+  timestamp: number;
+  timezone: number;
+  location_name: string;
+  source: string;
+  tag: string;
+};
 
 interface CoordinatesInput {
   lat: number;
@@ -29,7 +80,9 @@ const NubilaCoordinatesSchema = z.object({
 });
 
 const CurrentWeatherToolSchema = {
-  description: "Gets the current weather conditions for a specific location",
+  name: "get_current_weather",
+  description:
+    "Gets the current weather conditions for a specific location: temperature,condition,pressure,humidity,wind,uv,luminance,elevation,rain,wet_bulb",
   parameters: NubilaCoordinatesSchema,
   execute: async (input: CoordinatesInput) => {
     const tool = new CurrentWeatherAPITool();
@@ -38,7 +91,9 @@ const CurrentWeatherToolSchema = {
 };
 
 const ForecastWeatherToolSchema = {
-  description: "Gets the weather forecast for a specific location",
+  name: "get_forecast_weather",
+  description:
+    "Gets the weather forecast for a specific location with array of: temperature,condition,pressure,humidity,wind,uv,luminance,rain,wet_bulb",
   parameters: NubilaCoordinatesSchema,
   execute: async (input: CoordinatesInput) => {
     const tool = new ForecastWeatherAPITool();
@@ -49,16 +104,10 @@ const ForecastWeatherToolSchema = {
 abstract class BaseWeatherAPITool extends APITool<CoordinatesInput> {
   abstract schema: { name: string; tool: Tool }[];
 
-  constructor(
-    name: string,
-    description: string,
-    endpoint: string,
-    output: string
-  ) {
+  constructor(name: string, description: string, endpoint: string) {
     super({
       name,
       description,
-      output,
       baseUrl: NUBILA_URL + endpoint,
       twitterAccount: "nubilanetwork",
     });
@@ -68,30 +117,14 @@ abstract class BaseWeatherAPITool extends APITool<CoordinatesInput> {
     }
   }
 
-  async execute(userInput: any, llmService: LLMService): Promise<string> {
-    try {
-      const parsedInput = await this.parseInput(userInput, llmService);
-      const weatherData = await this.getRawData(parsedInput);
-      return this.formatWeatherData(parsedInput, weatherData);
-    } catch (error: any) {
-      logger.error("Error fetching weather data, skipping...");
-      logger.error(error.message);
-      return `Skipping weather ${this.name.toLowerCase()} fetch.`;
-    }
+  public async getRawData(
+    coords: CoordinatesInput
+  ): Promise<WeatherData | WeatherForecast> {
+    const { lat, lon } = NubilaCoordinatesSchema.parse(coords);
+    return this.fetchWeather(lat, lon);
   }
 
-  async parseInput(
-    userInput: any,
-    llmService: LLMService
-  ): Promise<CoordinatesInput> {
-    return Coordinates.extractFromQuery(userInput, llmService);
-  }
-
-  public async getRawData(coords: CoordinatesInput): Promise<any> {
-    const { lat, lon } = coords;
-    if (!lat || !lon) {
-      throw new Error("Latitude and longitude are required.");
-    }
+  private async fetchWeather(lat: number, lon: number) {
     const url = `${this.baseUrl}?lat=${lat}&lon=${lon}`;
     const apiKey = process.env.NUBILA_API_KEY as string;
     const response = await fetch(url, {
@@ -109,130 +142,38 @@ abstract class BaseWeatherAPITool extends APITool<CoordinatesInput> {
     const data = await response.json();
     return data.data;
   }
-
-  protected abstract formatWeatherData(
-    coords: CoordinatesInput,
-    data: any
-  ): Promise<string>;
 }
 
 export class CurrentWeatherAPITool extends BaseWeatherAPITool {
   schema = [
-    { name: "CurrentWeatherAPITool", tool: tool(CurrentWeatherToolSchema) },
+    {
+      name: CurrentWeatherToolSchema.name,
+      tool: tool(CurrentWeatherToolSchema),
+    },
   ];
 
   constructor() {
     super(
-      "CurrentWeatherAPITool",
-      "Gets the current weather from Nubila API.",
-      "weather",
-      "temperature,condition,pressure,humidity,wind,uv,luminance,elevation,rain,wet_bulb"
+      CurrentWeatherToolSchema.name,
+      CurrentWeatherToolSchema.description,
+      "weather"
     );
-  }
-
-  protected async formatWeatherData(
-    coords: CoordinatesInput,
-    weatherData: WeatherData
-  ): Promise<string> {
-    const {
-      condition,
-      temperature,
-      feels_like,
-      humidity,
-      pressure,
-      wind_speed,
-      wind_direction,
-      uv,
-      luminance,
-      elevation,
-      rain,
-      wet_bulb,
-      location_name,
-    } = weatherData;
-
-    return `
-The current weather in ${location_name} (${coords.lat}, ${coords.lon}) is:
-Condition: ${condition},
-Temperature: ${temperature}°C${feels_like && ` (Feels like ${feels_like}°C)`},
-Humidity: ${humidity}%,
-Pressure: ${pressure} hPa,
-Wind Speed: ${wind_speed} m/s,
-Wind Direction: ${wind_direction}°,
-UV: ${uv},
-Luminance: ${luminance},
-Elevation: ${elevation} m,
-Rain: ${rain},
-Wet Bulb: ${wet_bulb}°C,
-`;
   }
 }
 
 export class ForecastWeatherAPITool extends BaseWeatherAPITool {
   schema = [
-    { name: "ForecastWeatherAPITool", tool: tool(ForecastWeatherToolSchema) },
+    {
+      name: ForecastWeatherToolSchema.name,
+      tool: tool(ForecastWeatherToolSchema),
+    },
   ];
 
   constructor() {
     super(
-      "ForecastWeatherAPITool",
-      "Get weather forecast data from the Nubila API.",
-      "forecast",
-      "Array of: temperature,condition,pressure,humidity,wind,uv,luminance,rain,wet_bulb"
+      ForecastWeatherToolSchema.name,
+      ForecastWeatherToolSchema.description,
+      "forecast"
     );
-  }
-
-  protected async formatWeatherData(
-    coords: CoordinatesInput,
-    forecastData: WeatherForecast
-  ): Promise<string> {
-    const summaries = forecastData.map((item) => {
-      const {
-        temperature,
-        condition,
-        condition_desc,
-        wind_speed,
-        pressure,
-        humidity,
-        uv,
-        luminance,
-        rain,
-        wet_bulb,
-      } = item;
-      const date = new Date(item.timestamp * 1000).toLocaleString();
-      return `On ${date}, ${temperature}°C, ${condition}, ${condition_desc}, ${wind_speed} m/s, ${pressure} hPa, ${humidity}%, ${uv}, ${luminance}, ${rain}, ${wet_bulb}°C.`;
-    });
-
-    return `
-Weather Forecast Data for ${forecastData[0].location_name} (${coords.lat}, ${coords.lon}):
-temperature,condition,condition_desc,wind_speed,pressure,humidity,uv,luminance,rain,wet_bulb
-${summaries.join("\n")}
-`;
-  }
-}
-
-export class Coordinates {
-  constructor() {}
-
-  static async extractFromQuery(
-    query: string,
-    llmService: LLMService
-  ): Promise<CoordinatesInput> {
-    const llmResponse = await llmService.fastllm.generate(
-      coordinatesTemplate(query)
-    );
-    const extractedCoords = extractContentFromTags(llmResponse, "response");
-    if (!extractedCoords) {
-      throw new Error("Could not extract latitude and longitude from query.");
-    }
-    const parsedCoords = JSON.parse(extractedCoords);
-
-    if (!parsedCoords.lat || !parsedCoords.lon) {
-      throw new Error("Could not extract latitude and longitude from query.");
-    }
-
-    return {
-      lat: parsedCoords.lat,
-      lon: parsedCoords.lon,
-    };
   }
 }

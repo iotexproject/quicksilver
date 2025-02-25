@@ -1,19 +1,5 @@
 import { DepinScanProject } from "./depinscan";
 
-export const coordinatesTemplate = (query: string) =>
-  `
-Extract latitude and longitude from the following query: 
-<location_query>
-${query}
-</location_query>
-
-If there are no coordinates try to derive them from the location name.
-Return JSON in format 
-<response>
-{"lat": number, "lon": number}
-</response>
-`;
-
 export const depinScanProjectsTemplate = (
   query: string,
   projects: DepinScanProject[],

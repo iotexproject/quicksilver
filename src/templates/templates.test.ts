@@ -9,14 +9,10 @@ class ToolWithTwitterAccount extends APITool<any> {
       name: "ToolWithTwitterAccount",
       description: "ToolWithTwitterAccount",
       baseUrl: "https://api.nubila.ai/api/v1/",
-      output: "Textual response",
       twitterAccount: "nubilanetwork",
     });
   }
-  execute(input: string): Promise<string> {
-    return Promise.resolve("ToolWithTwitterAccount");
-  }
-  parseInput(input: string): Promise<any> {
+  getRawData(input: string): Promise<any> {
     return Promise.resolve({});
   }
 }
@@ -26,14 +22,10 @@ class ToolWithoutTwitterAccount extends APITool<any> {
     super({
       name: "ToolWithoutTwitterAccount",
       description: "ToolWithoutTwitterAccount",
-      output: "Textual response",
       baseUrl: "https://api.nubila.ai/api/v1/",
     });
   }
-  execute(input: string): Promise<string> {
-    return Promise.resolve("ToolWithoutTwitterAccount");
-  }
-  parseInput(input: string): Promise<any> {
+  getRawData(input: string): Promise<any> {
     return Promise.resolve({});
   }
 }
@@ -94,7 +86,6 @@ describe("templates", () => {
       expect(prompt).toContain("Current temperature in SF?");
       expect(prompt).toContain(name);
       expect(prompt).toContain(description);
-      expect(prompt).toContain("Textual response");
       expect(prompt).toContain("<response>");
     });
   });

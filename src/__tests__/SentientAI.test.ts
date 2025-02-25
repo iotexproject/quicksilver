@@ -4,7 +4,7 @@ import { SentientAI } from "../sentientAI";
 
 const currentWeatherOutput = `
 <response>
-["CurrentWeatherAPITool"]
+["get_current_weather"]
 </response>
 `;
 
@@ -25,23 +25,21 @@ describe("SentientAI", () => {
     }));
     vi.mock("../tools/weather/nubila", () => ({
       CurrentWeatherAPITool: vi.fn().mockImplementation(() => ({
-        name: "CurrentWeatherAPITool",
+        name: "get_current_weather",
         description:
           "Gets the current weather from Nubila API. Input is json with latitude and longitude to retrieve weather data.",
         twitterAccount: "nubilanetwork",
-        execute: vi.fn().mockResolvedValue("+10 C"),
       })),
       ForecastWeatherAPITool: vi.fn().mockImplementation(() => ({
         name: "ForecastWeatherAPITool",
         description:
           "Gets the forecast weather from Nubila API. Input is json with latitude and longitude to retrieve weather data.",
-        execute: vi.fn().mockResolvedValue("+10 C"),
       })),
     }));
     vi.mock("../raw-data-provider", () => ({
       RawDataProvider: vi.fn().mockImplementation(() => ({
         process: vi.fn().mockImplementation((tool, params) => {
-          if (tool.name === "CurrentWeatherAPITool") {
+          if (tool.name === "get_current_weather") {
             return Promise.resolve("+10 C");
           }
           return Promise.reject(new Error(`Unknown tool ${tool.name}`));
