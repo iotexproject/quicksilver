@@ -19,7 +19,7 @@ const GetVehicleSignalsToolSchema = {
   name: "get_vehicle_signals",
   description: "Gets available signals for a specific vehicle",
   parameters: z.object({
-    tokenId: z.string().describe("Vehicle token ID to fetch signals for"),
+    tokenId: z.string().describe("Vehicle token ID to fetch signals for. Example: 1234567890"),
   }),
   execute: async (input: { tokenId: string }) => {
     const tool = new DimoTool();
@@ -32,11 +32,16 @@ const GetVehicleSignalsToolSchema = {
 const GetLatestSignalsToolSchema = {
   name: "get_latest_signals",
   description:
-    "Gets latest signal values for a specific vehicle: tire pressure, location, vehicle speed, angular velocity, wheel speed, altitude, battery voltage, fuel system, engine load, fuel pressure, engine temperature, fuel trim, powertrain range, traction battery, transmission, service distance",
+    "Gets latest signal values for a specific vehicle: " +
+    "tire pressure, location, vehicle speed, angular velocity, wheel speed, altitude, " +
+    "battery voltage, fuel system, engine load, fuel pressure, engine temperature, fuel trim, " +
+    "powertrain range, traction battery, transmission, service distance. " +
+    "NOTE: This tool should be called after get_vehicle_signals to ensure the " +
+    "vehicle has available signals to show. Not all vehicles support all signals.",
   parameters: z.object({
     tokenId: z
       .string()
-      .describe("Vehicle token ID to fetch latest signals for"),
+      .describe("Vehicle token ID to fetch latest signals for. Example: 1234567890"),
     signals: z.array(z.string()).describe("List of signals to fetch"),
   }),
   execute: async (input: { tokenId: string; signals: string[] }) => {
