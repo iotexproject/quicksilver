@@ -47,7 +47,7 @@ export class QueryOrchestrator {
     const llmResponse =
       await this.llmService.fastllm.generate(toolSelectionPrompt);
 
-    logger.info("llmResponse", llmResponse);
+    logger.info("llmResponse %s", llmResponse);
 
     const toolNames = extractContentFromTags(llmResponse, "response");
     if (!toolNames) {
@@ -73,7 +73,9 @@ export class QueryOrchestrator {
       tools,
       toolOutputs,
     });
+    logger.info("finalPrompt %s", finalPrompt);
     const output = await this.llmService.llm.generate(finalPrompt);
+    logger.info("output %s", output);
     const parsedOutput = extractContentFromTags(output, "response");
     return parsedOutput || "Could not generate response";
   }

@@ -31,10 +31,12 @@ Before formulating your response, wrap your analysis inside <analysis> tags. Fol
 5. Prioritize the information based on relevance to the user's query.
 6. Plan how to address each part of the user's query concisely and accurately.
 
-After your analysis, provide a clear and concise response that directly answers the user's question. 
-Avoid repeating raw data unless necessary for context. Ensure your response is actionable and relevant.
-
-If provided, include the following mention handles in your response:
+After your analysis, provide a clear and concise response inside <response> tags:
+1. Directly answers the user's question. 
+2. Translate raw data into readable text unless necessary for context.
+3. Ensure your response is actionable and relevant.
+4. Make all information included in the response section since it is the only section to be returned. Don't refer to other section.
+5. If provided, include the following mention handles in your response:
 <mention_handles>
 ${ctx.tools
   .filter((tool) => tool.twitterAccount)
@@ -43,7 +45,7 @@ ${ctx.tools
 </mention_handles>
 
 Example output structure (do not copy the content, only the format):
-
+*******************************
 <analysis>
 1. Main questions: [List main questions]
 2. Tool output analysis:

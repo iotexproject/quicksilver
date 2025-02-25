@@ -14,7 +14,7 @@ const logFormat = printf((info: TransformableInfo) => {
 const commonFormat = combine(
   errors({ stack: true }), // Enable error stack traces
   timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
-  logFormat,
+  logFormat
 );
 
 // Create Winston logger
@@ -22,7 +22,11 @@ export const logger = createLogger({
   level: "info", // Default log level
   transports: [
     new transports.Console({
-      format: format.combine(format.colorize({ all: true }), commonFormat),
+      format: format.combine(
+        format.colorize({ all: true }),
+        format.splat(),
+        commonFormat
+      ),
     }),
   ],
 });

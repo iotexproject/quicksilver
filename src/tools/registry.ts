@@ -5,6 +5,7 @@ import { DePINScanMetricsTool, DePINScanProjectsTool } from "./depinscan";
 import { L1DataTool } from "./l1data";
 import DimoTool from "./dimo";
 import { NuclearOutagesTool } from "./gov";
+import { ETHDenverTool } from "./ethdenver";
 import { logger } from "../logger/winston";
 
 export class ToolRegistry {
@@ -20,6 +21,7 @@ export class ToolRegistry {
     this.register("l1data", () => new L1DataTool());
     this.register("dimo", () => new DimoTool());
     this.register("nuclear", () => new NuclearOutagesTool());
+    this.register("ethdenver", () => new ETHDenverTool());
   }
 
   static register(name: string, factory: () => Tool) {
@@ -35,7 +37,7 @@ export class ToolRegistry {
 
     if (!enabledToolsEnv) {
       logger.warn(
-        "No tools enabled. Please set ENABLED_TOOLS environment variable.",
+        "No tools enabled. Please set ENABLED_TOOLS environment variable."
       );
       return [];
     }
@@ -45,7 +47,7 @@ export class ToolRegistry {
     const invalidTools = enabledTools.filter((tool) => !this.tools.has(tool));
     if (invalidTools.length > 0) {
       logger.warn(
-        `Warning: Unknown tools configured: ${invalidTools.join(", ")}`,
+        `Warning: Unknown tools configured: ${invalidTools.join(", ")}`
       );
     }
 
