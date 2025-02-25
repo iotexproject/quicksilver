@@ -1,8 +1,8 @@
-import { Tool } from "./types";
+import { QSTool } from "./types";
 import { APITool } from "./tools/tool";
 
 export class RawDataProvider {
-  async process(tool: Tool, params: Record<string, any>): Promise<any> {
+  async process(tool: QSTool, params: Record<string, any>): Promise<any> {
     const apiTool = tool as APITool<any>;
     return apiTool.getRawData(params);
   }

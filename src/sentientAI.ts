@@ -1,13 +1,13 @@
 import { QueryOrchestrator } from "./workflow";
 import { LLMService } from "./llm/llm-service";
 import { ToolRegistry } from "./tools/registry";
-import { Tool } from "./types";
+import { QSTool } from "./types";
 import { RawDataProvider } from "./raw-data-provider";
 import { logger } from "./logger/winston";
 
 export class SentientAI {
   orchestrator: QueryOrchestrator;
-  private tools: Tool[];
+  private tools: QSTool[];
   private rawDataProvider: RawDataProvider;
 
   constructor() {
@@ -31,7 +31,7 @@ export class SentientAI {
 
   async getRawData(
     toolName: string,
-    params: Record<string, any>,
+    params: Record<string, any>
   ): Promise<any> {
     const tool = this.getTool(toolName);
     return this.rawDataProvider.process(tool, params);
@@ -41,7 +41,7 @@ export class SentientAI {
     return this.orchestrator.process(input);
   }
 
-  private getTool(toolName: string): Tool {
+  private getTool(toolName: string): QSTool {
     const tool = ToolRegistry.getTool(toolName);
     if (!tool) {
       throw new Error(`Tool '${toolName}' not found`);

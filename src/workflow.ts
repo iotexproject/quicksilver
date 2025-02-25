@@ -2,17 +2,17 @@ import { ToolSet } from "ai";
 
 import { logger } from "./logger/winston";
 import { LLMService } from "./llm/llm-service";
-import { Tool } from "./types";
+import { QSTool } from "./types";
 
 export class QueryOrchestrator {
   llmService: LLMService;
-  tools: Tool[] = [];
+  tools: QSTool[] = [];
 
   constructor({
     tools,
     llmService,
   }: {
-    tools: Tool[];
+    tools: QSTool[];
     llmService: LLMService;
   }) {
     this.tools = tools;
