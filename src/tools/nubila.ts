@@ -3,7 +3,7 @@ import { Tool, tool } from "ai";
 
 import { APITool } from "./tool";
 import { logger } from "../logger/winston";
-import { CoordinatesInput, WeatherData, WeatherForecast } from "./types/nubila";
+import { WeatherData, WeatherForecast } from "./types/nubila";
 
 const NUBILA_URL = "https://api.nubila.ai/api/v1/";
 
@@ -19,6 +19,8 @@ const NubilaCoordinatesSchema = z.object({
     .max(180)
     .describe("Longitude coordinate between -180 and 180 degrees"),
 });
+
+type CoordinatesInput = z.infer<typeof NubilaCoordinatesSchema>;
 
 const CurrentWeatherToolSchema = {
   name: "get_current_weather",
