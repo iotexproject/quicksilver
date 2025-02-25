@@ -3,31 +3,7 @@ import { z } from "zod";
 import { tool } from "ai";
 
 import { APITool } from "./tool";
-
-interface Vehicle {
-  tokenId: string;
-  owner: string;
-  definition: {
-    make: string;
-    model: string;
-    year: string;
-  };
-}
-
-interface Signal {
-  tokenId: string;
-  availableSignals: string[];
-}
-
-interface LatestSignals {
-  tokenId: string;
-  latestSignals: Signal;
-}
-
-interface DimoParams {
-  tokenId?: string;
-  signals?: string[];
-}
+import { Vehicle, Signal, LatestSignals, DimoParams } from "./types/dimo";
 
 const ListVehiclesToolSchema = {
   name: "list_vehicles",

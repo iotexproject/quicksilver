@@ -3,66 +3,7 @@ import { Tool, tool } from "ai";
 
 import { APITool } from "./tool";
 import { logger } from "../logger/winston";
-
-type WeatherData = {
-  latitude: number;
-  longitude: number;
-  temperature: number;
-  condition: string;
-  condition_desc: string;
-  condition_code: number;
-  temperature_min: number;
-  temperature_max: number;
-  feels_like: number;
-  pressure: number;
-  humidity: number;
-  wind_speed: number;
-  wind_scale: number;
-  wind_direction: number;
-  uv: number;
-  luminance: number;
-  elevation: number;
-  rain: number;
-  wet_bulb: number;
-  timestamp: number;
-  timezone: number;
-  location_name: string;
-  address: string;
-  source: string;
-  tag: string;
-};
-
-type WeatherForecast = WeatherForecastDP[];
-type WeatherForecastDP = {
-  latitude: number;
-  longitude: number;
-  temperature: number;
-  condition: string;
-  condition_desc: string;
-  condition_code: number;
-  temperature_min: number;
-  temperature_max: number;
-  feels_like: number;
-  pressure: number;
-  humidity: number;
-  wind_speed: number;
-  wind_direction: number;
-  uv: number;
-  luminance: number;
-  sea_level: number;
-  rain: number;
-  wet_bulb: number;
-  timestamp: number;
-  timezone: number;
-  location_name: string;
-  source: string;
-  tag: string;
-};
-
-interface CoordinatesInput {
-  lat: number;
-  lon: number;
-}
+import { CoordinatesInput, WeatherData, WeatherForecast } from "./types/nubila";
 
 const NUBILA_URL = "https://api.nubila.ai/api/v1/";
 
