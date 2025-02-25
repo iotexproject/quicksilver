@@ -30,6 +30,17 @@ export class QueryOrchestrator {
     }
   }
 
+  async processStream(input: string): Promise<any> {
+    try {
+      const toolSet = this.buildToolSet();
+      const response = await this.llmService.llm.stream(input, toolSet);
+      return response;
+    } catch (error) {
+      logger.error("Error processing query", error);
+      return "Processing Error, please try again later.";
+    }
+  }
+
   buildToolSet(): ToolSet {
     const toolSet: ToolSet = {};
     this.tools.forEach((tool) => {

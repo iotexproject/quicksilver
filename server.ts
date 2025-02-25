@@ -34,6 +34,27 @@ app.post("/ask", async (c) => {
   }
 });
 
+app.post("/stream", async (c) => {
+  const apiKey = c.req.header("API-KEY");
+  if (!apiKey) {
+    logger.warn("no SENTAI API-KEY provided");
+  }
+
+  try {
+    const formData = await c.req.formData();
+    let content = formData.get("text");
+    const recentMessages = formData.get("recentMessages");
+    if (recentMessages) {
+      content = recentMessages + "\n" + content;
+    }
+    return sentai.stream(content as string);
+  } catch (e) {
+    console.log("error", e);
+    logger.error(e);
+    return c.json({ error: "Internal server error." }, 400);
+  }
+});
+
 app.get("/raw", async (c) => {
   const apiKey = c.req.header("API-KEY");
   if (!apiKey) {

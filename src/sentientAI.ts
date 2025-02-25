@@ -41,6 +41,10 @@ export class SentientAI {
     return this.orchestrator.process(input);
   }
 
+  async stream(input: string): Promise<any> {
+    return this.orchestrator.processStream(input);
+  }
+
   private getTool(toolName: string): QSTool {
     const tool = ToolRegistry.getTool(toolName);
     if (!tool) {
