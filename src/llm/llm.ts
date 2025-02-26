@@ -48,6 +48,7 @@ export class ModelAdapter implements LLM {
       console.time(`generation with model: ${this.model.modelId}`);
       const response = await generateText({
         model: this.model,
+        system: process.env.SYSTEM_PROMPT || "You're a helpful assistant that can answer questions and help with tasks. You are also able to use tools to get information.",
         prompt,
         tools,
         maxSteps: TOOL_CALL_LIMIT,
@@ -73,6 +74,7 @@ export class ModelAdapter implements LLM {
       execute: (dataStream) => {
         const result = streamText({
           model: this.model,
+          system: process.env.SYSTEM_PROMPT || "You're a helpful assistant that can answer questions and help with tasks. You are also able to use tools to get information.",
           prompt,
           tools,
           maxSteps: TOOL_CALL_LIMIT,
