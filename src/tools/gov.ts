@@ -129,6 +129,6 @@ export class NuclearOutagesTool extends APITool<DateRange> {
     }
 
     const data = await response.json();
-    return z.array(NuclearOutageDataSchema).parse(data.response.data);
+    return data.response.data;
   }
 }

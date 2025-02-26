@@ -150,8 +150,7 @@ export class DePINScanMetricsTool extends APITool<DepinScanMetricsParams> {
     if (!res.ok) {
       throw new Error(`API request failed with status: ${res.status}`);
     }
-    const metricsArray = await res.json();
-    return z.array(DepinScanMetricsSchema).parse(metricsArray);
+    return await res.json();
   }
 }
 
@@ -173,7 +172,6 @@ export class DePINScanProjectsTool extends APITool<void> {
     if (!res.ok) {
       throw new Error(`API request failed with status: ${res.status}`);
     }
-    const projects = await res.json();
-    return z.array(DepinScanProjectSchema).parse(projects);
+    return await res.json();
   }
 }
