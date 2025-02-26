@@ -3,10 +3,25 @@ import { TransformableInfo } from "logform";
 
 const { combine, timestamp, printf, errors } = format;
 
+// Custom format to handle additional metadata/objects
+const addMetadata = format((info) => {
+  const args = info[Symbol.for("splat")];
+  if (args && Array.isArray(args)) {
+    info.metadata = args.length === 1 ? args[0] : args;
+  }
+  return info;
+});
+
 // Custom log format
 const logFormat = printf((info: TransformableInfo) => {
-  const { timestamp, level, message, stack } = info;
-  const logMessage = `${timestamp} [${level}]: ${message}`;
+  const { timestamp, level, message, stack, metadata } = info;
+  let logMessage = `${timestamp} [${level}]: ${message}`;
+
+  // Add metadata if it exists
+  if (metadata) {
+    logMessage += ` ${JSON.stringify(metadata, null, 2)}`;
+  }
+
   return stack ? `${logMessage}\n${stack}` : logMessage;
 });
 
@@ -14,7 +29,8 @@ const logFormat = printf((info: TransformableInfo) => {
 const commonFormat = combine(
   errors({ stack: true }), // Enable error stack traces
   timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
-  logFormat,
+  addMetadata(),
+  logFormat
 );
 
 // Create Winston logger

@@ -29,7 +29,8 @@ app.post("/ask", async (c) => {
     const response = await sentai.execute(content);
     return c.json({ data: response });
   } catch (e) {
-    logger.error(e);
+    console.log("error", e);
+    logger.error("Error in /ask", { error: e });
     return c.json({ error: "Internal server error." }, 400);
   }
 });
@@ -50,7 +51,7 @@ app.post("/stream", async (c) => {
     return sentai.stream(content as string);
   } catch (e) {
     console.log("error", e);
-    logger.error(e);
+    logger.error("Error in /stream", { error: e });
     return c.json({ error: "Internal server error." }, 400);
   }
 });
@@ -78,7 +79,8 @@ app.get("/raw", async (c) => {
     const rawData = await sentai.getRawData(toolName, params);
     return c.json({ data: rawData });
   } catch (e: any) {
-    logger.error(e);
+    console.log("error", e);
+    logger.error("Error in /raw", { error: e });
     return c.json({ error: e.message || "Internal server error" }, 500);
   }
 });
