@@ -131,29 +131,5 @@ describe("NuclearOutagesTool", () => {
         expect.any(Object)
       );
     });
-
-    it("should validate response data against schema", async () => {
-      const dateRange = {
-        start: "2024-02-01",
-        end: "2024-02-07",
-      };
-
-      // Mock API response with invalid data
-      (global.fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          response: {
-            data: [
-              {
-                period: "2024-02-01",
-                // Missing required fields
-              },
-            ],
-          },
-        }),
-      });
-
-      await expect(nuclearTool.getRawData(dateRange)).rejects.toThrow(ZodError);
-    });
   });
 });

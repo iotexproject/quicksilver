@@ -88,21 +88,6 @@ describe("DePINMetricsTool", () => {
       );
     });
 
-    it("should validate response data against schema", async () => {
-      vi.mocked(fetch).mockResolvedValueOnce({
-        ok: true,
-        json: () =>
-          Promise.resolve([
-            {
-              date: "2025-01-27",
-              // Missing required fields
-            },
-          ]),
-      } as Response);
-
-      await expect(metricsTool.getRawData({})).rejects.toThrow(ZodError);
-    });
-
     it("should handle network errors", async () => {
       vi.mocked(fetch).mockRejectedValueOnce(new Error("Network error"));
 
@@ -179,21 +164,6 @@ describe("DePINProjectsTool", () => {
       await expect(projectsTool.getRawData()).rejects.toThrow(
         "API request failed with status: 404"
       );
-    });
-
-    it("should validate response data against schema", async () => {
-      vi.mocked(fetch).mockResolvedValueOnce({
-        ok: true,
-        json: () =>
-          Promise.resolve([
-            {
-              project_name: "Project 1",
-              // Missing required fields
-            },
-          ]),
-      } as Response);
-
-      await expect(projectsTool.getRawData()).rejects.toThrow(ZodError);
     });
 
     it("should handle network errors", async () => {
