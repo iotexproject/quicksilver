@@ -88,4 +88,5 @@ app.get("/raw", async (c) => {
 export default {
   port: process.env.PORT || 8000,
   fetch: app.fetch,
+  idleTimeout: 120,
 };

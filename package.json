@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "bun run server.ts",
-    "dev": "bun run --watch server.ts",
+    "start": "bun run server.ts --server-options=\"{\\\"idleTimeout\\\": 120000}\"",
+    "dev": "bun run --watch server.ts --server-options=\"{\\\"idleTimeout\\\": 120000}\"",
     "test": "vitest run",
     "coverage": "vitest --coverage",
     "format": "bun prettier . --write"
