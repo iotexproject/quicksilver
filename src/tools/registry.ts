@@ -8,7 +8,7 @@ import { NuclearOutagesTool } from "./gov";
 import { logger } from "../logger/winston";
 import { MapboxTool } from "./mapbox";
 import { ETHDenverTool } from "./ethdenver";
-
+import LumaEventsTool from "./luma";
 export class ToolRegistry {
   private static tools = new Map<string, () => QSTool>();
 
@@ -24,6 +24,7 @@ export class ToolRegistry {
     this.register("nuclear", () => new NuclearOutagesTool());
     this.register("mapbox", () => new MapboxTool());
     this.register("ethdenver", () => new ETHDenverTool());
+    this.register("luma", () => new LumaEventsTool());
   }
 
   static register(name: string, factory: () => QSTool) {
