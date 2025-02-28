@@ -5,6 +5,7 @@ const DEEPSEEK_MODELS = new Set(["deepseek-chat", "deepseek-reasoner"]);
 const ANTHROPIC_MODELS = new Set([
   "claude-3-5-sonnet-latest",
   "claude-3-5-haiku-latest",
+  "claude-3-7-sonnet-latest",
 ]);
 
 export class LLMService {
