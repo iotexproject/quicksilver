@@ -303,5 +303,43 @@ describe("BaseWeatherAPITool", () => {
       const result = await tool.getRawData(coords);
       expect(result).toBeUndefined();
     });
+
+    it("should handle string values for latitude and longitude", async () => {
+      // @ts-ignore: Testing runtime behavior with string values
+      const coords = { lat: "37.7749", lon: "-122.4194" };
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ data: { temperature: 25 } }),
+      });
+
+      // @ts-ignore: Testing runtime behavior with string values
+      await tool.getRawData(coords);
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${tool.baseUrl}?lat=37.7749&lon=-122.4194`,
+        {
+          headers: { "x-api-key": "test-api-key" },
+          signal: expect.any(AbortSignal),
+        }
+      );
+    });
+
+    it("should handle string values with invalid numbers", async () => {
+      // @ts-ignore: Testing runtime behavior with invalid string values
+      const coords = { lat: "invalid", lon: "-122.4194" };
+
+      // @ts-ignore: Testing runtime behavior with invalid string values
+      await expect(tool.getRawData(coords)).rejects.toEqual(
+        expect.objectContaining({
+          name: "ZodError",
+          issues: expect.arrayContaining([
+            expect.objectContaining({
+              code: "invalid_type",
+              path: ["lat"],
+            }),
+          ]),
+        })
+      );
+    });
   });
 });

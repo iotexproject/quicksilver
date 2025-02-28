@@ -63,7 +63,13 @@ abstract class BaseWeatherAPITool extends APITool<CoordinatesInput> {
   public async getRawData(
     coords: CoordinatesInput
   ): Promise<WeatherData | WeatherForecast> {
-    const { lat, lon } = NubilaCoordinatesSchema.parse(coords);
+    // Convert string values to numbers if needed
+    const parsedCoords = {
+      lat: typeof coords.lat === "string" ? parseFloat(coords.lat) : coords.lat,
+      lon: typeof coords.lon === "string" ? parseFloat(coords.lon) : coords.lon,
+    };
+
+    const { lat, lon } = NubilaCoordinatesSchema.parse(parsedCoords);
     return this.fetchWeather(lat, lon);
   }
 
