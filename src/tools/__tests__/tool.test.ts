@@ -25,7 +25,6 @@ class TestAPITool extends APITool<ToolInput> {
 describe("APITool", () => {
   const name = "Test Tool";
   const description = "A test tool";
-  const output = "test-output";
   const twitterAccount = "test-twitter-account";
   const baseUrl = "https://test-api.com";
   let tool: TestAPITool;
@@ -34,7 +33,6 @@ describe("APITool", () => {
     tool = new TestAPITool({
       name,
       description,
-      output,
       baseUrl,
       twitterAccount,
     });
@@ -43,7 +41,6 @@ describe("APITool", () => {
   it("should initialize with correct properties", () => {
     expect(tool.name).toBe(name);
     expect(tool.description).toBe(description);
-    expect(tool.output).toBe(output);
     expect(tool.twitterAccount).toBe(twitterAccount);
     expect(tool.baseUrl).toBe(baseUrl);
   });
@@ -58,7 +55,6 @@ describe("APITool", () => {
     const tool = new TestAPITool({
       name,
       description,
-      output,
       baseUrl,
     });
     expect(tool.twitterAccount).toBe("");

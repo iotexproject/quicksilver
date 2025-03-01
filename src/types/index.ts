@@ -1,15 +1,15 @@
-import { LLMService } from "../llm/llm-service";
+import { Tool } from "ai";
 
 export interface PromptContext {
-  tools: Tool[];
+  tools: QSTool[];
   toolOutputs: string[];
   input: string;
 }
 
-export interface Tool {
+export interface QSTool {
   name: string;
   description: string;
   output: string;
   twitterAccount?: string;
-  execute(input: string, llmService: LLMService): Promise<string>;
+  schema: { name: string; tool: Tool }[];
 }

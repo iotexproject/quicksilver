@@ -1,70 +1,124 @@
-import Anthropic from "@anthropic-ai/sdk";
-import OpenAI from "openai";
+import {
+  generateText,
+  streamText,
+  LanguageModel,
+  ToolSet,
+  createDataStreamResponse,
+  smoothStream,
+} from "ai";
+import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { deepseek } from "@ai-sdk/deepseek";
+
 import { logger } from "../logger/winston";
 
+export const TOOL_CALL_LIMIT = process.env.TOOL_CALL_LIMIT
+  ? parseInt(process.env.TOOL_CALL_LIMIT)
+  : 20;
+
 export interface LLM {
-  generate(prompt: string): Promise<string>;
+  generate(prompt: string, tools?: ToolSet): Promise<string>;
+  stream(prompt: string, tools?: ToolSet): Promise<any>;
 }
 
 export class DummyLLM implements LLM {
-  async generate(prompt: string): Promise<string> {
+  async generate(_: string): Promise<string> {
     const response = `Dummy LLM Response to the user's request.`; // A fixed response
     return JSON.stringify({
       tool: null,
       tool_input: response,
     });
   }
+
+  async stream(_: string): Promise<string> {
+    return "Dummy LLM Response to the user's request.";
+  }
 }
 
-export class AnthropicLLM implements LLM {
-  private anthropic: Anthropic;
-  model: string;
+export class ModelAdapter implements LLM {
+  model: LanguageModel;
 
-  constructor(params: { model: string }) {
-    this.model = params.model;
-    const anthropic = new Anthropic();
-    this.anthropic = anthropic;
-  }
-
-  async generate(prompt: string): Promise<string> {
-    try {
-      console.time("called with model: " + this.model);
-      const response = await this.anthropic.messages.create({
-        messages: [{ role: "user", content: prompt }],
-        model: this.model,
-        max_tokens: 1000,
-        temperature: 0,
-      });
-      console.timeEnd("called with model: " + this.model);
-      // @ts-ignore property text does exist
-      return response.content[0]?.text || "No content in response";
-    } catch (error: any) {
-      logger.error("Anthropic API Error:", error.message);
-      return `Anthropic API Error: ${error.message}`;
+  constructor({ provider, model }: { provider: string; model: string }) {
+    if (provider === "anthropic") {
+      this.model = anthropic(model);
+    } else if (provider === "openai") {
+      this.model = openai(model);
+    } else if (provider === "deepseek") {
+      this.model = deepseek(model);
+    } else {
+      throw new Error(`Unsupported provider: ${provider}`);
     }
   }
+
+  async generate(prompt: string, tools?: ToolSet): Promise<string> {
+    try {
+      console.time(`generation with model: ${this.model.modelId}`);
+      const response = await generateText({
+        model: this.model,
+        system:
+          (process.env.SYSTEM_PROMPT ||
+            "You're a helpful assistant that can answer questions and help with tasks. You are also able to use tools to get information.") +
+          `\nCurrent date and time: ${new Date().toISOString()}`,
+        prompt,
+        tools,
+        maxSteps: TOOL_CALL_LIMIT,
+        experimental_continueSteps: true,
+        onStepFinish(step: any) {
+          ModelAdapter.logStep(step);
+        },
+      });
+      console.timeEnd(`generation with model: ${this.model.modelId}`);
+      return response.text;
+    } catch (error) {
+      logger.error(
+        `Error generating text with model ${this.model.modelId}:`,
+        error
+      );
+      throw new Error("Error generating response");
+    }
+  }
+
+  async stream(prompt: string, tools?: ToolSet) {
+    console.log("stream", prompt);
+    return createDataStreamResponse({
+      execute: (dataStream) => {
+        const result = streamText({
+          model: this.model,
+          system:
+            (process.env.SYSTEM_PROMPT ||
+              "You're a helpful assistant that can answer questions and help with tasks. You are also able to use tools to get information.") +
+            `\nCurrent date and time: ${new Date().toISOString()}`,
+          prompt,
+          tools,
+          maxSteps: TOOL_CALL_LIMIT,
+          experimental_continueSteps: true,
+          experimental_transform: smoothStream({ chunking: "word" }),
+          experimental_generateMessageId: generateUUID,
+          onStepFinish(step: any) {
+            ModelAdapter.logStep(step);
+          },
+        });
+        result.consumeStream();
+        result.mergeIntoDataStream(dataStream, {
+          sendReasoning: true,
+        });
+      },
+    });
+  }
+
+  static logStep(step: any) {
+    console.log("step: ", step.text);
+    console.log("toolCalls: ", step.toolCalls);
+    console.log("toolResults: ", step.toolResults);
+    console.log("finishReason: ", step.finishReason);
+    console.log("usage: ", step.usage);
+  }
 }
 
-export class OpenAILLM implements LLM {
-  private openai: OpenAI;
-  model: string;
-
-  constructor(params: { model: string; apiKey: string; baseURL?: string }) {
-    this.model = params.model;
-    const openai = new OpenAI({
-      apiKey: params.apiKey,
-      baseURL: params.baseURL || "https://api.openai.com/v1",
-    });
-    this.openai = openai;
-  }
-
-  async generate(prompt: string): Promise<string> {
-    console.time("called with model: " + this.model);
-    const response = await this.openai.chat.completions.create({
-      model: this.model,
-      messages: [{ role: "user", content: prompt }],
-    });
-    console.timeEnd("called with model: " + this.model);
-    return response.choices[0]?.message.content || "No content in response";
-  }
+function generateUUID(): string {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
 }

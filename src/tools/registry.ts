@@ -1,4 +1,4 @@
-import { Tool } from "../types";
+import { QSTool } from "../types";
 import { NewsAPITool } from "./newsapi";
 import { CurrentWeatherAPITool, ForecastWeatherAPITool } from "./nubila";
 import { DePINScanMetricsTool, DePINScanProjectsTool } from "./depinscan";
@@ -6,9 +6,11 @@ import { L1DataTool } from "./l1data";
 import DimoTool from "./dimo";
 import { NuclearOutagesTool } from "./gov";
 import { logger } from "../logger/winston";
-
+import { MapboxTool } from "./mapbox";
+import { ETHDenverTool } from "./ethdenver";
+import LumaEventsTool from "./luma";
 export class ToolRegistry {
-  private static tools = new Map<string, () => Tool>();
+  private static tools = new Map<string, () => QSTool>();
 
   static {
     // Register all available tools
@@ -20,9 +22,12 @@ export class ToolRegistry {
     this.register("l1data", () => new L1DataTool());
     this.register("dimo", () => new DimoTool());
     this.register("nuclear", () => new NuclearOutagesTool());
+    this.register("mapbox", () => new MapboxTool());
+    this.register("ethdenver", () => new ETHDenverTool());
+    this.register("luma", () => new LumaEventsTool());
   }
 
-  static register(name: string, factory: () => Tool) {
+  static register(name: string, factory: () => QSTool) {
     this.tools.set(name, factory);
   }
 
@@ -30,12 +35,12 @@ export class ToolRegistry {
     return Array.from(this.tools.keys());
   }
 
-  static getEnabledTools(): Tool[] {
+  static getEnabledTools(): QSTool[] {
     const enabledToolsEnv = process.env.ENABLED_TOOLS;
 
     if (!enabledToolsEnv) {
       logger.warn(
-        "No tools enabled. Please set ENABLED_TOOLS environment variable.",
+        "No tools enabled. Please set ENABLED_TOOLS environment variable."
       );
       return [];
     }
@@ -45,7 +50,7 @@ export class ToolRegistry {
     const invalidTools = enabledTools.filter((tool) => !this.tools.has(tool));
     if (invalidTools.length > 0) {
       logger.warn(
-        `Warning: Unknown tools configured: ${invalidTools.join(", ")}`,
+        `Warning: Unknown tools configured: ${invalidTools.join(", ")}`
       );
     }
 
@@ -58,10 +63,10 @@ export class ToolRegistry {
           return null;
         }
       })
-      .filter((tool): tool is Tool => tool !== null);
+      .filter((tool): tool is QSTool => tool !== null);
   }
 
-  static getTool(name: string): Tool | undefined {
+  static getTool(name: string): QSTool | undefined {
     const tool = this.tools.get(name);
     if (!tool) {
       return undefined;

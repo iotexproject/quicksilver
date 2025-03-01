@@ -1,7 +1,7 @@
-import { Tool } from "../types";
+import { QSTool } from "../types";
 import { ethers } from "ethers";
 
-export class IoIDTool implements Tool {
+export class IoIDTool implements QSTool {
   name: string = "IoIDTool";
   description: string = `
     This tool can read the IoTeX blockchain to get information related to the 
@@ -15,7 +15,7 @@ export class IoIDTool implements Tool {
 
   constructor() {
     this.provider = new ethers.JsonRpcProvider(
-      "https://babel-api.mainnet.iotex.io",
+      "https://babel-api.mainnet.iotex.io"
     );
   }
 
@@ -82,7 +82,7 @@ export class IoIDTool implements Tool {
     const projectContract = new ethers.Contract(
       contractAddress,
       contractABI,
-      this.provider,
+      this.provider
     );
 
     try {

@@ -2,16 +2,23 @@ import { mockLLMService } from "./mocks";
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 
 import { QueryOrchestrator } from "../workflow";
-import { CurrentWeatherAPITool, ForecastWeatherAPITool } from "../tools/nubila";
+import { CurrentWeatherAPITool } from "../tools/nubila";
 import { LLMService } from "../llm/llm-service";
 import { APITool } from "../tools/tool";
+import { Tool } from "ai";
 
 class TestAPITool extends APITool<any> {
+  schema: { name: string; tool: Tool }[] = [];
+
   async execute(_: string): Promise<string> {
     return "<response>test</response>";
   }
 
   async parseInput(_: string): Promise<any> {
+    return "test";
+  }
+
+  async getRawData(_: any): Promise<any> {
     return "test";
   }
 }
@@ -31,7 +38,7 @@ describe("Workflow", () => {
         generate: vi.fn().mockResolvedValue(queryResponse),
       },
       llm: {
-        generate: vi.fn().mockResolvedValue("<response>+10 C</response>"),
+        generate: vi.fn().mockResolvedValue("+10 C"),
       },
     }));
   };
@@ -82,58 +89,13 @@ describe("Workflow", () => {
         }),
       });
       const res = await workflow.process(
-        "Rephrase the following sentence'Current temperature in SF?'",
+        "Rephrase the following sentence'Current temperature in SF?'"
       );
       expect(res).toBe("What is the weather in SF?");
     });
   });
-  describe("selectTools", () => {
-    it("should return correct single tool", async () => {
-      const workflow = new QueryOrchestrator({
-        tools: [tool],
-        llmService: new LLMService({
-          fastLLMModel: "deepseek-chat",
-          LLMModel: "deepseek-chat",
-        }),
-      });
-      const res = await workflow.selectTools("Current temperature in SF?");
-
-      expect(res.length).toEqual(1);
-      expect(res[0].name).toEqual("Test Tool");
-      expect(res[0].description).toEqual("A test tool");
-      expect(res[0].execute).toBeDefined();
-    });
-    it("should return correct multiple tools", async () => {
-      // @ts-ignore no need to mock private methods
-      vi.mocked(LLMService).mockImplementationOnce(() => ({
-        fastllm: {
-          generate: vi.fn().mockResolvedValue(multipleTools),
-        },
-        llm: {
-          generate: vi.fn().mockResolvedValue("+10 C"),
-        },
-      }));
-      const workflow = new QueryOrchestrator({
-        tools: [new CurrentWeatherAPITool(), new ForecastWeatherAPITool()],
-        llmService: new LLMService({
-          fastLLMModel: "deepseek-chat",
-          LLMModel: "deepseek-chat",
-        }),
-      });
-      const res = await workflow.selectTools("Current temperature in SF?");
-
-      expect(res.length).toEqual(2);
-      expect(res[0].name).toEqual("CurrentWeatherAPITool");
-      expect(res[1].name).toEqual("ForecastWeatherAPITool");
-    });
-  });
 });
 
-const multipleTools = `
-<response>
-["CurrentWeatherAPITool", "ForecastWeatherAPITool"]
-</response>
-`;
 const noTools = `
 <response>
 []
