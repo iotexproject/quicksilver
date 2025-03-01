@@ -22,10 +22,6 @@ const FetchLumaEventsToolSchema = {
       .describe(
         "Optional Luma calendar URL. If not provided, uses ETHDenver calendar"
       ),
-    filter: z
-      .string()
-      .optional()
-      .describe("Optional text to filter events by title or description"),
   }),
   execute: async (input: { calendarUrl?: string; filter?: string }) => {
     const tool = new LumaEventsTool();
