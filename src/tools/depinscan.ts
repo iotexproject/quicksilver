@@ -8,10 +8,19 @@ export const DEPIN_PROJECTS_URL = "https://metrics-api.w3bstream.com/project";
 
 const DepinScanMetricsSchema = z.object({
   date: z.string().describe("Date of the metrics measurement"),
-  volume: z.string().describe("Trading volume"),
-  total_projects: z.string().describe("Total number of DePIN projects"),
-  market_cap: z.string().describe("Total market capitalization"),
-  total_device: z.string().describe("Total number of connected devices"),
+  volume: z
+    .union([z.string(), z.number()])
+    .optional()
+    .describe("Trading volume"),
+  total_projects: z
+    .union([z.string(), z.number()])
+    .describe("Total number of DePIN projects"),
+  market_cap: z
+    .union([z.string(), z.number()])
+    .describe("Total market capitalization"),
+  total_device: z
+    .union([z.string(), z.number()])
+    .describe("Total number of connected devices"),
 });
 
 const DepinScanProjectSchema = z.object({
@@ -105,10 +114,10 @@ const GetMetricsToolSchema = {
     return {
       metrics: metrics.map((m) => ({
         date: m.date,
-        volume: Number(m.volume).toLocaleString(),
-        totalProjects: parseInt(m.total_projects),
-        marketCap: Number(m.market_cap).toLocaleString(),
-        totalDevices: Number(m.total_device).toLocaleString(),
+        volume: m.volume ? Number(m.volume).toLocaleString() : "N/A",
+        totalProjects: Number(m.total_projects || 0),
+        marketCap: Number(m.market_cap || 0).toLocaleString(),
+        totalDevices: Number(m.total_device || 0).toLocaleString(),
       })),
     };
   },

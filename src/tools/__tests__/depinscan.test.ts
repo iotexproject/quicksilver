@@ -16,6 +16,22 @@ const llmServiceParams = {
 
 describe("DePINMetricsTool", () => {
   let metricsTool: DePINScanMetricsTool;
+  const mockMetrics = [
+    {
+      date: "2025-01-27",
+      volume: 9749741266.623559,
+      market_cap: "26543784050.341797273197",
+      total_device: 20273355,
+      total_projects: 310,
+    },
+    {
+      date: "2025-01-26",
+      volume: "6696675220.806737",
+      market_cap: 27740603007.22298408133,
+      total_device: "20273355",
+      total_projects: "310",
+    },
+  ];
 
   beforeEach(() => {
     metricsTool = new DePINScanMetricsTool();
@@ -33,23 +49,6 @@ describe("DePINMetricsTool", () => {
   });
 
   describe("getRawData", () => {
-    const mockMetrics = [
-      {
-        date: "2025-01-27",
-        volume: "9749741266.623559",
-        market_cap: "26543784050.341797273197",
-        total_device: "20273355",
-        total_projects: "310",
-      },
-      {
-        date: "2025-01-26",
-        volume: "6696675220.806737",
-        market_cap: "27740603007.22298408133",
-        total_device: "20273355",
-        total_projects: "310",
-      },
-    ];
-
     it("should fetch and validate metrics data", async () => {
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
@@ -80,11 +79,108 @@ describe("DePINMetricsTool", () => {
       await expect(metricsTool.getRawData({})).rejects.toThrow("Network error");
     });
   });
+  describe("execute", () => {
+    const executionOptions = {
+      toolCallId: "test-call-id",
+      messages: [],
+      llm: new LLMService(llmServiceParams),
+    };
+    it("should handle latest metrics without volume field", async () => {
+      const latestMetricsWithoutVolume = [
+        {
+          date: "2025-03-01",
+          total_projects: "313",
+          market_cap: "17926784780.719073689883",
+          total_device: "21334450",
+        },
+      ];
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(latestMetricsWithoutVolume),
+      } as Response);
+
+      const result = await metricsTool.schema[0].tool.execute(
+        { isLatest: true },
+        executionOptions
+      );
+
+      expect(result.metrics).toHaveLength(1);
+      expect(result.metrics[0]).toEqual({
+        date: "2025-03-01",
+        volume: "N/A",
+        totalProjects: 313,
+        marketCap: "17,926,784,780.719",
+        totalDevices: "21,334,450",
+      });
+    });
+    it.skip("should handle real data (only latest metrics)", async () => {
+      const originalFetch = global.fetch;
+      vi.unstubAllGlobals();
+
+      const response = await fetch(DEPIN_METRICS_URL + "?is_latest=true");
+      const realData = await response.json();
+      // Restore the mock
+      global.fetch = originalFetch;
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(realData),
+      } as Response);
+      await metricsTool.schema[0].tool.execute(
+        { isLatest: true },
+        executionOptions
+      );
+    });
+    it.skip("should handle real data (only latest metrics)", async () => {
+      const originalFetch = global.fetch;
+      vi.unstubAllGlobals();
+
+      const response = await fetch(DEPIN_METRICS_URL);
+      const realData = await response.json();
+      // Restore the mock
+      global.fetch = originalFetch;
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(realData),
+      } as Response);
+      await metricsTool.schema[0].tool.execute(
+        { isLatest: false },
+        executionOptions
+      );
+    });
+    it("should handle both string and number formats in metrics", async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockMetrics),
+      } as Response);
+
+      const result = await metricsTool.schema[0].tool.execute(
+        { isLatest: false },
+        executionOptions
+      );
+
+      expect(result.metrics).toHaveLength(2);
+      expect(result.metrics[0]).toEqual({
+        date: "2025-01-27",
+        volume: "9,749,741,266.624",
+        totalProjects: 310,
+        marketCap: "26,543,784,050.342",
+        totalDevices: "20,273,355",
+      });
+
+      expect(result.metrics[1]).toEqual({
+        date: "2025-01-26",
+        volume: "6,696,675,220.807",
+        totalProjects: 310,
+        marketCap: "27,740,603,007.223",
+        totalDevices: "20,273,355",
+      });
+    });
+  });
 });
 
 describe("DePINProjectsTool", () => {
   let projectsTool: DePINScanProjectsTool;
-  let mockLLMService: { fastllm: { generate: any; stream: any } };
 
   const mockProjects = [
     {
@@ -152,13 +248,6 @@ describe("DePINProjectsTool", () => {
   beforeEach(() => {
     projectsTool = new DePINScanProjectsTool();
     vi.stubGlobal("fetch", vi.fn());
-
-    mockLLMService = {
-      fastllm: {
-        generate: vi.fn(),
-        stream: vi.fn(),
-      },
-    };
   });
 
   it("should initialize with correct properties", () => {
@@ -226,7 +315,7 @@ describe("DePINProjectsTool", () => {
       } as Response);
     });
 
-    it("should not throw on real data and handle different filters", async () => {
+    it.skip("should handle real data and handle different filters", async () => {
       // Temporarily restore the real fetch for this test
       const originalFetch = global.fetch;
       vi.unstubAllGlobals();
@@ -235,48 +324,71 @@ describe("DePINProjectsTool", () => {
       const realData = await response.json();
       // Restore the mock
       global.fetch = originalFetch;
-      
+
       // Test with no filters
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(realData),
       } as Response);
-      const noFilterResult = await projectsTool.schema[0].tool.execute({}, executionOptions);
+      const noFilterResult = await projectsTool.schema[0].tool.execute(
+        {},
+        executionOptions
+      );
       expect(noFilterResult.totalProjects).toBeGreaterThan(0);
-      
+
       // Test with category filter
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(realData),
       } as Response);
-      const categoryResult = await projectsTool.schema[0].tool.execute({ category: "Storage" }, executionOptions);
-      
+      const categoryResult = await projectsTool.schema[0].tool.execute(
+        { category: "Storage" },
+        executionOptions
+      );
+
       // Test with layer1 filter
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(realData),
       } as Response);
-      const layer1Result = await projectsTool.schema[0].tool.execute({ layer1: "Ethereum" }, executionOptions);
-      
+      const layer1Result = await projectsTool.schema[0].tool.execute(
+        { layer1: "Ethereum" },
+        executionOptions
+      );
+
       // Test with market cap filter
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(realData),
       } as Response);
-      const marketCapResult = await projectsTool.schema[0].tool.execute({ minMarketCap: 1000000 }, executionOptions);
-      
+      const marketCapResult = await projectsTool.schema[0].tool.execute(
+        { minMarketCap: 1000000 },
+        executionOptions
+      );
+
       // Test with devices filter
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(realData),
       } as Response);
-      const devicesResult = await projectsTool.schema[0].tool.execute({ minDevices: 1000 }, executionOptions);
-      
+      const devicesResult = await projectsTool.schema[0].tool.execute(
+        { minDevices: 1000 },
+        executionOptions
+      );
+
       // Verify each filtered result has fewer or equal projects than the unfiltered result
-      expect(categoryResult.totalProjects).toBeLessThanOrEqual(noFilterResult.totalProjects);
-      expect(layer1Result.totalProjects).toBeLessThanOrEqual(noFilterResult.totalProjects);
-      expect(marketCapResult.totalProjects).toBeLessThanOrEqual(noFilterResult.totalProjects);
-      expect(devicesResult.totalProjects).toBeLessThanOrEqual(noFilterResult.totalProjects);
+      expect(categoryResult.totalProjects).toBeLessThanOrEqual(
+        noFilterResult.totalProjects
+      );
+      expect(layer1Result.totalProjects).toBeLessThanOrEqual(
+        noFilterResult.totalProjects
+      );
+      expect(marketCapResult.totalProjects).toBeLessThanOrEqual(
+        noFilterResult.totalProjects
+      );
+      expect(devicesResult.totalProjects).toBeLessThanOrEqual(
+        noFilterResult.totalProjects
+      );
     }, 10000);
 
     it("should return all projects with transformed data", async () => {
