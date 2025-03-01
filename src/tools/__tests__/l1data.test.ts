@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { L1DataTool } from "../l1data";
+import { L1DataTool, GetL1StatsToolSchema } from "../l1data";
 import { ZodError } from "zod";
 
 describe("L1DataTool", () => {
@@ -21,42 +21,42 @@ describe("L1DataTool", () => {
 
   describe("getRawData", () => {
     it("should successfully fetch and process L1 data", async () => {
-      // Mock all REST API responses
+      // Mock all REST API responses with quoted strings like the real API returns
       // @ts-ignore Mock responses don't need full Response implementation
       vi.mocked(fetch)
         .mockImplementationOnce(() =>
           // @ts-ignore Mock responses don't need full Response implementation
           Promise.resolve({
             ok: true,
-            text: () => Promise.resolve("1000000"),
+            text: () => Promise.resolve('"1000000"'),
           })
         ) // tvl
         .mockImplementationOnce(() =>
           // @ts-ignore Mock responses don't need full Response implementation
           Promise.resolve({
             ok: true,
-            text: () => Promise.resolve("500"),
+            text: () => Promise.resolve('"500"'),
           })
         ) // contracts
         .mockImplementationOnce(() =>
           // @ts-ignore Mock responses don't need full Response implementation
           Promise.resolve({
             ok: true,
-            text: () => Promise.resolve("3561284800099304444227406264"),
+            text: () => Promise.resolve('"3561284800099304444227406264"'),
           })
         ) // totalStaked
         .mockImplementationOnce(() =>
           // @ts-ignore Mock responses don't need full Response implementation
           Promise.resolve({
             ok: true,
-            text: () => Promise.resolve("100"),
+            text: () => Promise.resolve('"100"'),
           })
         ) // nodes
         .mockImplementationOnce(() =>
           // @ts-ignore Mock responses don't need full Response implementation
           Promise.resolve({
             ok: true,
-            text: () => Promise.resolve("200"),
+            text: () => Promise.resolve('"200"'),
           })
         ) // dapps
         .mockImplementationOnce(() =>
@@ -65,7 +65,7 @@ describe("L1DataTool", () => {
             ok: true,
             text: () => Promise.resolve("1000"),
           })
-        ) // crossChainTx
+        ) // crossChainTx - this one doesn't have quotes based on logs
         // GraphQL response
         .mockImplementationOnce(() =>
           // @ts-ignore Mock responses don't need full Response implementation
@@ -167,11 +167,70 @@ describe("L1DataTool", () => {
     it("should handle malformed data responses", async () => {
       vi.mocked(fetch).mockImplementationOnce(() =>
         Promise.resolve({
-          text: () => Promise.resolve("invalid-number"),
+          ok: true,
+          text: () => Promise.resolve('"invalid-number"'),
         } as Response)
       );
 
       await expect(l1DataTool.getRawData()).rejects.toThrow();
     });
+
+    it("should correctly parse quoted string responses", async () => {
+      // Mock a response with double quotes
+      vi.mocked(fetch).mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          text: () => Promise.resolve('"31946444.838592477"'),
+        } as Response)
+      );
+
+      // Call the fetchTvl method directly to test parsing
+      const result = await l1DataTool["fetchTvl"]();
+
+      // Should correctly parse to a number
+      expect(result).toBe(31946444.838592477);
+    });
+  });
+});
+
+describe("GetL1StatsToolSchema execute function", () => {
+  it("should correctly format the data", async () => {
+    // Mock getRawData to return a known set of values
+    const mockStats = {
+      tvl: 31946444.838592477,
+      contracts: 13290,
+      totalStaked: 3720739446.03,
+      nodes: 118,
+      dapps: 128,
+      crossChainTx: 135821,
+      totalSupply: 9441369061,
+      totalNumberOfHolders: 744558,
+      totalNumberOfXrc20: 3150,
+      totalNumberOfXrc721: 549,
+      stakingRatio: 0.3941,
+      tps: 12.3456,
+    };
+
+    // Spy on getRawData and make it return our mock data
+    const getRawDataSpy = vi
+      .spyOn(L1DataTool.prototype, "getRawData")
+      .mockResolvedValue(mockStats);
+
+    // Call the execute function
+    const result = await GetL1StatsToolSchema.execute();
+
+    // Verify the formatting is correct
+    expect(result).toEqual({
+      ...mockStats,
+      totalStaked: 3720739446.03, // Should be formatted to 2 decimal places
+      stakingRatio: 39.41, // Should be converted to percentage and formatted to 2 decimal places
+      tps: 12.3456, // Should be formatted to 4 decimal places
+    });
+
+    // Verify getRawData was called
+    expect(getRawDataSpy).toHaveBeenCalledTimes(1);
+
+    // Clean up
+    getRawDataSpy.mockRestore();
   });
 });

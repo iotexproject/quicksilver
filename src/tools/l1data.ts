@@ -48,7 +48,8 @@ const ChainStatsSchema = z.object({
   }),
 });
 
-const GetL1StatsToolSchema = {
+// Export for testing
+export const GetL1StatsToolSchema = {
   name: "get_l1_stats",
   description:
     "Fetches IoTeX L1 chain statistics and metrics: TVL, contracts, staking, nodes, dapps, tps, transactions, supply, holders, xrc20, xrc721",
@@ -137,14 +138,18 @@ export class L1DataTool extends APITool<void> {
     const res = await this.sendRestRequest("tvl");
     const tvl = await res.text();
     logger.info("tvl", tvl);
-    return parseInt(tvl);
+    // Remove quotes and parse as float since TVL can have decimals
+    const cleanValue = tvl.replace(/"/g, "");
+    return parseFloat(cleanValue);
   }
 
   private async fetchContractsNumber(): Promise<number> {
     const res = await this.sendRestRequest("contractCount");
     const contracts = await res.text();
     logger.info("contractCount", contracts);
-    return parseInt(contracts);
+    // Remove quotes and parse as integer
+    const cleanValue = contracts.replace(/"/g, "");
+    return parseInt(cleanValue);
   }
 
   private async fetchTotalStaked(): Promise<number> {
@@ -161,21 +166,27 @@ export class L1DataTool extends APITool<void> {
     const res = await this.sendRestRequest("nodesCount");
     const nodes = await res.text();
     logger.info("nodesCount", nodes);
-    return parseInt(nodes);
+    // Remove quotes and parse as integer
+    const cleanValue = nodes.replace(/"/g, "");
+    return parseInt(cleanValue);
   }
 
   private async fetchDappsCount(): Promise<number> {
     const res = await this.sendRestRequest("dappsCount");
     const dapps = await res.text();
     logger.info("dappsCount", dapps);
-    return parseInt(dapps);
+    // Remove quotes and parse as integer
+    const cleanValue = dapps.replace(/"/g, "");
+    return parseInt(cleanValue);
   }
 
   private async fetchCrossChainTx(): Promise<number> {
     const res = await this.sendRestRequest("totalCrossChainTxCount");
     const crossChainTx = await res.text();
     logger.info("totalCrossChainTxCount", crossChainTx);
-    return parseInt(crossChainTx);
+    // This one might not have quotes based on the logs, but adding the cleanup for consistency
+    const cleanValue = crossChainTx.replace(/"/g, "");
+    return parseInt(cleanValue);
   }
 
   private async fetchAnalyticsV2Stats(): Promise<ChainStats> {
@@ -210,6 +221,7 @@ export class L1DataTool extends APITool<void> {
       });
 
       const { data } = (await response.json()) as GraphQLResponse;
+      logger.info("analyticsV2Stats", data);
       return data;
     } catch (error: any) {
       throw new Error(`Failed to fetch analytics v2 stats: ${error.message}`);
@@ -238,7 +250,11 @@ export class L1DataTool extends APITool<void> {
       stats.TotalNumberOfHolders.totalNumberOfHolders;
     const totalNumberOfXrc20 = stats.XRC20Addresses.count;
     const totalNumberOfXrc721 = stats.XRC721Addresses.count;
-    const tps = Math.floor(stats.MostRecentTPS.mostRecentTPS * 10000) / 10000;
+    // Ensure TPS is not negative and has reasonable precision
+    const tps = Math.max(
+      0,
+      Math.floor(stats.MostRecentTPS.mostRecentTPS * 10000) / 10000
+    );
 
     return [
       totalSupply,
