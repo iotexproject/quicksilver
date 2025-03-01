@@ -8,8 +8,6 @@ import {
   DEPIN_PROJECTS_URL,
 } from "../depinscan";
 import { LLMService } from "../../llm/llm-service";
-import { logger } from "../../logger/winston";
-import { ZodError } from "zod";
 
 const llmServiceParams = {
   fastLLMModel: "test-fast-provider",
@@ -18,18 +16,6 @@ const llmServiceParams = {
 
 describe("DePINMetricsTool", () => {
   let metricsTool: DePINScanMetricsTool;
-
-  const setupMockLLM = (secondResponse: string) => {
-    // @ts-ignore no need to mock private methods
-    vi.mocked(LLMService).mockImplementation(() => ({
-      fastllm: {
-        generate: vi
-          .fn()
-          .mockResolvedValueOnce('<response>{"isLatest": false}</response>')
-          .mockResolvedValueOnce(secondResponse),
-      },
-    }));
-  };
 
   beforeEach(() => {
     metricsTool = new DePINScanMetricsTool();
@@ -91,25 +77,86 @@ describe("DePINMetricsTool", () => {
     it("should handle network errors", async () => {
       vi.mocked(fetch).mockRejectedValueOnce(new Error("Network error"));
 
-      await expect(metricsTool.getRawData({})).rejects.toThrow(
-        "Network error"
-      );
+      await expect(metricsTool.getRawData({})).rejects.toThrow("Network error");
     });
   });
 });
 
 describe("DePINProjectsTool", () => {
   let projectsTool: DePINScanProjectsTool;
-  let mockLLMService: { fastllm: { generate: any } };
+  let mockLLMService: { fastllm: { generate: any; stream: any } };
+
+  const mockProjects = [
+    {
+      project_name: "Solana",
+      slug: "solana",
+      logo: "https://depinscan-prod.s3.us-east-1.amazonaws.com/next-s3-uploads/3160a9ec-42df-4f02-9db6-5aadc61323d8/solana.svg",
+      description: "Solana is a general purpose layer 1 blockchain...",
+      trusted_metric: true,
+      token: "SOL",
+      layer_1: ["Solana"],
+      categories: ["Chain"],
+      market_cap: "74109880918.67668",
+      token_price: "146.07",
+      total_devices: 0,
+      network_status: "Mainnet",
+      avg_device_cost: "",
+      days_to_breakeven: "",
+      estimated_daily_earnings: "",
+      chainid: "",
+      coingecko_id: "solana",
+      fully_diluted_valuation: "87572333564",
+    },
+    {
+      project_name: "Filecoin",
+      slug: "filecoin",
+      logo: "https://depinscan-prod.s3.amazonaws.com/depin/8d40ef7c502c0bf8d805fe7f561b8250.png",
+      description: "Filecoin is a peer-to-peer network...",
+      trusted_metric: false,
+      token: "FIL",
+      layer_1: ["Filecoin"],
+      categories: ["Storage"],
+      market_cap: null,
+      token_price: null,
+      total_devices: 1000,
+      network_status: "Testnet",
+      avg_device_cost: "500",
+      days_to_breakeven: "30",
+      estimated_daily_earnings: "16.67",
+      chainid: "1",
+      coingecko_id: null,
+      fully_diluted_valuation: null,
+    },
+    {
+      project_name: "IoTeX",
+      slug: "iotex",
+      logo: "https://example.com/iotex.png",
+      description: "IoTeX network...",
+      trusted_metric: true,
+      token: "IOTX",
+      layer_1: ["IoTeX"],
+      categories: ["IoT", "Chain"],
+      market_cap: "300000000",
+      token_price: "0.025",
+      total_devices: "5000",
+      network_status: "Mainnet",
+      avg_device_cost: "100",
+      days_to_breakeven: "60",
+      estimated_daily_earnings: "1.67",
+      chainid: "4689",
+      coingecko_id: "iotex",
+      fully_diluted_valuation: "500000000",
+    },
+  ];
 
   beforeEach(() => {
     projectsTool = new DePINScanProjectsTool();
     vi.stubGlobal("fetch", vi.fn());
 
-    // Mock LLM service
     mockLLMService = {
       fastllm: {
         generate: vi.fn(),
+        stream: vi.fn(),
       },
     };
   });
@@ -124,26 +171,6 @@ describe("DePINProjectsTool", () => {
   });
 
   describe("getRawData", () => {
-    const mockProjects = [
-      {
-        project_name: "Project 1",
-        market_cap: "500000000",
-        token_price: "1.5",
-        total_devices: "20000",
-        categories: ["IoT", "Mining"],
-        slug: "project-1",
-        token: "PRJ1",
-        description: "Test project 1",
-        layer_1: ["Ethereum"],
-        avg_device_cost: "500",
-        days_to_breakeven: "100",
-        estimated_daily_earnings: "5",
-        chainid: "1",
-        coingecko_id: "project-1",
-        fully_diluted_valuation: "1000000000",
-      },
-    ];
-
     it("should fetch and validate projects data", async () => {
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
@@ -153,6 +180,18 @@ describe("DePINProjectsTool", () => {
       const result = await projectsTool.getRawData();
       expect(result).toEqual(mockProjects);
       expect(fetch).toHaveBeenCalledWith(DEPIN_PROJECTS_URL);
+    });
+
+    it("should handle projects with null/empty values", async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve([mockProjects[1]]), // Use Filecoin which has null values
+      } as Response);
+
+      const result = await projectsTool.getRawData();
+      expect(result[0].market_cap).toBeNull();
+      expect(result[0].token_price).toBeNull();
+      expect(result[0].fully_diluted_valuation).toBeNull();
     });
 
     it("should handle API errors", async () => {
@@ -169,9 +208,126 @@ describe("DePINProjectsTool", () => {
     it("should handle network errors", async () => {
       vi.mocked(fetch).mockRejectedValueOnce(new Error("Network error"));
 
-      await expect(projectsTool.getRawData()).rejects.toThrow(
-        "Network error"
+      await expect(projectsTool.getRawData()).rejects.toThrow("Network error");
+    });
+  });
+
+  describe("execute", () => {
+    const executionOptions = {
+      toolCallId: "test-call-id",
+      messages: [],
+      llm: new LLMService(llmServiceParams),
+    };
+
+    beforeEach(() => {
+      vi.mocked(fetch).mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockProjects),
+      } as Response);
+    });
+
+    it("should not throw on real data", async () => {
+      // Temporarily restore the real fetch for this test
+      const originalFetch = global.fetch;
+      vi.unstubAllGlobals();
+      
+      const response = await fetch(DEPIN_PROJECTS_URL);
+      const realData = await response.json();
+      // Restore the mock
+      global.fetch = originalFetch;
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(realData),
+      } as Response);
+      await projectsTool.schema[0].tool.execute({}, executionOptions);
+    }, 10000);
+
+    it("should return all projects with transformed data", async () => {
+      const result = await projectsTool.schema[0].tool.execute(
+        {},
+        executionOptions
       );
+
+      expect(result.totalProjects).toBe(3);
+      const solana = result.projects[0];
+      expect(solana).toEqual({
+        name: "Solana",
+        description: "Solana is a general purpose layer 1 blockchain...",
+        token: "SOL",
+        marketCap: "74,109,880,918.677",
+        tokenPrice: "146.07",
+        totalDevices: "0",
+        avgDeviceCost: "0",
+        estimatedDailyEarnings: "0",
+        daysToBreakeven: 0,
+        categories: ["Chain"],
+        layer1: ["Solana"],
+      });
+    });
+
+    it("should filter projects by category case-insensitively", async () => {
+      const result = await projectsTool.schema[0].tool.execute(
+        { category: "chain" },
+        executionOptions
+      );
+      expect(result.totalProjects).toBe(2);
+      expect(result.projects.map((p) => p.name)).toEqual(["Solana", "IoTeX"]);
+    });
+
+    it("should filter projects by minimum market cap", async () => {
+      const result = await projectsTool.schema[0].tool.execute(
+        { minMarketCap: 400000000 },
+        executionOptions
+      );
+      expect(result.totalProjects).toBe(1);
+      expect(result.projects.map((p) => p.name)).toEqual([
+        "Solana"
+      ]);
+    });
+
+    it("should filter projects by minimum devices", async () => {
+      const result = await projectsTool.schema[0].tool.execute(
+        { minDevices: 1000 },
+        executionOptions
+      );
+      expect(result.totalProjects).toBe(2);
+      expect(result.projects.map((p) => p.name)).toEqual(["Filecoin", "IoTeX"]);
+    });
+
+    it("should combine multiple filters", async () => {
+      const result = await projectsTool.schema[0].tool.execute(
+        {
+          category: "chain",
+          minDevices: 1000,
+        },
+        executionOptions
+      );
+      expect(result.totalProjects).toBe(1);
+      expect(result.projects[0].name).toBe("IoTeX");
+    });
+
+    it("should handle null values in number formatting", async () => {
+      const filecoin = (
+        await projectsTool.schema[0].tool.execute({}, executionOptions)
+      ).projects.find((p) => p.name === "Filecoin");
+
+      expect(filecoin).toBeDefined();
+      expect(filecoin!.marketCap).toBe("0");
+      expect(filecoin!.tokenPrice).toBe("0");
+      expect(filecoin!.totalDevices).toBe("1,000");
+      expect(filecoin!.avgDeviceCost).toBe("500");
+    });
+
+    it("should handle empty string values in number formatting", async () => {
+      const solana = (
+        await projectsTool.schema[0].tool.execute({}, executionOptions)
+      ).projects.find((p) => p.name === "Solana");
+
+      expect(solana).toBeDefined();
+      expect(solana!.avgDeviceCost).toBe("0");
+      expect(solana!.estimatedDailyEarnings).toBe("0");
+      expect(solana!.daysToBreakeven).toBe(0);
     });
   });
 });
+

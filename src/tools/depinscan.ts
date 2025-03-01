@@ -17,26 +17,74 @@ const DepinScanMetricsSchema = z.object({
 const DepinScanProjectSchema = z.object({
   project_name: z.string().describe("Name of the DePIN project"),
   slug: z.string().describe("URL-friendly identifier for the project"),
-  token: z.string().describe("Project's token symbol"),
-  description: z.string().describe("Project description"),
+  token: z
+    .string()
+    .nullable()
+    .optional()
+    .default("")
+    .describe("Project's token symbol"),
+  description: z
+    .string()
+    .nullable()
+    .optional()
+    .default("")
+    .describe("Project description"),
   layer_1: z
     .array(z.string())
+    .nullable()
+    .optional()
+    .default([])
     .describe("Blockchain networks the project operates on"),
-  categories: z.array(z.string()).describe("Project categories"),
-  market_cap: z.string().describe("Market capitalization of the project"),
-  token_price: z.string().describe("Current token price"),
-  total_devices: z.string().describe("Number of devices in the network"),
-  avg_device_cost: z.string().describe("Average cost per device"),
+  categories: z
+    .array(z.string())
+    .nullable()
+    .optional()
+    .default([])
+    .describe("Project categories"),
+  market_cap: z
+    .union([z.string(), z.number()])
+    .nullable()
+    .describe("Market capitalization of the project"),
+  token_price: z
+    .union([z.string(), z.number()])
+    .nullable()
+    .describe("Current token price"),
+  total_devices: z
+    .union([z.string(), z.number()])
+    .describe("Number of devices in the network"),
+  avg_device_cost: z
+    .union([z.string(), z.number()])
+    .nullable()
+    .optional()
+    .default("")
+    .describe("Average cost per device"),
   days_to_breakeven: z
-    .string()
+    .union([z.string(), z.number()])
+    .nullable()
+    .optional()
+    .default("")
     .describe("Estimated days to break even on device investment"),
   estimated_daily_earnings: z
-    .string()
+    .union([z.string(), z.number()])
+    .nullable()
+    .optional()
+    .default("")
     .describe("Estimated daily earnings per device"),
-  chainid: z.string().describe("Primary blockchain network ID"),
-  coingecko_id: z.string().describe("CoinGecko API identifier"),
-  fully_diluted_valuation: z
+  chainid: z
     .string()
+    .nullable()
+    .optional()
+    .default("")
+    .describe("Primary blockchain network ID"),
+  coingecko_id: z
+    .string()
+    .nullable()
+    .optional()
+    .default("")
+    .describe("CoinGecko API identifier"),
+  fully_diluted_valuation: z
+    .union([z.string(), z.number()])
+    .nullable()
     .describe("Fully diluted valuation of the project"),
 });
 
@@ -88,9 +136,13 @@ const GetProjectsToolSchema = {
 
     let filteredProjects = projects;
     if (args.category) {
-      filteredProjects = projects.filter((p) =>
-        p.categories.includes(args.category!.toLowerCase())
-      );
+      filteredProjects = projects.filter((p) => {
+        const lowerCaseCategory = args.category!.toLowerCase();
+        return (
+          p.categories?.some((c) => c.toLowerCase() === lowerCaseCategory) ??
+          false
+        );
+      });
     }
     if (args.minMarketCap) {
       filteredProjects = filteredProjects.filter(
@@ -107,18 +159,18 @@ const GetProjectsToolSchema = {
       totalProjects: filteredProjects.length,
       projects: filteredProjects.map((p) => ({
         name: p.project_name,
-        description: p.description,
-        token: p.token,
-        marketCap: Number(p.market_cap).toLocaleString(),
-        tokenPrice: Number(p.token_price).toLocaleString(),
-        totalDevices: Number(p.total_devices).toLocaleString(),
-        avgDeviceCost: Number(p.avg_device_cost).toLocaleString(),
+        description: p.description || "",
+        token: p.token || "",
+        marketCap: Number(p.market_cap || 0).toLocaleString(),
+        tokenPrice: Number(p.token_price || 0).toLocaleString(),
+        totalDevices: Number(p.total_devices || 0).toLocaleString(),
+        avgDeviceCost: Number(p.avg_device_cost || 0).toLocaleString(),
         estimatedDailyEarnings: Number(
-          p.estimated_daily_earnings
+          p.estimated_daily_earnings || 0
         ).toLocaleString(),
-        daysToBreakeven: Number(p.days_to_breakeven),
-        categories: p.categories,
-        layer1: p.layer_1,
+        daysToBreakeven: Number(p.days_to_breakeven || 0),
+        categories: p.categories || [],
+        layer1: p.layer_1 || [],
       })),
     };
   },
