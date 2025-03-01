@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Tool, tool } from "ai";
+import { tool } from "ai";
 import { formatEther } from "ethers";
 
 import { APITool } from "./tool";
@@ -55,14 +55,19 @@ export const GetL1StatsToolSchema = {
     "Fetches IoTeX L1 chain statistics and metrics: TVL, contracts, staking, nodes, dapps, tps, transactions, supply, holders, xrc20, xrc721",
   parameters: z.object({}),
   execute: async () => {
-    const tool = new L1DataTool();
-    const stats = await tool.getRawData();
-    return {
-      ...stats,
-      totalStaked: Number(stats.totalStaked.toFixed(2)),
-      stakingRatio: Number((stats.stakingRatio * 100).toFixed(2)), // Convert to percentage
-      tps: Number(stats.tps.toFixed(4)),
-    };
+    try {
+      const tool = new L1DataTool();
+      const stats = await tool.getRawData();
+      return {
+        ...stats,
+        totalStaked: Number(stats.totalStaked.toFixed(2)),
+        stakingRatio: Number((stats.stakingRatio * 100).toFixed(2)), // Convert to percentage
+        tps: Number(stats.tps.toFixed(4)),
+      };
+    } catch (error) {
+      logger.error("Error executing get_l1_stats tool", error);
+      return `Error executing get_l1_stats tool`;
+    }
   },
 };
 

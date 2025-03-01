@@ -1,7 +1,7 @@
 import axios from "axios";
 import { z } from "zod";
 import { tool } from "ai";
-
+import { logger } from "../logger/winston";
 import { APITool } from "./tool";
 
 const CategoryEnum = z
@@ -57,8 +57,13 @@ const GetHeadlinesToolSchema = {
       .describe("Keywords or phrase to search for in the headlines"),
   }),
   execute: async (input: NewsAPIParams) => {
-    const tool = new NewsAPITool();
-    return await tool.getRawData(input);
+    try {
+      const tool = new NewsAPITool();
+      return await tool.getRawData(input);
+    } catch (error) {
+      logger.error("Error executing get_headlines tool", error);
+      return `Error executing get_headlines tool`;
+    }
   },
 };
 

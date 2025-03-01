@@ -4,14 +4,19 @@ import { tool } from "ai";
 
 import { APITool } from "./tool";
 import { Vehicle, Signal, LatestSignals, DimoParams } from "./types/dimo";
-
+import { logger } from "../logger/winston";
 const ListVehiclesToolSchema = {
   name: "list_vehicles",
   description: "Lists all vehicles accessible to the user",
   parameters: z.object({}),
   execute: async () => {
-    const tool = new DimoTool();
-    return await tool.getListOfConnectedVehicles();
+    try {
+      const tool = new DimoTool();
+      return await tool.getListOfConnectedVehicles();
+    } catch (error) {
+      logger.error("Error executing list_vehicles tool", error);
+      return `Error executing list_vehicles tool`;
+    }
   },
 };
 
@@ -19,13 +24,20 @@ const GetVehicleSignalsToolSchema = {
   name: "get_vehicle_signals",
   description: "Gets available signals for a specific vehicle",
   parameters: z.object({
-    tokenId: z.string().describe("Vehicle token ID to fetch signals for. Example: 1234567890"),
+    tokenId: z
+      .string()
+      .describe("Vehicle token ID to fetch signals for. Example: 1234567890"),
   }),
   execute: async (input: { tokenId: string }) => {
-    const tool = new DimoTool();
-    const jwt = await tool.getDevJwt();
-    const vehicleJwt = await tool.getVehicleJwt(input.tokenId, jwt);
-    return await tool.getVehicleAvailableSignals(input.tokenId, vehicleJwt);
+    try {
+      const tool = new DimoTool();
+      const jwt = await tool.getDevJwt();
+      const vehicleJwt = await tool.getVehicleJwt(input.tokenId, jwt);
+      return await tool.getVehicleAvailableSignals(input.tokenId, vehicleJwt);
+    } catch (error) {
+      logger.error("Error executing get_vehicle_signals tool", error);
+      return `Error executing get_vehicle_signals tool`;
+    }
   },
 };
 
@@ -41,18 +53,25 @@ const GetLatestSignalsToolSchema = {
   parameters: z.object({
     tokenId: z
       .string()
-      .describe("Vehicle token ID to fetch latest signals for. Example: 1234567890"),
+      .describe(
+        "Vehicle token ID to fetch latest signals for. Example: 1234567890"
+      ),
     signals: z.array(z.string()).describe("List of signals to fetch"),
   }),
   execute: async (input: { tokenId: string; signals: string[] }) => {
-    const tool = new DimoTool();
-    const jwt = await tool.getDevJwt();
-    const vehicleJwt = await tool.getVehicleJwt(input.tokenId, jwt);
-    return await tool.getVehicleLatestSignals(
-      input.tokenId,
-      vehicleJwt,
-      input.signals
-    );
+    try {
+      const tool = new DimoTool();
+      const jwt = await tool.getDevJwt();
+      const vehicleJwt = await tool.getVehicleJwt(input.tokenId, jwt);
+      return await tool.getVehicleLatestSignals(
+        input.tokenId,
+        vehicleJwt,
+        input.signals
+      );
+    } catch (error) {
+      logger.error("Error executing get_latest_signals tool", error);
+      return `Error executing get_latest_signals tool`;
+    }
   },
 };
 

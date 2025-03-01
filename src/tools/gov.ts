@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { tool } from "ai";
-
 import { APITool } from "./tool";
+import { logger } from "../logger/winston";
 
 const DateRangeSchema = z
   .object({
@@ -41,32 +41,37 @@ const GetNuclearOutagesToolSchema = {
     ),
   }),
   execute: async (args: { dateRange: { start: string; end: string } }) => {
-    const tool = new NuclearOutagesTool();
-    const data = await tool.getRawData(args.dateRange);
+    try {
+      const tool = new NuclearOutagesTool();
+      const data = await tool.getRawData(args.dateRange);
 
-    // Calculate summary statistics
-    const outages = data.map((d) => parseFloat(d.percentOutage));
-    const avgOutage = outages.reduce((a, b) => a + b, 0) / outages.length;
-    const maxOutage = Math.max(...outages);
-    const minOutage = Math.min(...outages);
-    const latestCapacity = parseFloat(data[0].capacity);
+      // Calculate summary statistics
+      const outages = data.map((d) => parseFloat(d.percentOutage));
+      const avgOutage = outages.reduce((a, b) => a + b, 0) / outages.length;
+      const maxOutage = Math.max(...outages);
+      const minOutage = Math.min(...outages);
+      const latestCapacity = parseFloat(data[0].capacity);
 
-    return {
-      dateRange: args.dateRange,
-      summary: {
-        averageOutagePercentage: Number(avgOutage.toFixed(2)),
-        maxOutagePercentage: Number(maxOutage.toFixed(2)),
-        minOutagePercentage: Number(minOutage.toFixed(2)),
-        totalCapacity: Number(latestCapacity.toFixed(2)),
-        capacityUnits: data[0]["capacity-units"],
-        numberOfDays: data.length,
-      },
-      dailyData: data.map((d) => ({
-        date: d.period,
-        outagePercentage: Number(parseFloat(d.percentOutage).toFixed(2)),
-        capacity: Number(parseFloat(d.capacity).toFixed(2)),
-      })),
-    };
+      return {
+        dateRange: args.dateRange,
+        summary: {
+          averageOutagePercentage: Number(avgOutage.toFixed(2)),
+          maxOutagePercentage: Number(maxOutage.toFixed(2)),
+          minOutagePercentage: Number(minOutage.toFixed(2)),
+          totalCapacity: Number(latestCapacity.toFixed(2)),
+          capacityUnits: data[0]["capacity-units"],
+          numberOfDays: data.length,
+        },
+        dailyData: data.map((d) => ({
+          date: d.period,
+          outagePercentage: Number(parseFloat(d.percentOutage).toFixed(2)),
+          capacity: Number(parseFloat(d.capacity).toFixed(2)),
+        })),
+      };
+    } catch (error) {
+      logger.error("Error executing get_nuclear_outages tool", error);
+      return `Error executing get_nuclear_outages tool`;
+    }
   },
 };
 

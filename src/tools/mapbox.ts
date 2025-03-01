@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { tool } from "ai";
 import { APITool } from "./tool";
-
+import { logger } from "../logger/winston";
 const MAPBOX_GEOCODING_URL = "https://api.mapbox.com/search/geocode/v6";
 const MAPBOX_DIRECTIONS_URL = "https://api.mapbox.com/directions/v5/mapbox";
 
@@ -157,22 +157,28 @@ const GetCoordinatesToolSchema = {
       .describe("Number of results to return"),
   }),
   execute: async (args: GeocodeParams) => {
-    const tool = new MapboxTool();
-    const response = await tool.getGeocodingData(args);
+    try {
+      const tool = new MapboxTool();
+      const response = await tool.getGeocodingData(args);
 
-    return {
-      query: args.location,
-      results: response.features.map((feature) => ({
-        coordinates: {
-          longitude: feature.geometry.coordinates[0],
-          latitude: feature.geometry.coordinates[1],
-        },
-        name: feature.properties.name,
-        type: feature.properties.feature_type,
-        address: feature.properties.full_address || feature.properties.address,
-        accuracy: feature.properties.accuracy,
-      })),
-    };
+      return {
+        query: args.location,
+        results: response.features.map((feature) => ({
+          coordinates: {
+            longitude: feature.geometry.coordinates[0],
+            latitude: feature.geometry.coordinates[1],
+          },
+          name: feature.properties.name,
+          type: feature.properties.feature_type,
+          address:
+            feature.properties.full_address || feature.properties.address,
+          accuracy: feature.properties.accuracy,
+        })),
+      };
+    } catch (error) {
+      logger.error("Error executing get_coordinates tool", error);
+      return `Error executing get_coordinates tool`;
+    }
   },
 };
 
@@ -191,21 +197,27 @@ const GetLocationFromCoordinatesToolSchema = {
       .describe("Number of results to return"),
   }),
   execute: async (args: ReverseGeocodeParams) => {
-    const tool = new MapboxTool();
-    const response = await tool.getReverseGeocodingData(args);
+    try {
+      const tool = new MapboxTool();
+      const response = await tool.getReverseGeocodingData(args);
 
-    return {
-      coordinates: {
-        longitude: args.longitude,
-        latitude: args.latitude,
-      },
-      results: response.features.map((feature) => ({
-        name: feature.properties.name,
-        type: feature.properties.feature_type,
-        address: feature.properties.full_address || feature.properties.address,
-        accuracy: feature.properties.accuracy,
-      })),
-    };
+      return {
+        coordinates: {
+          longitude: args.longitude,
+          latitude: args.latitude,
+        },
+        results: response.features.map((feature) => ({
+          name: feature.properties.name,
+          type: feature.properties.feature_type,
+          address:
+            feature.properties.full_address || feature.properties.address,
+          accuracy: feature.properties.accuracy,
+        })),
+      };
+    } catch (error) {
+      logger.error("Error executing get_location_from_coordinates tool", error);
+      return `Error executing get_location_from_coordinates tool`;
+    }
   },
 };
 
@@ -237,56 +249,61 @@ const GetDirectionsToolSchema = {
       .describe("Features to avoid (e.g., ['toll', 'motorway'])"),
   }),
   execute: async (args: DirectionsParams) => {
-    const tool = new MapboxTool();
+    try {
+      const tool = new MapboxTool();
 
-    // Parse origin and destination - they could be coordinates or location names
-    let originCoords: [number, number];
-    let destCoords: [number, number];
+      // Parse origin and destination - they could be coordinates or location names
+      let originCoords: [number, number];
+      let destCoords: [number, number];
 
-    // Check if origin is already coordinates
-    const originParsed = parseCoordinateString(args.origin);
-    if (originParsed) {
-      originCoords = originParsed;
-    } else {
-      // If not coordinates, geocode the location name
-      originCoords = await tool.geocodeLocation(args.origin);
-    }
+      // Check if origin is already coordinates
+      const originParsed = parseCoordinateString(args.origin);
+      if (originParsed) {
+        originCoords = originParsed;
+      } else {
+        // If not coordinates, geocode the location name
+        originCoords = await tool.geocodeLocation(args.origin);
+      }
 
-    // Check if destination is already coordinates
-    const destParsed = parseCoordinateString(args.destination);
-    if (destParsed) {
-      destCoords = destParsed;
-    } else {
-      // If not coordinates, geocode the location name
-      destCoords = await tool.geocodeLocation(args.destination);
-    }
+      // Check if destination is already coordinates
+      const destParsed = parseCoordinateString(args.destination);
+      if (destParsed) {
+        destCoords = destParsed;
+      } else {
+        // If not coordinates, geocode the location name
+        destCoords = await tool.geocodeLocation(args.destination);
+      }
 
-    // Then get the directions
-    const directions = await tool.getDirections({
-      coordinates: [originCoords, destCoords],
-      profile: args.profile || "driving",
-      alternatives: args.alternatives,
-      avoid: args.avoid,
-    });
+      // Then get the directions
+      const directions = await tool.getDirections({
+        coordinates: [originCoords, destCoords],
+        profile: args.profile || "driving",
+        alternatives: args.alternatives,
+        avoid: args.avoid,
+      });
 
-    return {
-      summary: {
-        distance: (directions.routes[0].distance / 1000).toFixed(1) + " km",
-        duration: Math.round(directions.routes[0].duration / 60) + " minutes",
-        origin: args.origin,
-        destination: args.destination,
-        mode: args.profile,
-      },
-      routes: directions.routes.map((route) => ({
-        distance: (route.distance / 1000).toFixed(1) + " km",
-        duration: Math.round(route.duration / 60) + " minutes",
-        steps: route.legs[0].steps.map((step) => ({
-          instruction: step.maneuver.instruction,
-          distance: (step.distance / 1000).toFixed(1) + " km",
-          duration: Math.round(step.duration / 60) + " minutes",
+      return {
+        summary: {
+          distance: (directions.routes[0].distance / 1000).toFixed(1) + " km",
+          duration: Math.round(directions.routes[0].duration / 60) + " minutes",
+          origin: args.origin,
+          destination: args.destination,
+          mode: args.profile,
+        },
+        routes: directions.routes.map((route) => ({
+          distance: (route.distance / 1000).toFixed(1) + " km",
+          duration: Math.round(route.duration / 60) + " minutes",
+          steps: route.legs[0].steps.map((step) => ({
+            instruction: step.maneuver.instruction,
+            distance: (step.distance / 1000).toFixed(1) + " km",
+            duration: Math.round(step.duration / 60) + " minutes",
+          })),
         })),
-      })),
-    };
+      };
+    } catch (error) {
+      logger.error("Error executing get_directions tool", error);
+      return `Error executing get_directions tool`;
+    }
   },
 };
 

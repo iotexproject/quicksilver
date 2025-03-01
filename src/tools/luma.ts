@@ -24,11 +24,16 @@ const FetchLumaEventsToolSchema = {
       ),
   }),
   execute: async (input: { calendarUrl?: string; filter?: string }) => {
-    const tool = new LumaEventsTool();
-    return await tool.getRawData({
-      calendarUrl: input.calendarUrl || DEFAULT_LUMA_CALENDAR_URL,
-      filter: input.filter,
-    });
+    try {
+      const tool = new LumaEventsTool();
+      return await tool.getRawData({
+        calendarUrl: input.calendarUrl || DEFAULT_LUMA_CALENDAR_URL,
+        filter: input.filter,
+      });
+    } catch (error) {
+      logger.error("Error executing fetch_luma_events tool", error);
+      return `Error executing fetch_luma_events tool`;
+    }
   },
 };
 

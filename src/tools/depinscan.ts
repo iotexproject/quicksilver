@@ -2,6 +2,7 @@ import { z } from "zod";
 import { tool } from "ai";
 
 import { APITool } from "./tool";
+import { logger } from "../logger/winston";
 
 export const DEPIN_METRICS_URL = "https://gateway1.iotex.io/depinscan/explorer";
 export const DEPIN_PROJECTS_URL = "https://metrics-api.w3bstream.com/project";
@@ -107,19 +108,24 @@ const GetMetricsToolSchema = {
       .describe("Whether to fetch only the latest metrics or historical data"),
   }),
   execute: async (args: { isLatest: boolean }) => {
-    const tool = new DePINScanMetricsTool();
-    const metricsData = await tool.getRawData({ isLatest: args.isLatest });
-    const metrics = z.array(DepinScanMetricsSchema).parse(metricsData);
+    try {
+      const tool = new DePINScanMetricsTool();
+      const metricsData = await tool.getRawData({ isLatest: args.isLatest });
+      const metrics = z.array(DepinScanMetricsSchema).parse(metricsData);
 
-    return {
-      metrics: metrics.map((m) => ({
-        date: m.date,
-        volume: m.volume ? Number(m.volume).toLocaleString() : "N/A",
-        totalProjects: Number(m.total_projects || 0),
-        marketCap: Number(m.market_cap || 0).toLocaleString(),
-        totalDevices: Number(m.total_device || 0).toLocaleString(),
-      })),
-    };
+      return {
+        metrics: metrics.map((m) => ({
+          date: m.date,
+          volume: m.volume ? Number(m.volume).toLocaleString() : "N/A",
+          totalProjects: Number(m.total_projects || 0),
+          marketCap: Number(m.market_cap || 0).toLocaleString(),
+          totalDevices: Number(m.total_device || 0).toLocaleString(),
+        })),
+      };
+    } catch (error) {
+      logger.error("Error executing get_depin_metrics tool", error);
+      return `Error executing get_depin_metrics tool`;
+    }
   },
 };
 
@@ -171,54 +177,59 @@ const GetProjectsToolSchema = {
     minMarketCap?: number;
     minDevices?: number;
   }) => {
-    const tool = new DePINScanProjectsTool();
-    const projectsData = await tool.getRawData();
-    const projects = z.array(DepinScanProjectSchema).parse(projectsData);
+    try {
+      const tool = new DePINScanProjectsTool();
+      const projectsData = await tool.getRawData();
+      const projects = z.array(DepinScanProjectSchema).parse(projectsData);
 
-    let filteredProjects = projects;
-    if (args.category) {
-      filteredProjects = filteredProjects.filter((p) => {
-        const lowerCaseCategory = args.category!.toLowerCase();
-        return (
-          p.categories?.some((c) => c.toLowerCase() === lowerCaseCategory) ??
-          false
+      let filteredProjects = projects;
+      if (args.category) {
+        filteredProjects = filteredProjects.filter((p) => {
+          const lowerCaseCategory = args.category!.toLowerCase();
+          return (
+            p.categories?.some((c) => c.toLowerCase() === lowerCaseCategory) ??
+            false
+          );
+        });
+      }
+      if (args.layer1) {
+        filteredProjects = filteredProjects.filter((p) => {
+          return p.layer_1?.includes(args.layer1!) ?? false;
+        });
+      }
+      if (args.minMarketCap) {
+        filteredProjects = filteredProjects.filter(
+          (p) => Number(p.market_cap) >= args.minMarketCap!
         );
-      });
-    }
-    if (args.layer1) {
-      filteredProjects = filteredProjects.filter((p) => {
-        return p.layer_1?.includes(args.layer1!) ?? false;
-      });
-    }
-    if (args.minMarketCap) {
-      filteredProjects = filteredProjects.filter(
-        (p) => Number(p.market_cap) >= args.minMarketCap!
-      );
-    }
-    if (args.minDevices) {
-      filteredProjects = filteredProjects.filter(
-        (p) => Number(p.total_devices) >= args.minDevices!
-      );
-    }
+      }
+      if (args.minDevices) {
+        filteredProjects = filteredProjects.filter(
+          (p) => Number(p.total_devices) >= args.minDevices!
+        );
+      }
 
-    return {
-      totalProjects: filteredProjects.length,
-      projects: filteredProjects.map((p) => ({
-        name: p.project_name,
-        description: p.description || "",
-        token: p.token || "",
-        marketCap: Number(p.market_cap || 0).toLocaleString(),
-        tokenPrice: Number(p.token_price || 0).toLocaleString(),
-        totalDevices: Number(p.total_devices || 0).toLocaleString(),
-        avgDeviceCost: Number(p.avg_device_cost || 0).toLocaleString(),
-        estimatedDailyEarnings: Number(
-          p.estimated_daily_earnings || 0
-        ).toLocaleString(),
-        daysToBreakeven: Number(p.days_to_breakeven || 0),
-        categories: p.categories || [],
-        layer1: p.layer_1 || [],
-      })),
-    };
+      return {
+        totalProjects: filteredProjects.length,
+        projects: filteredProjects.map((p) => ({
+          name: p.project_name,
+          description: p.description || "",
+          token: p.token || "",
+          marketCap: Number(p.market_cap || 0).toLocaleString(),
+          tokenPrice: Number(p.token_price || 0).toLocaleString(),
+          totalDevices: Number(p.total_devices || 0).toLocaleString(),
+          avgDeviceCost: Number(p.avg_device_cost || 0).toLocaleString(),
+          estimatedDailyEarnings: Number(
+            p.estimated_daily_earnings || 0
+          ).toLocaleString(),
+          daysToBreakeven: Number(p.days_to_breakeven || 0),
+          categories: p.categories || [],
+          layer1: p.layer_1 || [],
+        })),
+      };
+    } catch (error) {
+      logger.error("Error executing get_depin_projects tool", error);
+      return `Error executing get_depin_projects tool`;
+    }
   },
 };
 

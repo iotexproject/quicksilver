@@ -21,9 +21,14 @@ const SearchEventsToolSchema = {
     query: z.string().describe("Search query for ETH Denver events"),
   }),
   execute: async (input: { query: string }) => {
-    const tool = new ETHDenverTool();
-    await tool.initialize();
-    return await tool.execute(input.query);
+    try {
+      const tool = new ETHDenverTool();
+      await tool.initialize();
+      return await tool.execute(input.query);
+    } catch (error) {
+      logger.error("Error executing search_ethdenver_events tool", error);
+      return `Error executing search_ethdenver_events tool`;
+    }
   },
 };
 
@@ -47,7 +52,7 @@ export class ETHDenverTool extends APITool<{ query: string }> {
     });
   }
 
-async initialize() {
+  async initialize() {
     if (!process.env.VECTOR_DB_URI) {
       throw new Error("Please set the VECTOR_DB_URI environment variable.");
     }

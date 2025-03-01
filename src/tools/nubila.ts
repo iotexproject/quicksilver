@@ -28,8 +28,13 @@ const CurrentWeatherToolSchema = {
     "Gets the current weather conditions for a specific location: temperature,condition,pressure,humidity,wind,uv,luminance,elevation,rain,wet_bulb",
   parameters: NubilaCoordinatesSchema,
   execute: async (input: CoordinatesInput) => {
-    const tool = new CurrentWeatherAPITool();
-    return await tool.getRawData(input);
+    try {
+      const tool = new CurrentWeatherAPITool();
+      return await tool.getRawData(input);
+    } catch (error) {
+      logger.error("Error executing get_current_weather tool", error);
+      return `Error executing get_current_weather tool`;
+    }
   },
 };
 
@@ -39,8 +44,13 @@ const ForecastWeatherToolSchema = {
     "Gets the weather forecast for a specific location with array of: temperature,condition,pressure,humidity,wind,uv,luminance,rain,wet_bulb",
   parameters: NubilaCoordinatesSchema,
   execute: async (input: CoordinatesInput) => {
-    const tool = new ForecastWeatherAPITool();
-    return await tool.getRawData(input);
+    try {
+      const tool = new ForecastWeatherAPITool();
+      return await tool.getRawData(input);
+    } catch (error) {
+      logger.error("Error executing get_forecast_weather tool", error);
+      return `Error executing get_forecast_weather tool`;
+    }
   },
 };
 
