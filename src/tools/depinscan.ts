@@ -118,7 +118,38 @@ const GetProjectsToolSchema = {
   name: "get_depin_projects",
   description: "Fetches DePINScan projects and their metrics",
   parameters: z.object({
-    category: z.string().optional().describe("Filter projects by category"),
+    category: z
+      .enum([
+        "Chain",
+        "Server",
+        "AI",
+        "Wireless",
+        "Compute",
+        "Sensor",
+        "Services",
+        "Data",
+        "Storage",
+        "Cloud",
+        "Bandwidth",
+        "Mobile",
+        "Other",
+        "VPN",
+        "dVPN",
+        "DeWI",
+        "Connections",
+        "Search/Privacy",
+        "Energy",
+      ])
+      .optional()
+      .describe(
+        "Filter projects by category. Must be one of the supported categories."
+      ),
+    layer1: z
+      .string()
+      .optional()
+      .describe(
+        "Filter projects by layer 1 blockchain. Can be any valid blockchain name."
+      ),
     minMarketCap: z.number().optional().describe("Minimum market cap filter"),
     minDevices: z
       .number()
@@ -127,6 +158,7 @@ const GetProjectsToolSchema = {
   }),
   execute: async (args: {
     category?: string;
+    layer1?: string;
     minMarketCap?: number;
     minDevices?: number;
   }) => {
@@ -136,12 +168,17 @@ const GetProjectsToolSchema = {
 
     let filteredProjects = projects;
     if (args.category) {
-      filteredProjects = projects.filter((p) => {
+      filteredProjects = filteredProjects.filter((p) => {
         const lowerCaseCategory = args.category!.toLowerCase();
         return (
           p.categories?.some((c) => c.toLowerCase() === lowerCaseCategory) ??
           false
         );
+      });
+    }
+    if (args.layer1) {
+      filteredProjects = filteredProjects.filter((p) => {
+        return p.layer_1?.includes(args.layer1!) ?? false;
       });
     }
     if (args.minMarketCap) {

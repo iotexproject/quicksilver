@@ -226,20 +226,57 @@ describe("DePINProjectsTool", () => {
       } as Response);
     });
 
-    it("should not throw on real data", async () => {
+    it("should not throw on real data and handle different filters", async () => {
       // Temporarily restore the real fetch for this test
       const originalFetch = global.fetch;
       vi.unstubAllGlobals();
-      
+
       const response = await fetch(DEPIN_PROJECTS_URL);
       const realData = await response.json();
       // Restore the mock
       global.fetch = originalFetch;
+      
+      // Test with no filters
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(realData),
       } as Response);
-      await projectsTool.schema[0].tool.execute({}, executionOptions);
+      const noFilterResult = await projectsTool.schema[0].tool.execute({}, executionOptions);
+      expect(noFilterResult.totalProjects).toBeGreaterThan(0);
+      
+      // Test with category filter
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(realData),
+      } as Response);
+      const categoryResult = await projectsTool.schema[0].tool.execute({ category: "Storage" }, executionOptions);
+      
+      // Test with layer1 filter
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(realData),
+      } as Response);
+      const layer1Result = await projectsTool.schema[0].tool.execute({ layer1: "Ethereum" }, executionOptions);
+      
+      // Test with market cap filter
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(realData),
+      } as Response);
+      const marketCapResult = await projectsTool.schema[0].tool.execute({ minMarketCap: 1000000 }, executionOptions);
+      
+      // Test with devices filter
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(realData),
+      } as Response);
+      const devicesResult = await projectsTool.schema[0].tool.execute({ minDevices: 1000 }, executionOptions);
+      
+      // Verify each filtered result has fewer or equal projects than the unfiltered result
+      expect(categoryResult.totalProjects).toBeLessThanOrEqual(noFilterResult.totalProjects);
+      expect(layer1Result.totalProjects).toBeLessThanOrEqual(noFilterResult.totalProjects);
+      expect(marketCapResult.totalProjects).toBeLessThanOrEqual(noFilterResult.totalProjects);
+      expect(devicesResult.totalProjects).toBeLessThanOrEqual(noFilterResult.totalProjects);
     }, 10000);
 
     it("should return all projects with transformed data", async () => {
@@ -267,7 +304,7 @@ describe("DePINProjectsTool", () => {
 
     it("should filter projects by category case-insensitively", async () => {
       const result = await projectsTool.schema[0].tool.execute(
-        { category: "chain" },
+        { category: "Chain" },
         executionOptions
       );
       expect(result.totalProjects).toBe(2);
@@ -280,9 +317,7 @@ describe("DePINProjectsTool", () => {
         executionOptions
       );
       expect(result.totalProjects).toBe(1);
-      expect(result.projects.map((p) => p.name)).toEqual([
-        "Solana"
-      ]);
+      expect(result.projects.map((p) => p.name)).toEqual(["Solana"]);
     });
 
     it("should filter projects by minimum devices", async () => {
@@ -294,10 +329,19 @@ describe("DePINProjectsTool", () => {
       expect(result.projects.map((p) => p.name)).toEqual(["Filecoin", "IoTeX"]);
     });
 
-    it("should combine multiple filters", async () => {
+    it("should filter projects by layer1", async () => {
+      const result = await projectsTool.schema[0].tool.execute(
+        { layer1: "Solana" },
+        executionOptions
+      );
+      expect(result.totalProjects).toBe(1);
+      expect(result.projects[0].name).toBe("Solana");
+    });
+
+    it("should combine layer1 filter with other filters", async () => {
       const result = await projectsTool.schema[0].tool.execute(
         {
-          category: "chain",
+          layer1: "IoTeX",
           minDevices: 1000,
         },
         executionOptions
@@ -330,4 +374,3 @@ describe("DePINProjectsTool", () => {
     });
   });
 });
-
