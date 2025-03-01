@@ -1,4 +1,11 @@
-import { generateText, streamText, LanguageModel, ToolSet, createDataStreamResponse, smoothStream } from "ai";
+import {
+  generateText,
+  streamText,
+  LanguageModel,
+  ToolSet,
+  createDataStreamResponse,
+  smoothStream,
+} from "ai";
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import { deepseek } from "@ai-sdk/deepseek";
@@ -48,7 +55,10 @@ export class ModelAdapter implements LLM {
       console.time(`generation with model: ${this.model.modelId}`);
       const response = await generateText({
         model: this.model,
-        system: process.env.SYSTEM_PROMPT || "You're a helpful assistant that can answer questions and help with tasks. You are also able to use tools to get information.",
+        system:
+          (process.env.SYSTEM_PROMPT ||
+            "You're a helpful assistant that can answer questions and help with tasks. You are also able to use tools to get information.") +
+          `\nCurrent date and time: ${new Date().toISOString()}`,
         prompt,
         tools,
         maxSteps: TOOL_CALL_LIMIT,
@@ -74,22 +84,25 @@ export class ModelAdapter implements LLM {
       execute: (dataStream) => {
         const result = streamText({
           model: this.model,
-          system: process.env.SYSTEM_PROMPT || "You're a helpful assistant that can answer questions and help with tasks. You are also able to use tools to get information.",
+          system:
+            (process.env.SYSTEM_PROMPT ||
+              "You're a helpful assistant that can answer questions and help with tasks. You are also able to use tools to get information.") +
+            `\nCurrent date and time: ${new Date().toISOString()}`,
           prompt,
           tools,
           maxSteps: TOOL_CALL_LIMIT,
           experimental_continueSteps: true,
-          experimental_transform: smoothStream({ chunking: 'word' }),
+          experimental_transform: smoothStream({ chunking: "word" }),
           experimental_generateMessageId: generateUUID,
           onStepFinish(step: any) {
             ModelAdapter.logStep(step);
-          }
-        })
-        result.consumeStream()
+          },
+        });
+        result.consumeStream();
         result.mergeIntoDataStream(dataStream, {
           sendReasoning: true,
         });
-      }
+      },
     });
   }
 
@@ -103,9 +116,9 @@ export class ModelAdapter implements LLM {
 }
 
 function generateUUID(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
 }
