@@ -4,24 +4,26 @@ services:
   # CONFIG_PATH=configs/instance1.env docker compose up instance1
 
   # Instance with all tools enabled (for testing)
-  test:
-    image: qs:main
-    env_file: configs/.env.test
-    ports:
-      - "8000:8000"
-    restart: always
+  # test:
+  #   image: qs:main
+  #   env_file: configs/.env.test
+  #   ports:
+  #     - "8000:8000"
+  #   restart: always
 
   # Template for production instances (commented out)
   latest:
-    image: qs:latest
+    image: qs:ethdenver
     env_file: configs/.env.latest
     ports:
+      - "33333:3000"
       - "8000:8000"
     restart: always
 
-  # instance2:
-  #   image: qs:main
-  #   env_file: ${CONFIG_PATH}
-  #   ports:
-  #     - "8002:8000"
-  #   restart: always
+  dimo:
+    image: qs:ethdenver
+    env_file: configs/.env.dimo
+    ports:
+      - "33334:3000"
+      - "8001:8000"
+    restart: always

@@ -1,36 +1,236 @@
-import { extractContentFromTags } from "../utils/parsers";
-import { LLMService } from "../llm/llm-service";
-import { depinScanProjectsTemplate } from "./templates";
+import { z } from "zod";
+import { tool } from "ai";
+
 import { APITool } from "./tool";
 import { logger } from "../logger/winston";
 
 export const DEPIN_METRICS_URL = "https://gateway1.iotex.io/depinscan/explorer";
 export const DEPIN_PROJECTS_URL = "https://metrics-api.w3bstream.com/project";
 
-export type DepinScanMetrics = {
-  date: string;
-  volume: string;
-  total_projects: string;
-  market_cap: string;
-  total_device: string;
+const DepinScanMetricsSchema = z.object({
+  date: z.string().describe("Date of the metrics measurement"),
+  volume: z
+    .union([z.string(), z.number()])
+    .optional()
+    .describe("Trading volume"),
+  total_projects: z
+    .union([z.string(), z.number()])
+    .describe("Total number of DePIN projects"),
+  market_cap: z
+    .union([z.string(), z.number()])
+    .describe("Total market capitalization"),
+  total_device: z
+    .union([z.string(), z.number()])
+    .describe("Total number of connected devices"),
+});
+
+const DepinScanProjectSchema = z.object({
+  project_name: z.string().describe("Name of the DePIN project"),
+  slug: z.string().describe("URL-friendly identifier for the project"),
+  token: z
+    .string()
+    .nullable()
+    .optional()
+    .default("")
+    .describe("Project's token symbol"),
+  description: z
+    .string()
+    .nullable()
+    .optional()
+    .default("")
+    .describe("Project description"),
+  layer_1: z
+    .array(z.string())
+    .nullable()
+    .optional()
+    .default([])
+    .describe("Blockchain networks the project operates on"),
+  categories: z
+    .array(z.string())
+    .nullable()
+    .optional()
+    .default([])
+    .describe("Project categories"),
+  market_cap: z
+    .union([z.string(), z.number()])
+    .nullable()
+    .describe("Market capitalization of the project"),
+  token_price: z
+    .union([z.string(), z.number()])
+    .nullable()
+    .describe("Current token price"),
+  total_devices: z
+    .union([z.string(), z.number()])
+    .describe("Number of devices in the network"),
+  avg_device_cost: z
+    .union([z.string(), z.number()])
+    .nullable()
+    .optional()
+    .default("")
+    .describe("Average cost per device"),
+  days_to_breakeven: z
+    .union([z.string(), z.number()])
+    .nullable()
+    .optional()
+    .default("")
+    .describe("Estimated days to break even on device investment"),
+  estimated_daily_earnings: z
+    .union([z.string(), z.number()])
+    .nullable()
+    .optional()
+    .default("")
+    .describe("Estimated daily earnings per device"),
+  chainid: z
+    .string()
+    .nullable()
+    .optional()
+    .default("")
+    .describe("Primary blockchain network ID"),
+  coingecko_id: z
+    .string()
+    .nullable()
+    .optional()
+    .default("")
+    .describe("CoinGecko API identifier"),
+  fully_diluted_valuation: z
+    .union([z.string(), z.number()])
+    .nullable()
+    .describe("Fully diluted valuation of the project"),
+});
+
+const GetMetricsToolSchema = {
+  name: "get_depin_metrics",
+  description: "Fetches Global DePINScan metrics for market analysis",
+  parameters: z.object({
+    isLatest: z
+      .boolean()
+      .default(true)
+      .describe("Whether to fetch only the latest metrics or historical data"),
+  }),
+  execute: async (args: { isLatest: boolean }) => {
+    try {
+      const tool = new DePINScanMetricsTool();
+      const metricsData = await tool.getRawData({ isLatest: args.isLatest });
+      const metrics = z.array(DepinScanMetricsSchema).parse(metricsData);
+
+      return {
+        metrics: metrics.map((m) => ({
+          date: m.date,
+          volume: m.volume ? Number(m.volume).toLocaleString() : "N/A",
+          totalProjects: Number(m.total_projects || 0),
+          marketCap: Number(m.market_cap || 0).toLocaleString(),
+          totalDevices: Number(m.total_device || 0).toLocaleString(),
+        })),
+      };
+    } catch (error) {
+      logger.error("Error executing get_depin_metrics tool", error);
+      return `Error executing get_depin_metrics tool`;
+    }
+  },
 };
 
-export type DepinScanProject = {
-  project_name: string;
-  slug: string;
-  token: string;
-  description: string;
-  layer_1: string[];
-  categories: string[];
-  market_cap: string;
-  token_price: string;
-  total_devices: string;
-  avg_device_cost: string;
-  days_to_breakeven: string;
-  estimated_daily_earnings: string;
-  chainid: string;
-  coingecko_id: string;
-  fully_diluted_valuation: string;
+const GetProjectsToolSchema = {
+  name: "get_depin_projects",
+  description: "Fetches DePINScan projects and their metrics",
+  parameters: z.object({
+    category: z
+      .enum([
+        "Chain",
+        "Server",
+        "AI",
+        "Wireless",
+        "Compute",
+        "Sensor",
+        "Services",
+        "Data",
+        "Storage",
+        "Cloud",
+        "Bandwidth",
+        "Mobile",
+        "Other",
+        "VPN",
+        "dVPN",
+        "DeWI",
+        "Connections",
+        "Search/Privacy",
+        "Energy",
+      ])
+      .optional()
+      .describe(
+        "Filter projects by category. Must be one of the supported categories."
+      ),
+    layer1: z
+      .string()
+      .optional()
+      .describe(
+        "Filter projects by layer 1 blockchain. Can be any valid blockchain name."
+      ),
+    minMarketCap: z.number().optional().describe("Minimum market cap filter"),
+    minDevices: z
+      .number()
+      .optional()
+      .describe("Minimum number of devices filter"),
+  }),
+  execute: async (args: {
+    category?: string;
+    layer1?: string;
+    minMarketCap?: number;
+    minDevices?: number;
+  }) => {
+    try {
+      const tool = new DePINScanProjectsTool();
+      const projectsData = await tool.getRawData();
+      const projects = z.array(DepinScanProjectSchema).parse(projectsData);
+
+      let filteredProjects = projects;
+      if (args.category) {
+        filteredProjects = filteredProjects.filter((p) => {
+          const lowerCaseCategory = args.category!.toLowerCase();
+          return (
+            p.categories?.some((c) => c.toLowerCase() === lowerCaseCategory) ??
+            false
+          );
+        });
+      }
+      if (args.layer1) {
+        filteredProjects = filteredProjects.filter((p) => {
+          return p.layer_1?.includes(args.layer1!) ?? false;
+        });
+      }
+      if (args.minMarketCap) {
+        filteredProjects = filteredProjects.filter(
+          (p) => Number(p.market_cap) >= args.minMarketCap!
+        );
+      }
+      if (args.minDevices) {
+        filteredProjects = filteredProjects.filter(
+          (p) => Number(p.total_devices) >= args.minDevices!
+        );
+      }
+
+      return {
+        totalProjects: filteredProjects.length,
+        projects: filteredProjects.map((p) => ({
+          name: p.project_name,
+          description: p.description || "",
+          token: p.token || "",
+          marketCap: Number(p.market_cap || 0).toLocaleString(),
+          tokenPrice: Number(p.token_price || 0).toLocaleString(),
+          totalDevices: Number(p.total_devices || 0).toLocaleString(),
+          avgDeviceCost: Number(p.avg_device_cost || 0).toLocaleString(),
+          estimatedDailyEarnings: Number(
+            p.estimated_daily_earnings || 0
+          ).toLocaleString(),
+          daysToBreakeven: Number(p.days_to_breakeven || 0),
+          categories: p.categories || [],
+          layer1: p.layer_1 || [],
+        })),
+      };
+    } catch (error) {
+      logger.error("Error executing get_depin_projects tool", error);
+      return `Error executing get_depin_projects tool`;
+    }
+  },
 };
 
 type DepinScanMetricsParams = {
@@ -38,107 +238,49 @@ type DepinScanMetricsParams = {
 };
 
 export class DePINScanMetricsTool extends APITool<DepinScanMetricsParams> {
+  schema = [
+    { name: GetMetricsToolSchema.name, tool: tool(GetMetricsToolSchema) },
+  ];
+
   constructor() {
     super({
-      name: "DePINScanMetrics",
-      description:
-        "Fetches Global DePINScan (Decentralized Physical Infrastructure) metrics",
-      output: "volume, market_cap, total_device, total_projects",
+      name: GetMetricsToolSchema.name,
+      description: GetMetricsToolSchema.description,
       baseUrl: DEPIN_METRICS_URL,
     });
   }
 
-  async execute(input: string, llmService: LLMService): Promise<string> {
-    try {
-      const params = await this.parseInput(input, llmService);
-      const metrics = await this.getRawData(params);
-      const response = await llmService.fastllm.generate(metrics);
-      return response;
-    } catch (error) {
-      logger.error("DePINMetrics Error:", error);
-      return `Error fetching DePIN metrics: ${error}`;
-    }
-  }
-
-  async parseInput(
-    input: string,
-    llmService: LLMService,
-  ): Promise<DepinScanMetricsParams> {
-    const prompt = `
-    You are a helpful assistant that parses the user's query and returns the parameters for the DePINScanMetricsTool.
-    The user's query is: ${input}
-    The parameters are:
-    - isLatest: boolean
-
-    Your task is to identify if only the latest metrics (for the current day) are needed or more historical metrics are needed.
-    Keep in mind:
-    - Historical metrics can be helpful to understand the trends over time.
-    - The user might be interested in the metrics for a specific date range.
-    - If the user is interested in the latest metrics, return { isLatest: true }.
-    - If the user is interested in historical metrics, return { isLatest: false }.
-    - If impossible to determine, return { isLatest: true }.
-
-    Output should be in <response> tags.
-
-    <response>
-    {
-      "isLatest": true
-    }
-    </response>
-    `;
-
-    const response = await llmService.fastllm.generate(prompt);
-    const extractedResponse = extractContentFromTags(response, "response");
-    if (!extractedResponse) {
-      return { isLatest: true };
-    }
-    return JSON.parse(extractedResponse);
-  }
-
-  async getRawData(params: DepinScanMetricsParams): Promise<string> {
+  async getRawData(
+    params: DepinScanMetricsParams
+  ): Promise<z.infer<typeof DepinScanMetricsSchema>[]> {
     const res = await fetch(
-      DEPIN_METRICS_URL + `${params.isLatest ? "?is_latest=true" : ""}`,
+      DEPIN_METRICS_URL + `${params.isLatest ? "?is_latest=true" : ""}`
     );
-    const metricsArray: DepinScanMetrics[] = await res.json();
-    return JSON.stringify(metricsArray);
+    if (!res.ok) {
+      throw new Error(`API request failed with status: ${res.status}`);
+    }
+    return await res.json();
   }
 }
 
 export class DePINScanProjectsTool extends APITool<void> {
+  schema = [
+    { name: GetProjectsToolSchema.name, tool: tool(GetProjectsToolSchema) },
+  ];
+
   constructor() {
     super({
-      name: "DePINScanProjects",
-      description:
-        "Fetches DePINScan (Decentralized Physical Infrastructure) projects metrics. You can ask about specific projects, categories, or metrics.",
-      output:
-        "Project details including: project name, description, market cap, token price, total devices, device cost, earnings, and categories",
+      name: GetProjectsToolSchema.name,
+      description: GetProjectsToolSchema.description,
       baseUrl: DEPIN_PROJECTS_URL,
     });
   }
 
-  async execute(input: string, llmService: LLMService): Promise<string> {
-    try {
-      const projects = await this.getRawData();
-      const projectsArray: DepinScanProject[] = JSON.parse(projects);
-
-      // Let the LLM extract relevant projects and fields based on the query
-      const prompt = depinScanProjectsTemplate(input, projectsArray);
-
-      const response = await llmService.fastllm.generate(prompt);
-      return response;
-    } catch (error) {
-      logger.error("DePINProjects Error:", error);
-      return `Error fetching DePIN projects: ${error}`;
-    }
-  }
-
-  async parseInput(_: any): Promise<void> {
-    return;
-  }
-
-  async getRawData(): Promise<string> {
+  async getRawData(): Promise<z.infer<typeof DepinScanProjectSchema>[]> {
     const res = await fetch(DEPIN_PROJECTS_URL);
-    const projects: DepinScanProject[] = await res.json();
-    return JSON.stringify(projects);
+    if (!res.ok) {
+      throw new Error(`API request failed with status: ${res.status}`);
+    }
+    return await res.json();
   }
 }

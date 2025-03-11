@@ -1,23 +1,96 @@
 import axios from "axios";
+import { z } from "zod";
+import { tool } from "ai";
 import { logger } from "../logger/winston";
-
 import { APITool } from "./tool";
+
+const CategoryEnum = z
+  .enum([
+    "business",
+    "entertainment",
+    "general",
+    "health",
+    "science",
+    "sports",
+    "technology",
+  ])
+  .describe("News category to fetch headlines for");
+
+// Can be used to parse the response if needed
+// const NewsArticleSchema = z.object({
+//   source: z.object({
+//     name: z.string().describe("Name of the news source"),
+//   }),
+//   title: z.string().describe("Title of the article"),
+//   url: z.string().url().describe("URL of the article"),
+//   description: z.string().nullable().describe("Article description or snippet"),
+//   publishedAt: z.string().describe("Publication date and time in UTC"),
+//   urlToImage: z.string().nullable().describe("URL to article image"),
+//   content: z
+//     .string()
+//     .nullable()
+//     .describe("Article content (truncated to 200 chars)"),
+// });
+
+// const NewsAPIResponseSchema = z.object({
+//   status: z.string().describe("API response status"),
+//   totalResults: z.number().describe("Total number of results"),
+//   articles: z.array(NewsArticleSchema).describe("List of news articles"),
+// });
+
+interface NewsAPIParams {
+  category?: string;
+  q?: string;
+}
+
+const GetHeadlinesToolSchema = {
+  name: "get_headlines",
+  description:
+    "Fetches today's top headlines from News API. You can filter by country, category, and search keywords.",
+  parameters: z.object({
+    category: CategoryEnum.optional().describe(
+      "Category to filter headlines by: business, entertainment, general, health, science, sports, technology"
+    ),
+    q: z
+      .string()
+      .optional()
+      .describe("Keywords or phrase to search for in the headlines"),
+  }),
+  execute: async (input: NewsAPIParams) => {
+    try {
+      const tool = new NewsAPITool();
+      return await tool.getRawData(input);
+    } catch (error) {
+      logger.error("Error executing get_headlines tool", error);
+      return `Error executing get_headlines tool`;
+    }
+  },
+};
 
 interface NewsAPIResponse {
   status: string;
   totalResults: number;
-  articles: { source: { name: string }; title: string; url: string }[]; // Include URL
+  articles: {
+    source: { name: string };
+    title: string;
+    url: string;
+    description: string | null;
+    publishedAt: string;
+    urlToImage: string | null;
+    content: string | null;
+  }[];
 }
 
-const NUMBER_OF_HEADLINES = 10;
+export class NewsAPITool extends APITool<NewsAPIParams> {
+  schema = [
+    { name: GetHeadlinesToolSchema.name, tool: tool(GetHeadlinesToolSchema) },
+  ];
 
-export class NewsAPITool extends APITool<any> {
   constructor() {
     super({
-      name: "NewsAPI",
-      description: "Fetches today's headlines from News API",
-      output: `Array of ${NUMBER_OF_HEADLINES} top headlines with their titles and links`,
-      baseUrl: "https://newsapi.org/v2/top-headlines?country=us&apiKey=",
+      name: GetHeadlinesToolSchema.name,
+      description: GetHeadlinesToolSchema.description,
+      baseUrl: "https://newsapi.org/v2/top-headlines",
     });
 
     if (!process.env.NEWSAPI_API_KEY) {
@@ -25,33 +98,23 @@ export class NewsAPITool extends APITool<any> {
     }
   }
 
-  async execute(_: string): Promise<string> {
-    try {
-      const response = await this.getRawData();
-
-      if (response.status === "ok") {
-        const headlines = response.articles.map(
-          (article) =>
-            `- [${article.title}](${article.url}) - ${article.source.name}`,
-        ); // Markdown links
-        return headlines.slice(0, NUMBER_OF_HEADLINES).join("\n");
-      } else {
-        return `Error fetching headlines: ${response.status}`; // Return error as string
-      }
-    } catch (error) {
-      logger.error("NewsAPI Error", error);
-      return `Error fetching headlines: ${error}`; // More robust error handling
-    }
+  public async getRawData(params: NewsAPIParams): Promise<NewsAPIResponse> {
+    const validatedParams = GetHeadlinesToolSchema.parameters.parse(params);
+    return this.fetchNews(validatedParams);
   }
 
-  async getRawData(): Promise<NewsAPIResponse> {
+  private async fetchNews(params: NewsAPIParams): Promise<NewsAPIResponse> {
     const apiKey = process.env.NEWSAPI_API_KEY!;
-    const url = `https://newsapi.org/v2/top-headlines?country=us&apiKey=${apiKey}`;
-    const response = await axios.get<NewsAPIResponse>(url);
-    return response.data;
-  }
+    const queryParams = new URLSearchParams({
+      country: "us",
+      apiKey,
+      ...(params.category && { category: params.category }),
+      ...(params.q && { q: params.q }),
+    });
 
-  async parseInput(userInput: any): Promise<any> {
-    return userInput;
+    const url = `${this.baseUrl}?${queryParams.toString()}`;
+    const response = await axios.get<NewsAPIResponse>(url);
+
+    return response.data;
   }
 }

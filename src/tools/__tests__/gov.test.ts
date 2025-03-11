@@ -1,10 +1,9 @@
-import { describe, expect, it, vi, beforeEach, Mock } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 import { NuclearOutagesTool } from "../gov";
-import { LLMService } from "../../llm/llm-service";
+import { ZodError } from "zod";
 
 describe("NuclearOutagesTool", () => {
   let nuclearTool: NuclearOutagesTool;
-  let mockLLMService: LLMService;
   const mockApiKey = "test-api-key";
 
   beforeEach(() => {
@@ -16,91 +15,27 @@ describe("NuclearOutagesTool", () => {
 
     // Initialize tool
     nuclearTool = new NuclearOutagesTool();
-
-    // Setup mock LLM service
-    const generateMock = vi.fn() as Mock;
-    mockLLMService = {
-      fastLLMProvider: "test-provider",
-      llmProvider: "test-provider",
-      fastllm: {
-        generate: generateMock,
-      },
-      llm: {
-        generate: vi.fn(),
-      },
-      initLLM: vi.fn(),
-    } as unknown as LLMService;
   });
 
   describe("constructor", () => {
     it("should throw error if API key is missing", () => {
       delete process.env.EIA_API_KEY;
       expect(() => new NuclearOutagesTool()).toThrow(
-        "Missing EIA_API_KEY environment variable",
+        "Missing EIA_API_KEY environment variable"
       );
     });
 
-    it("should initialize with API key", () => {
-      expect(() => new NuclearOutagesTool()).not.toThrow();
-    });
-  });
-
-  describe("parseInput", () => {
-    it("should parse valid date range", async () => {
-      const input = "show nuclear outages from 2024-01-01 to 2024-02-01";
-      (mockLLMService.fastllm.generate as Mock).mockResolvedValueOnce(
-        '<response>{"start": "2024-01-01", "end": "2024-02-01"}</response>',
+    it("should initialize with correct properties", () => {
+      expect(nuclearTool.name).toBe("get_nuclear_outages");
+      expect(nuclearTool.description).toBe(
+        "Fetches nuclear power plant outage data in the United States for a specified date range"
       );
-
-      const result = await nuclearTool.parseInput(input, mockLLMService);
-      expect(result).toEqual({
-        start: "2024-01-01",
-        end: "2024-02-01",
-      });
-    });
-
-    it("should default to last 7 days if no dates provided", async () => {
-      const input = "show current nuclear outages";
-      (mockLLMService.fastllm.generate as Mock).mockResolvedValueOnce(
-        "invalid response",
-      );
-
-      const result = await nuclearTool.parseInput(input, mockLLMService);
-      const today = new Date();
-      const sevenDaysAgo = new Date(today);
-      sevenDaysAgo.setDate(today.getDate() - 7);
-
-      expect(result.start).toBe(sevenDaysAgo.toISOString().split("T")[0]);
-      expect(result.end).toBe(today.toISOString().split("T")[0]);
-    });
-
-    it("should adjust future end date to current date", async () => {
-      const input = "show nuclear outages until 2026-01-01";
-      const futureDate = "2026-01-01";
-      const today = new Date().toISOString().split("T")[0];
-
-      (mockLLMService.fastllm.generate as Mock).mockResolvedValueOnce(
-        `<response>{"start": "2024-01-01", "end": "${futureDate}"}</response>`,
-      );
-
-      const result = await nuclearTool.parseInput(input, mockLLMService);
-      expect(result.end).toBe(today);
-    });
-
-    it("should adjust invalid date range (end before start)", async () => {
-      const input = "show nuclear outages from 2024-02-01 to 2024-01-01";
-      (mockLLMService.fastllm.generate as Mock).mockResolvedValueOnce(
-        '<response>{"start": "2024-02-01", "end": "2024-01-01"}</response>',
-      );
-
-      const result = await nuclearTool.parseInput(input, mockLLMService);
-      expect(new Date(result.start).getTime()).toBeLessThan(
-        new Date(result.end).getTime(),
-      );
+      expect(nuclearTool.schema).toHaveLength(1);
+      expect(nuclearTool.schema[0].name).toBe("get_nuclear_outages");
     });
   });
 
-  describe("execute", () => {
+  describe("getRawData", () => {
     const mockOutageData = [
       {
         period: "2024-02-01",
@@ -113,18 +48,14 @@ describe("NuclearOutagesTool", () => {
       },
     ];
 
-    it("should fetch and format nuclear outage data", async () => {
-      const input = "show nuclear outages for last week";
-
-      // Mock date parsing
-      (mockLLMService.fastllm.generate as Mock)
-        .mockResolvedValueOnce(
-          '<response>{"start": "2024-02-01", "end": "2024-02-07"}</response>',
-        )
-        .mockResolvedValueOnce("Nuclear outage summary for the period...");
+    it("should fetch and validate nuclear outage data", async () => {
+      const dateRange = {
+        start: "2024-02-01",
+        end: "2024-02-07",
+      };
 
       // Mock API response
-      (global.fetch as Mock).mockResolvedValueOnce({
+      (global.fetch as any).mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           response: {
@@ -133,52 +64,71 @@ describe("NuclearOutagesTool", () => {
         }),
       });
 
-      const result = await nuclearTool.execute(input, mockLLMService);
-      expect(result).toContain("Nuclear outage summary");
+      const result = await nuclearTool.getRawData(dateRange);
+      expect(result).toEqual(mockOutageData);
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining(
-          "https://api.eia.gov/v2/nuclear-outages/us-nuclear-outages/data",
+          "https://api.eia.gov/v2/nuclear-outages/us-nuclear-outages/data"
         ),
-        expect.any(Object),
+        expect.any(Object)
       );
     });
 
     it("should handle API errors", async () => {
-      const input = "show nuclear outages for last week";
-
-      // Mock date parsing
-      (mockLLMService.fastllm.generate as Mock).mockResolvedValueOnce(
-        '<response>{"start": "2024-02-01", "end": "2024-02-07"}</response>',
-      );
+      const dateRange = {
+        start: "2024-02-01",
+        end: "2024-02-07",
+      };
 
       // Mock API error
-      (global.fetch as Mock).mockResolvedValueOnce({
+      (global.fetch as any).mockResolvedValueOnce({
         ok: false,
         status: 404,
       });
 
-      const result = await nuclearTool.execute(input, mockLLMService);
-      expect(result).toContain("Error fetching nuclear outage data");
-    });
-
-    it("should handle parsing errors", async () => {
-      const input = "show nuclear outages for last week";
-
-      // Mock parsing error
-      (mockLLMService.fastllm.generate as Mock).mockRejectedValueOnce(
-        new Error("Failed to parse dates"),
+      await expect(nuclearTool.getRawData(dateRange)).rejects.toThrow(
+        "API request failed with status: 404"
       );
-
-      const result = await nuclearTool.execute(input, mockLLMService);
-      expect(result).toContain("Error fetching nuclear outage data");
     });
-  });
 
-  describe("getRawData", () => {
-    it("should throw error if start or end dates are missing", async () => {
-      const invalidDateRange = { start: "", end: "2024-02-07" };
+    it("should validate date range input", async () => {
+      const invalidDateRange = {
+        start: "invalid-date",
+        end: "2024-02-07",
+      };
+
       await expect(nuclearTool.getRawData(invalidDateRange)).rejects.toThrow(
-        "Start and end dates are required.",
+        ZodError
+      );
+    });
+
+    it("should adjust future end date to current date", async () => {
+      const futureDate = new Date();
+      futureDate.setFullYear(futureDate.getFullYear() + 1);
+      const futureDateStr = futureDate.toISOString().split("T")[0];
+
+      const dateRange = {
+        start: "2024-02-01",
+        end: futureDateStr,
+      };
+
+      // Mock API response
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          response: {
+            data: mockOutageData,
+          },
+        }),
+      });
+
+      await nuclearTool.getRawData(dateRange);
+
+      // Verify the API was called with today's date instead of the future date
+      const today = new Date().toISOString().split("T")[0];
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining(`end=${today}`),
+        expect.any(Object)
       );
     });
   });

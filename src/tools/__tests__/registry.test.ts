@@ -1,24 +1,24 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { ToolRegistry } from "../registry";
-import { Tool } from "../../types";
+import { QSTool } from "../../types";
 import { logger } from "../../logger/winston";
 
 // Mock tools for testing
-class MockToolA implements Tool {
+class MockToolA implements QSTool {
   name = "MockToolA";
   description = "Mock Tool A for testing";
   output = "Mock output A";
   execute = vi.fn();
 }
 
-class MockToolB implements Tool {
+class MockToolB implements QSTool {
   name = "MockToolB";
   description = "Mock Tool B for testing";
   output = "Mock output B";
   execute = vi.fn();
 }
 
-class FailingTool implements Tool {
+class FailingTool implements QSTool {
   constructor() {
     throw new Error("Failed to initialize tool");
   }
@@ -83,7 +83,7 @@ describe("ToolRegistry", () => {
 
       expect(enabled).toHaveLength(0);
       expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining("No tools enabled"),
+        expect.stringContaining("No tools enabled")
       );
     });
 
@@ -95,7 +95,7 @@ describe("ToolRegistry", () => {
       expect(enabled[0]).toBeInstanceOf(MockToolA);
       expect(enabled[1]).toBeInstanceOf(MockToolB);
       expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining("Unknown tools configured: unknown-tool"),
+        expect.stringContaining("Unknown tools configured: unknown-tool")
       );
     });
 
@@ -108,7 +108,7 @@ describe("ToolRegistry", () => {
       expect(enabled[1]).toBeInstanceOf(MockToolB);
       expect(logger.error).toHaveBeenCalledWith(
         expect.stringContaining("Failed to initialize tool failing"),
-        expect.any(Error),
+        expect.any(Error)
       );
     });
 
@@ -118,7 +118,7 @@ describe("ToolRegistry", () => {
 
       expect(enabled).toHaveLength(0);
       expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining("No tools enabled"),
+        expect.stringContaining("No tools enabled")
       );
     });
 
@@ -153,7 +153,7 @@ describe("ToolRegistry", () => {
       expect(tool).toBeUndefined();
       expect(logger.error).toHaveBeenCalledWith(
         expect.stringContaining("Failed to initialize tool failing"),
-        expect.any(Error),
+        expect.any(Error)
       );
     });
   });
