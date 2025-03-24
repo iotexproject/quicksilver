@@ -7,7 +7,6 @@ import DimoTool from "./dimo";
 import { NuclearOutagesTool } from "./gov";
 import { logger } from "../logger/winston";
 import { MapboxTool } from "./mapbox";
-import { ETHDenverTool } from "./ethdenver";
 import LumaEventsTool from "./luma";
 import { ThirdWebTool } from "./thirdWeb";
 
