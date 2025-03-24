@@ -24,21 +24,22 @@ interface ThirdWebParams {
 }
 
 const AskNebulaToolSchema = {
-  name: "ask_nebula",
-  description: "Asks a blockchain-related question to ThirdWeb's Nebula API",
+  name: "ask_thirdweb",
+  description:
+    "Retrieve smart contract details (metadata, source code, ABI); Fetch comprehensive blockchain network information; Retrieve transaction details by transaction hash; Get block details by number or block hash; Check wallet balances; Obtain token metadata and price information; Interact with smart contracts (read/write functions); Execute native value transfers; Perform cross-chain token swaps and bridges; Analyze blockchain network data",
   parameters: z.object({
     message: z
       .string()
       .min(20)
-      .describe("The blockchain-related question to ask Nebula"),
+      .describe("The blockchain-related question to ask ThirdWeb"),
   }),
   execute: async (input: ThirdWebParams) => {
     try {
       const tool = new ThirdWebTool();
       return await tool.getRawData(input);
     } catch (error) {
-      logger.error("Error executing ask_nebula tool", error);
-      return `Error executing ask_nebula tool`;
+      logger.error("Error executing ask_thirdweb tool", error);
+      return `Error executing ask_thirdweb tool`;
     }
   },
 };

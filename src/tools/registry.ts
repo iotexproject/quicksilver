@@ -25,7 +25,7 @@ export class ToolRegistry {
     this.register("nuclear", () => new NuclearOutagesTool());
     this.register("mapbox", () => new MapboxTool());
     this.register("luma", () => new LumaEventsTool());
-    this.register("twnebula", () => new ThirdWebTool());
+    this.register("thirdweb", () => new ThirdWebTool());
   }
 
   static register(name: string, factory: () => QSTool) {
