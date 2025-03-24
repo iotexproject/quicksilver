@@ -23,7 +23,6 @@ export class ToolRegistry {
     this.register("dimo", () => new DimoTool());
     this.register("nuclear", () => new NuclearOutagesTool());
     this.register("mapbox", () => new MapboxTool());
-    this.register("ethdenver", () => new ETHDenverTool());
     this.register("luma", () => new LumaEventsTool());
   }
 
