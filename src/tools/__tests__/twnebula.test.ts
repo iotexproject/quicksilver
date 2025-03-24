@@ -20,12 +20,12 @@ describe("ThirdWebTool", () => {
   });
 
   it("should initialize with correct properties", () => {
-    expect(tool.name).toBe("ask_nebula");
-    expect(tool.description).toBe(
-      "Asks a blockchain-related question to ThirdWeb's Nebula API"
+    expect(tool.name).toBe("ask_thirdweb");
+    expect(tool.description).toContain(
+      "Retrieve smart contract details"
     );
     expect(tool.schema).toHaveLength(1);
-    expect(tool.schema[0].name).toBe("ask_nebula");
+    expect(tool.schema[0].name).toBe("ask_thirdweb");
   });
 
   it("should throw error when secret key is not set", () => {
@@ -77,7 +77,8 @@ describe("ThirdWebTool", () => {
           headers: {
             "x-secret-key": mockSecretKey,
             "Content-Type": "application/json"
-          }
+          },
+          timeout: 60000
         }
       );
     });
