@@ -36,7 +36,7 @@ export class SentientAI {
     toolName: string,
     params: Record<string, any>
   ): Promise<any> {
-    const tool = this.getTool(toolName);
+    const tool = this.getRawTool(toolName);
     return this.rawDataProvider.process(tool, params);
   }
 
@@ -48,13 +48,10 @@ export class SentientAI {
     return this.orchestrator.processStream(input);
   }
 
-  private getTool(toolName: string): QSTool {
+  private getRawTool(toolName: string): QSTool {
     const tool = ToolRegistry.getTool(toolName as ToolName);
     if (!tool) {
       throw new Error(`Tool '${toolName}' not found`);
-    }
-    if (!ToolRegistry.isEnabled(toolName as ToolName)) {
-      throw new Error(`Tool '${toolName}' is not enabled`);
     }
     return tool;
   }

@@ -60,14 +60,14 @@ describe("SentientAI", () => {
   it("should throw if FAST_LLM_MODEL is not set", () => {
     delete process.env.FAST_LLM_MODEL;
     expect(() => new SentientAI()).toThrow(
-      "FAST_LLM_MODEL and LLM_MODEL must be set",
+      "FAST_LLM_MODEL and LLM_MODEL must be set"
     );
   });
 
   it("should throw if LLM_MODEL is not set", () => {
     delete process.env.LLM_MODEL;
     expect(() => new SentientAI()).toThrow(
-      "FAST_LLM_MODEL and LLM_MODEL must be set",
+      "FAST_LLM_MODEL and LLM_MODEL must be set"
     );
   });
 
@@ -75,7 +75,7 @@ describe("SentientAI", () => {
     delete process.env.FAST_LLM_MODEL;
     delete process.env.LLM_MODEL;
     expect(() => new SentientAI()).toThrow(
-      "FAST_LLM_MODEL and LLM_MODEL must be set",
+      "FAST_LLM_MODEL and LLM_MODEL must be set"
     );
   });
 
@@ -88,7 +88,6 @@ describe("SentientAI", () => {
 
   describe("getRawData", () => {
     it("should return raw data for an enabled tool", async () => {
-      process.env.ENABLED_TOOLS = "weather-current";
       const sentai = new SentientAI();
       const params = { latitude: 37.7749, longitude: -122.4194 };
       const result = await sentai.getRawData("weather-current", params);
@@ -99,15 +98,7 @@ describe("SentientAI", () => {
       process.env.ENABLED_TOOLS = "weather-current";
       const sentai = new SentientAI();
       await expect(sentai.getRawData("non-existent-tool", {})).rejects.toThrow(
-        "Tool 'non-existent-tool' not found",
-      );
-    });
-
-    it("should throw when tool is not enabled", async () => {
-      process.env.ENABLED_TOOLS = "weather-current";
-      const sentai = new SentientAI();
-      await expect(sentai.getRawData("weather-forecast", {})).rejects.toThrow(
-        "Tool 'weather-forecast' is not enabled",
+        "Tool 'non-existent-tool' not found"
       );
     });
   });
