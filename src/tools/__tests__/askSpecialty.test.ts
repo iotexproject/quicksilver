@@ -5,6 +5,7 @@ import { LLMService } from "../../llm/llm-service";
 import { ToolRegistry } from "../../registry/registry";
 import { QueryOrchestrator } from "../../workflow";
 import { ToolName } from "../../registry/toolNames";
+import { DomainName } from "../specialtyDomains";
 
 const llmServiceParams = {
   fastLLMModel: "test-fast-provider",
@@ -71,20 +72,22 @@ describe("AskSpecialtyTool", () => {
     it("should successfully process a valid domain query", async () => {
       const result = await askSpecialtyTool.schema[0].tool.execute(
         {
-          domain: "crypto",
+          domain: DomainName.BLOCKCHAIN,
           question: "What's the price of ETH?",
         },
         executionOptions
       );
 
       expect(result).toEqual({
-        domain: "crypto",
+        domain: DomainName.BLOCKCHAIN,
         response: "Mock response",
       });
 
       expect(ToolRegistry.getSpecialtyTools).toHaveBeenCalledWith([
-        ToolName.CMC,
-        ToolName.DEFILLAMA,
+        ToolName.DEPIN_METRICS,
+        ToolName.DEPIN_PROJECTS,
+        ToolName.L1DATA,
+        ToolName.THIRDWEB,
       ]);
       expect(ToolRegistry.buildToolSet).toHaveBeenCalled();
       expect(mockOrchestrator.process).toHaveBeenCalledWith(
@@ -110,13 +113,17 @@ describe("AskSpecialtyTool", () => {
 
       const result = await askSpecialtyTool.schema[0].tool.execute(
         {
-          domain: "crypto",
+          domain: DomainName.BLOCKCHAIN,
           question: "Some question",
         },
         executionOptions
       );
 
-      expect(result).toBe("No tools available for domain: Crypto");
+      expect((result as string).toLowerCase()).toBe(
+        (
+          "No tools available for domain: " + DomainName.BLOCKCHAIN
+        ).toLowerCase()
+      );
       expect(ToolRegistry.buildToolSet).not.toHaveBeenCalled();
       expect(mockOrchestrator.process).not.toHaveBeenCalled();
     });
@@ -128,14 +135,15 @@ describe("AskSpecialtyTool", () => {
 
       const result = await askSpecialtyTool.schema[0].tool.execute(
         {
-          domain: "crypto",
+          domain: DomainName.BLOCKCHAIN,
           question: "Some question",
         },
         executionOptions
       );
 
       expect(result).toBe(
-        "Error executing ask_specialty tool for domain: crypto"
+        "Error executing ask_specialty tool for domain: " +
+          DomainName.BLOCKCHAIN
       );
     });
 
