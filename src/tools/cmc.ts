@@ -34,7 +34,7 @@ const CMCResponseSchema = z.object({
         .optional()
         .describe("Last historical data timestamp"),
       is_active: z.number().optional().describe("Whether the token is active"),
-      status: z.string().nullable().optional().describe("Token status"),
+      status: z.number().nullable().optional().describe("Token status"),
     })
   ),
   status: z.object({
@@ -50,7 +50,7 @@ const CMCResponseSchema = z.object({
 const GetTokenMapToolSchema = {
   name: "get_cmc_token_map",
   description:
-    "Fetches token mapping data from CoinMarketCap with symbol, network and address information",
+    "Fetches token mapping data from CoinMarketCap. Returns available platforms for a token (with chain and address)",
   parameters: z.object({
     start: z
       .number()

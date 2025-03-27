@@ -21,7 +21,7 @@ const DefiLlamaPriceResponseSchema = z.object({
 const GetTokenPriceToolSchema = {
   name: "get_token_price",
   description:
-    "Fetches token price from DefiLlama using chain and token address in the format {chain}:{address}",
+    "Fetches token price from DefiLlama using chain and token address in the format {chain}:{address}. If no token address and chain is provided, try get_cmc_token_map tool to retrieve the token available networks and addresses.",
   parameters: z.object({
     chain: z
       .string()
