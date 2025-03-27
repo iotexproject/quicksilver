@@ -33,9 +33,10 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository_owner }}/quicksilver
           tags: |
-            type=raw,value=latest
-            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable=${{ github.event_name == 'push' }}
+            type=sha,prefix=sha-
             type=ref,event=branch
+            type=ref,event=pr
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -60,7 +61,6 @@ jobs:
           ignore-unfixed: true
           vuln-type: "os,library"
           severity: "CRITICAL,HIGH"
-          detail: true
 
       # Only push if this is a push to main (not a PR)
       - name: Push Docker Image
