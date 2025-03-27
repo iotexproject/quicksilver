@@ -9,6 +9,8 @@ import { logger } from "../logger/winston";
 import { MapboxTool } from "./mapbox";
 import LumaEventsTool from "./luma";
 import { ThirdWebTool } from "./thirdWeb";
+import { DefiLlamaTool } from "./defillama";
+import { CMCBaseTool } from "./cmc";
 
 export class ToolRegistry {
   private static tools = new Map<string, () => QSTool>();
@@ -26,6 +28,8 @@ export class ToolRegistry {
     this.register("mapbox", () => new MapboxTool());
     this.register("luma", () => new LumaEventsTool());
     this.register("thirdweb", () => new ThirdWebTool());
+    this.register("cmc", () => new CMCBaseTool());
+    this.register("defillama", () => new DefiLlamaTool());
   }
 
   static register(name: string, factory: () => QSTool) {
