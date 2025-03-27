@@ -30,7 +30,7 @@ describe("CMCBaseTool", () => {
         first_historical_data: "2013-04-28T00:00:00.000Z",
         last_historical_data: "2024-03-20T00:00:00.000Z",
         is_active: 1,
-        status: "active",
+        status: 1,
       },
       {
         id: 1027,
@@ -42,7 +42,7 @@ describe("CMCBaseTool", () => {
         first_historical_data: "2015-08-07T00:00:00.000Z",
         last_historical_data: "2024-03-20T00:00:00.000Z",
         is_active: 1,
-        status: "active",
+        status: 1,
       },
       {
         id: 825,
@@ -60,7 +60,7 @@ describe("CMCBaseTool", () => {
         first_historical_data: "2015-02-25T00:00:00.000Z",
         last_historical_data: "2024-03-20T00:00:00.000Z",
         is_active: 1,
-        status: "active",
+        status: 1,
       },
     ],
     status: {
@@ -231,7 +231,7 @@ describe("CMCBaseTool", () => {
         firstHistoricalData: "2013-04-28T00:00:00.000Z",
         lastHistoricalData: "2024-03-20T00:00:00.000Z",
         isActive: true,
-        status: "active",
+        status: 1,
       });
 
       expect(result.tokens[2]).toEqual({
@@ -250,7 +250,7 @@ describe("CMCBaseTool", () => {
         firstHistoricalData: "2015-02-25T00:00:00.000Z",
         lastHistoricalData: "2024-03-20T00:00:00.000Z",
         isActive: true,
-        status: "active",
+        status: 1,
       });
 
       expect(result.metadata).toEqual({
