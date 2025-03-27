@@ -61,6 +61,7 @@ const DepinScanProjectSchema = z.object({
     .describe("Current token price"),
   total_devices: z
     .union([z.string(), z.number()])
+    .nullable()
     .describe("Number of devices in the network"),
   avg_device_cost: z
     .union([z.string(), z.number()])
