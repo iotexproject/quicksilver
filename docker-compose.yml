@@ -1,19 +1,6 @@
 services:
-  # Example of running multiple instances with different configurations
-  # To start a specific instance:
-  # CONFIG_PATH=configs/instance1.env docker compose up instance1
-
-  # Instance with all tools enabled (for testing)
-  # test:
-  #   image: qs:main
-  #   env_file: configs/.env.test
-  #   ports:
-  #     - "8000:8000"
-  #   restart: always
-
-  # Template for production instances (commented out)
   latest:
-    image: qs:ethdenver
+    image: ghcr.io/iotexproject/quicksilver:latest
     env_file: configs/.env.latest
     ports:
       - "33333:3000"
@@ -21,7 +8,7 @@ services:
     restart: always
 
   dimo:
-    image: qs:ethdenver
+    image: ghcr.io/iotexproject/quicksilver:latest
     env_file: configs/.env.dimo
     ports:
       - "33334:3000"
