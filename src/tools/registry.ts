@@ -1,3 +1,5 @@
+import { ToolSet } from "ai";
+
 import { QSTool } from "../types";
 import { NewsAPITool } from "./newsapi";
 import { CurrentWeatherAPITool, ForecastWeatherAPITool } from "./nubila";
@@ -11,6 +13,7 @@ import LumaEventsTool from "./luma";
 import { ThirdWebTool } from "./thirdWeb";
 import { DefiLlamaTool } from "./defillama";
 import { CMCBaseTool } from "./cmc";
+import { AskSpecialtyTool } from "./askSpecialty";
 
 export class ToolRegistry {
   private static tools = new Map<string, () => QSTool>();
@@ -30,6 +33,7 @@ export class ToolRegistry {
     this.register("thirdweb", () => new ThirdWebTool());
     this.register("cmc", () => new CMCBaseTool());
     this.register("defillama", () => new DefiLlamaTool());
+    this.register("ask_specialty", () => new AskSpecialtyTool());
   }
 
   static register(name: string, factory: () => QSTool) {
@@ -60,15 +64,14 @@ export class ToolRegistry {
     }
 
     return enabledTools
-      .map((tool) => {
-        try {
-          return this.tools.get(tool)!();
-        } catch (error) {
-          logger.error(`Failed to initialize tool ${tool}:`, error);
-          return null;
-        }
-      })
-      .filter((tool): tool is QSTool => tool !== null);
+      .map((tool) => this.getTool(tool))
+      .filter((tool): tool is QSTool => tool !== undefined);
+  }
+
+  static getSpecialtyTools(toolNames: string[]): QSTool[] {
+    return toolNames
+      .map((toolName) => this.getTool(toolName))
+      .filter((tool): tool is QSTool => tool !== undefined);
   }
 
   static getTool(name: string): QSTool | undefined {
@@ -93,5 +96,15 @@ export class ToolRegistry {
       .split(",")
       .map((t) => t.trim())
       .includes(name);
+  }
+
+  static buildToolSet(tools: QSTool[]): ToolSet {
+    const toolSet: ToolSet = {};
+    tools.forEach((tool) => {
+      tool.schema.forEach((schema) => {
+        toolSet[schema.name] = schema.tool;
+      });
+    });
+    return toolSet;
   }
 }
