@@ -1,3 +1,5 @@
+import { ToolSet } from "ai";
+
 import { QueryOrchestrator } from "./workflow";
 import { LLMService } from "./llm/llm-service";
 import { ToolRegistry } from "./tools/registry";
@@ -7,7 +9,7 @@ import { logger } from "./logger/winston";
 
 export class SentientAI {
   orchestrator: QueryOrchestrator;
-  private tools: QSTool[];
+  private toolSet: ToolSet;
   private rawDataProvider: RawDataProvider;
 
   constructor() {
@@ -15,11 +17,12 @@ export class SentientAI {
       throw new Error("FAST_LLM_MODEL and LLM_MODEL must be set");
     }
 
-    this.tools = ToolRegistry.getEnabledTools();
-    logger.info("Enabled tools:", this.tools.map((t) => t.name).join(", "));
+    const enabledTools = ToolRegistry.getEnabledTools();
+    this.toolSet = ToolRegistry.buildToolSet(enabledTools);
+    logger.info("Enabled tools:", this.toolSet);
 
     this.orchestrator = new QueryOrchestrator({
-      tools: this.tools,
+      toolSet: this.toolSet,
       llmService: new LLMService({
         fastLLMModel: process.env.FAST_LLM_MODEL,
         LLMModel: process.env.LLM_MODEL,
