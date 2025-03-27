@@ -2,16 +2,17 @@ import { z } from "zod";
 import { tool } from "ai";
 
 import { APITool } from "./tool";
-import { ToolRegistry } from "./registry";
+import { ToolRegistry } from "../registry/registry";
 import { LLMService } from "../llm/llm-service";
 import { QueryOrchestrator } from "../workflow";
 import { logger } from "../logger/winston";
+import { ToolName } from "../registry/toolNames";
 
 type DomainConfig = {
   name: string;
   description: string;
   capabilities: string[];
-  tools: string[];
+  tools: ToolName[];
 };
 
 const domains = new Map<string, DomainConfig>([
@@ -19,9 +20,9 @@ const domains = new Map<string, DomainConfig>([
     "news",
     {
       name: "News",
-      description: "News about the latest events and developments in the world",
+      description: "News from the newsapi",
       capabilities: ["news", "top-headlines"],
-      tools: ["news"],
+      tools: [ToolName.NEWS],
     },
   ],
   [
@@ -30,7 +31,7 @@ const domains = new Map<string, DomainConfig>([
       name: "Environment",
       description: "Weather, climate, and environmental conditions",
       capabilities: ["weather", "forecast"],
-      tools: ["weather-current", "weather-forecast"],
+      tools: [ToolName.WEATHER_CURRENT, ToolName.WEATHER_FORECAST],
     },
   ],
   [
@@ -39,7 +40,7 @@ const domains = new Map<string, DomainConfig>([
       name: "DePIN",
       description: "DePIN projects, tokens and metrics",
       capabilities: ["depin", "metrics", "depinscan"],
-      tools: ["depin-metrics", "depin-projects"],
+      tools: [ToolName.DEPIN_METRICS, ToolName.DEPIN_PROJECTS],
     },
   ],
   [
@@ -48,7 +49,7 @@ const domains = new Map<string, DomainConfig>([
       name: "IoTeX",
       description: "IoTeX projects and metrics",
       capabilities: ["iotex", "metrics", "l1stats"],
-      tools: ["l1data"],
+      tools: [ToolName.L1DATA],
     },
   ],
   [
@@ -57,7 +58,7 @@ const domains = new Map<string, DomainConfig>([
       name: "Government",
       description: "Government data",
       capabilities: ["gov", "nuclear-outages"],
-      tools: ["nuclear"],
+      tools: [ToolName.NUCLEAR],
     },
   ],
   [
@@ -66,7 +67,7 @@ const domains = new Map<string, DomainConfig>([
       name: "Navigation",
       description: "Navigation data",
       capabilities: ["navigation", "directions", "geocoding"],
-      tools: ["mapbox"],
+      tools: [ToolName.MAPBOX],
     },
   ],
   [
@@ -82,7 +83,7 @@ const domains = new Map<string, DomainConfig>([
         "defi",
         "tokens",
       ],
-      tools: ["cmc", "defillama"],
+      tools: [ToolName.CMC, ToolName.DEFILLAMA],
     },
   ],
 ]);
