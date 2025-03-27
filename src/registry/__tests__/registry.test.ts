@@ -2,12 +2,19 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { ToolRegistry } from "../registry";
 import { QSTool } from "../../types";
 import { logger } from "../../logger/winston";
+import { Tool } from "ai";
+
+const mockToolSchema: { name: string; tool: Tool } = {
+  name: "Test Tool",
+  tool: vi.fn().mockResolvedValue("test") as unknown as Tool,
+};
 
 // Mock tools for testing
 class MockToolA implements QSTool {
   name = "MockToolA";
   description = "Mock Tool A for testing";
   output = "Mock output A";
+  schema: { name: string; tool: Tool }[] = [mockToolSchema];
   execute = vi.fn();
 }
 
@@ -15,10 +22,12 @@ class MockToolB implements QSTool {
   name = "MockToolB";
   description = "Mock Tool B for testing";
   output = "Mock output B";
+  schema: { name: string; tool: Tool }[] = [mockToolSchema];
   execute = vi.fn();
 }
 
 class FailingTool implements QSTool {
+  schema: { name: string; tool: Tool }[] = [mockToolSchema];
   constructor() {
     throw new Error("Failed to initialize tool");
   }
@@ -181,6 +190,120 @@ describe("ToolRegistry", () => {
     it("should handle spaces in ENABLED_TOOLS", () => {
       process.env.ENABLED_TOOLS = "mock-b, mock-a";
       expect(ToolRegistry.isEnabled("mock-a")).toBe(true);
+    });
+  });
+
+  describe("getSpecialtyTools", () => {
+    beforeEach(() => {
+      ToolRegistry.register("mock-a", () => new MockToolA());
+      ToolRegistry.register("mock-b", () => new MockToolB());
+      ToolRegistry.register("failing", () => new FailingTool());
+    });
+
+    it("should return all requested tools that exist", () => {
+      const tools = ToolRegistry.getSpecialtyTools(["mock-a", "mock-b"]);
+      expect(tools).toHaveLength(2);
+      expect(tools[0]).toBeInstanceOf(MockToolA);
+      expect(tools[1]).toBeInstanceOf(MockToolB);
+    });
+
+    it("should filter out undefined tools", () => {
+      const tools = ToolRegistry.getSpecialtyTools([
+        "mock-a",
+        "unknown-tool",
+        "mock-b",
+      ]);
+      expect(tools).toHaveLength(2);
+      expect(tools[0]).toBeInstanceOf(MockToolA);
+      expect(tools[1]).toBeInstanceOf(MockToolB);
+    });
+
+    it("should handle failing tool initialization", () => {
+      const tools = ToolRegistry.getSpecialtyTools([
+        "mock-a",
+        "failing",
+        "mock-b",
+      ]);
+      expect(tools).toHaveLength(2);
+      expect(tools[0]).toBeInstanceOf(MockToolA);
+      expect(tools[1]).toBeInstanceOf(MockToolB);
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringContaining("Failed to initialize tool failing"),
+        expect.any(Error)
+      );
+    });
+
+    it("should return empty array when no tools exist", () => {
+      const tools = ToolRegistry.getSpecialtyTools([
+        "unknown-tool-1",
+        "unknown-tool-2",
+      ]);
+      expect(tools).toHaveLength(0);
+    });
+
+    it("should return empty array for empty input", () => {
+      const tools = ToolRegistry.getSpecialtyTools([]);
+      expect(tools).toHaveLength(0);
+    });
+  });
+
+  describe("buildToolSet", () => {
+    beforeEach(() => {
+      ToolRegistry.register("mock-a", () => new MockToolA());
+      ToolRegistry.register("mock-b", () => new MockToolB());
+    });
+
+    it("should build tool set from array of tools", () => {
+      const tools = [
+        ToolRegistry.getTool("mock-a")!,
+        ToolRegistry.getTool("mock-b")!,
+      ];
+      const toolSet = ToolRegistry.buildToolSet(tools);
+
+      expect(toolSet).toHaveProperty("Test Tool");
+      expect(toolSet["Test Tool"]).toBeDefined();
+      expect(typeof toolSet["Test Tool"]).toBe("function");
+    });
+
+    it("should handle empty array of tools", () => {
+      const toolSet = ToolRegistry.buildToolSet([]);
+      expect(toolSet).toEqual({});
+    });
+
+    it("should handle tools with multiple schemas", () => {
+      class MultiSchemaTool implements QSTool {
+        name = "MultiSchemaTool";
+        description = "Tool with multiple schemas";
+        output = "Mock output";
+        schema: { name: string; tool: Tool }[] = [
+          { name: "Schema1", tool: vi.fn() as unknown as Tool },
+          { name: "Schema2", tool: vi.fn() as unknown as Tool },
+        ];
+        execute = vi.fn();
+      }
+
+      const multiSchemaTool = new MultiSchemaTool();
+      const toolSet = ToolRegistry.buildToolSet([multiSchemaTool]);
+
+      expect(toolSet).toHaveProperty("Schema1");
+      expect(toolSet).toHaveProperty("Schema2");
+      expect(toolSet["Schema1"]).toBeDefined();
+      expect(toolSet["Schema2"]).toBeDefined();
+    });
+
+    it("should handle tools with no schemas", () => {
+      class NoSchemaTool implements QSTool {
+        name = "NoSchemaTool";
+        description = "Tool with no schemas";
+        output = "Mock output";
+        schema: { name: string; tool: Tool }[] = [];
+        execute = vi.fn();
+      }
+
+      const noSchemaTool = new NoSchemaTool();
+      const toolSet = ToolRegistry.buildToolSet([noSchemaTool]);
+
+      expect(toolSet).toEqual({});
     });
   });
 });

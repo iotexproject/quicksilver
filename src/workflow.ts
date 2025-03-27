@@ -2,28 +2,25 @@ import { ToolSet } from "ai";
 
 import { logger } from "./logger/winston";
 import { LLMService } from "./llm/llm-service";
-import { QSTool } from "./types";
 
 export class QueryOrchestrator {
   llmService: LLMService;
-  tools: QSTool[] = [];
+  toolSet: ToolSet = {};
 
   constructor({
-    tools,
+    toolSet,
     llmService,
   }: {
-    tools: QSTool[];
+    toolSet: ToolSet;
     llmService: LLMService;
   }) {
-    this.tools = tools;
+    this.toolSet = toolSet;
     this.llmService = llmService;
   }
 
   async process(input: string): Promise<string> {
     try {
-      const toolSet = this.buildToolSet();
-      const response = await this.llmService.llm.generate(input, toolSet);
-      return response;
+      return await this.llmService.llm.generate(input, this.toolSet);
     } catch (error) {
       logger.error("Error processing query", error);
       return "Processing Error, please try again later.";
@@ -32,22 +29,10 @@ export class QueryOrchestrator {
 
   async processStream(input: string): Promise<any> {
     try {
-      const toolSet = this.buildToolSet();
-      const response = await this.llmService.llm.stream(input, toolSet);
-      return response;
+      return await this.llmService.llm.stream(input, this.toolSet);
     } catch (error) {
       logger.error("Error processing query", error);
       return "Processing Error, please try again later.";
     }
-  }
-
-  buildToolSet(): ToolSet {
-    const toolSet: ToolSet = {};
-    this.tools.forEach((tool) => {
-      tool.schema.forEach((schema) => {
-        toolSet[schema.name] = schema.tool;
-      });
-    });
-    return toolSet;
   }
 }

@@ -1,13 +1,15 @@
+import { ToolSet } from "ai";
+
 import { QueryOrchestrator } from "./workflow";
 import { LLMService } from "./llm/llm-service";
-import { ToolRegistry } from "./tools/registry";
+import { ToolRegistry } from "./registry/registry";
 import { QSTool } from "./types";
 import { RawDataProvider } from "./raw-data-provider";
 import { logger } from "./logger/winston";
-
+import { ToolName } from "./registry/toolNames";
 export class SentientAI {
   orchestrator: QueryOrchestrator;
-  private tools: QSTool[];
+  private toolSet: ToolSet;
   private rawDataProvider: RawDataProvider;
 
   constructor() {
@@ -15,11 +17,12 @@ export class SentientAI {
       throw new Error("FAST_LLM_MODEL and LLM_MODEL must be set");
     }
 
-    this.tools = ToolRegistry.getEnabledTools();
-    logger.info("Enabled tools:", this.tools.map((t) => t.name).join(", "));
+    const enabledTools = ToolRegistry.getEnabledTools();
+    this.toolSet = ToolRegistry.buildToolSet(enabledTools);
+    logger.info("Enabled tools:", this.toolSet);
 
     this.orchestrator = new QueryOrchestrator({
-      tools: this.tools,
+      toolSet: this.toolSet,
       llmService: new LLMService({
         fastLLMModel: process.env.FAST_LLM_MODEL,
         LLMModel: process.env.LLM_MODEL,
@@ -46,11 +49,11 @@ export class SentientAI {
   }
 
   private getTool(toolName: string): QSTool {
-    const tool = ToolRegistry.getTool(toolName);
+    const tool = ToolRegistry.getTool(toolName as ToolName);
     if (!tool) {
       throw new Error(`Tool '${toolName}' not found`);
     }
-    if (!ToolRegistry.isEnabled(toolName)) {
+    if (!ToolRegistry.isEnabled(toolName as ToolName)) {
       throw new Error(`Tool '${toolName}' is not enabled`);
     }
     return tool;
