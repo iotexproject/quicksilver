@@ -10,8 +10,7 @@ class TestAPITool extends APITool<any> {
   schema: { name: string; tool: Tool }[] = [
     {
       name: "Test Tool",
-      // @ts-ignore only serves as a mock
-      tool: vi.fn().mockResolvedValue("test"),
+      tool: vi.fn().mockResolvedValue("test") as unknown as Tool,
     },
   ];
 
