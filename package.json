@@ -7,6 +7,7 @@
     "start": "bun run server.ts --server-options=\"{\\\"idleTimeout\\\": 120000}\"",
     "dev": "bun run --watch server.ts --server-options=\"{\\\"idleTimeout\\\": 120000}\"",
     "test": "vitest run",
+    "test:watch": "vitest",
     "coverage": "vitest --coverage",
     "format": "bun prettier . --write"
   },
@@ -17,24 +18,25 @@
     "@ai-sdk/anthropic": "^1.1.9",
     "@ai-sdk/deepseek": "^0.1.11",
     "@ai-sdk/openai": "^1.1.13",
-    "@dimo-network/data-sdk": "^1.2.3",
+    "@dimo-network/data-sdk": "1.2.3",
+    "@langchain/community": "^0.3.32",
+    "@langchain/core": "^0.3.40",
+    "@langchain/openai": "^0.4.4",
+    "@langchain/qdrant": "^0.1.1",
+    "@qdrant/js-client-rest": "^1.13.0",
+    "@upstash/redis": "^1.34.4",
     "ai": "^4.1.45",
     "axios": "^1.7.9",
     "chalk": "^4.1.2",
     "dotenv": "^16.4.7",
     "ethers": "^6.13.5",
     "hono": "^4.6.16",
+    "langchain": "^0.3.19",
     "logform": "^2.7.0",
     "typescript": "^5.7.2",
+    "uuid": "^11.1.0",
     "winston": "^3.17.0",
-    "zod": "^3.24.2",
-    "@qdrant/js-client-rest": "^1.13.0",
-    "@langchain/qdrant": "^0.1.1",
-    "@upstash/redis": "^1.34.4",
-    "@langchain/community": "^0.3.32",
-    "@langchain/core": "^0.3.40",
-    "@langchain/openai": "^0.4.4",
-    "langchain": "^0.3.19"
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/axios": "^0.14.4",
@@ -42,5 +44,6 @@
     "@vitest/coverage-v8": "2.1.8",
     "prettier": "^3.4.2",
     "vitest": "^2.1.8"
-  }
+  },
+  "packageManager": "pnpm@10.6.3+sha512.bb45e34d50a9a76e858a95837301bfb6bd6d35aea2c5d52094fa497a467c43f5c440103ce2511e9e0a2f89c3d6071baac3358fc68ac6fb75e2ceb3d2736065e6"
 }

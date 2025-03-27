@@ -7,8 +7,9 @@ import DimoTool from "./dimo";
 import { NuclearOutagesTool } from "./gov";
 import { logger } from "../logger/winston";
 import { MapboxTool } from "./mapbox";
-import { ETHDenverTool } from "./ethdenver";
 import LumaEventsTool from "./luma";
+import { ThirdWebTool } from "./thirdWeb";
+
 export class ToolRegistry {
   private static tools = new Map<string, () => QSTool>();
 
@@ -23,8 +24,8 @@ export class ToolRegistry {
     this.register("dimo", () => new DimoTool());
     this.register("nuclear", () => new NuclearOutagesTool());
     this.register("mapbox", () => new MapboxTool());
-    this.register("ethdenver", () => new ETHDenverTool());
     this.register("luma", () => new LumaEventsTool());
+    this.register("thirdweb", () => new ThirdWebTool());
   }
 
   static register(name: string, factory: () => QSTool) {
