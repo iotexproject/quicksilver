@@ -2,8 +2,9 @@ import { mockLLMService } from "../../__tests__/mocks";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { AskSpecialtyTool } from "../askSpecialty";
 import { LLMService } from "../../llm/llm-service";
-import { ToolRegistry } from "../registry";
+import { ToolRegistry } from "../../registry/registry";
 import { QueryOrchestrator } from "../../workflow";
+import { ToolName } from "../../registry/toolNames";
 
 const llmServiceParams = {
   fastLLMModel: "test-fast-provider",
@@ -11,7 +12,7 @@ const llmServiceParams = {
 };
 
 // Mock dependencies
-vi.mock("../registry", () => ({
+vi.mock("../../registry/registry", () => ({
   ToolRegistry: {
     getSpecialtyTools: vi.fn(),
     buildToolSet: vi.fn(),
@@ -59,7 +60,10 @@ describe("AskSpecialtyTool", () => {
 
     beforeEach(() => {
       // Setup default mock responses
-      (ToolRegistry.getSpecialtyTools as any).mockReturnValue(["mock-tool"]);
+      (ToolRegistry.getSpecialtyTools as any).mockReturnValue([
+        ToolName.CMC,
+        ToolName.DEFILLAMA,
+      ]);
       (ToolRegistry.buildToolSet as any).mockReturnValue({});
       mockOrchestrator.process.mockResolvedValue("Mock response");
     });
@@ -79,8 +83,8 @@ describe("AskSpecialtyTool", () => {
       });
 
       expect(ToolRegistry.getSpecialtyTools).toHaveBeenCalledWith([
-        "cmc",
-        "defillama",
+        ToolName.CMC,
+        ToolName.DEFILLAMA,
       ]);
       expect(ToolRegistry.buildToolSet).toHaveBeenCalled();
       expect(mockOrchestrator.process).toHaveBeenCalledWith(
@@ -148,6 +152,5 @@ describe("AskSpecialtyTool", () => {
       expect(result).toContain("Domain 'invalid_domain' not found");
       expect(result).toContain("Available domains:");
     });
-
   });
 });

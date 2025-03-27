@@ -2,11 +2,11 @@ import { ToolSet } from "ai";
 
 import { QueryOrchestrator } from "./workflow";
 import { LLMService } from "./llm/llm-service";
-import { ToolRegistry } from "./tools/registry";
+import { ToolRegistry } from "./registry/registry";
 import { QSTool } from "./types";
 import { RawDataProvider } from "./raw-data-provider";
 import { logger } from "./logger/winston";
-
+import { ToolName } from "./registry/toolNames";
 export class SentientAI {
   orchestrator: QueryOrchestrator;
   private toolSet: ToolSet;
@@ -49,11 +49,11 @@ export class SentientAI {
   }
 
   private getTool(toolName: string): QSTool {
-    const tool = ToolRegistry.getTool(toolName);
+    const tool = ToolRegistry.getTool(toolName as ToolName);
     if (!tool) {
       throw new Error(`Tool '${toolName}' not found`);
     }
-    if (!ToolRegistry.isEnabled(toolName)) {
+    if (!ToolRegistry.isEnabled(toolName as ToolName)) {
       throw new Error(`Tool '${toolName}' is not enabled`);
     }
     return tool;
