@@ -38,11 +38,13 @@ export const domains = new Map<string, DomainConfig>([
         "nuclear-outages",
         "nubila",
         "gov",
+        "air-quality",
       ],
       tools: [
         ToolName.WEATHER_CURRENT,
         ToolName.WEATHER_FORECAST,
         ToolName.NUCLEAR,
+        ToolName.AIR_QUALITY,
       ],
     },
   ],
