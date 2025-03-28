@@ -33,7 +33,7 @@ describe("DefiLlamaTool", () => {
     expect(defillamaTool.description).toContain(
       "Fetches token prices from DefiLlama"
     );
-    expect(defillamaTool.schema).toHaveLength(3);
+    expect(defillamaTool.schema).toHaveLength(4);
     expect(defillamaTool.schema[0].name).toBe("get_token_price");
   });
 
@@ -632,6 +632,177 @@ describe("DefiLlamaTool", () => {
       );
 
       expect(result).toBe("Error executing get_token_price_chart tool");
+    });
+  });
+
+  describe("executePercentage", () => {
+    const executionOptions = {
+      toolCallId: "test-call-id",
+      messages: [],
+      llm: new LLMService(llmServiceParams),
+    };
+
+    it("should fetch percentage change for tokens", async () => {
+      const percentageResponse = {
+        coins: {
+          "coingecko:ethereum": -14.558151749299784,
+          "ethereum:0xdB25f211AB05b1c97D595516F45794528a807ad8":
+            -3.3519208785134125,
+          "bsc:0x762539b45a1dcce3d36d080f74d1aed37844b878": -8.822041839808112,
+          "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1":
+            -0.2106898504109858,
+        },
+      };
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(percentageResponse),
+      } as Response);
+
+      const result = await defillamaTool.schema[3].tool.execute(
+        {
+          coins: [
+            "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1",
+            "coingecko:ethereum",
+            "bsc:0x762539b45a1dcce3d36d080f74d1aed37844b878",
+            "ethereum:0xdB25f211AB05b1c97D595516F45794528a807ad8",
+          ],
+          timestamp: 1664364537,
+          lookForward: false,
+          period: "3w",
+        },
+        executionOptions
+      );
+
+      expect(result).toEqual({
+        changes: [
+          {
+            token: "coingecko:ethereum",
+            percentageChange: -14.558151749299784,
+          },
+          {
+            token: "ethereum:0xdB25f211AB05b1c97D595516F45794528a807ad8",
+            percentageChange: -3.3519208785134125,
+          },
+          {
+            token: "bsc:0x762539b45a1dcce3d36d080f74d1aed37844b878",
+            percentageChange: -8.822041839808112,
+          },
+          {
+            token: "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1",
+            percentageChange: -0.2106898504109858,
+          },
+        ],
+      });
+
+      expect(fetch).toHaveBeenCalledWith(
+        `${DEFILLAMA_BASE_URL}/percentage/ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1,coingecko:ethereum,bsc:0x762539b45a1dcce3d36d080f74d1aed37844b878,ethereum:0xdB25f211AB05b1c97D595516F45794528a807ad8?timestamp=1664364537&lookForward=false&period=3w`
+      );
+    });
+
+    it("should handle default parameters", async () => {
+      const percentageResponse = {
+        coins: {
+          "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1":
+            -0.2106898504109858,
+        },
+      };
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(percentageResponse),
+      } as Response);
+
+      await defillamaTool.schema[3].tool.execute(
+        {
+          coins: ["ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1"],
+        },
+        executionOptions
+      );
+
+      expect(fetch).toHaveBeenCalledWith(
+        `${DEFILLAMA_BASE_URL}/percentage/ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1`
+      );
+    });
+
+    it("should handle lookForward parameter", async () => {
+      const percentageResponse = {
+        coins: {
+          "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1": 0.5,
+        },
+      };
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(percentageResponse),
+      } as Response);
+
+      await defillamaTool.schema[3].tool.execute(
+        {
+          coins: ["ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1"],
+          lookForward: true,
+        },
+        executionOptions
+      );
+
+      expect(fetch).toHaveBeenCalledWith(
+        `${DEFILLAMA_BASE_URL}/percentage/ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1?lookForward=true`
+      );
+    });
+
+    it("should handle missing tokens in response", async () => {
+      const emptyResponse = {
+        coins: {},
+      };
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(emptyResponse),
+      } as Response);
+
+      const result = await defillamaTool.schema[3].tool.execute(
+        {
+          coins: ["ethereum:0xnonexistent"],
+        },
+        executionOptions
+      );
+
+      expect(result).toEqual({
+        changes: [],
+      });
+    });
+
+    it("should handle API errors", async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+      } as Response);
+
+      const result = await defillamaTool.schema[3].tool.execute(
+        {
+          coins: ["ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1"],
+        },
+        executionOptions
+      );
+
+      expect(result).toBe(
+        "Error executing get_token_price_percentage_change tool"
+      );
+    });
+
+    it("should handle network errors", async () => {
+      vi.mocked(fetch).mockRejectedValueOnce(new Error("Network error"));
+
+      const result = await defillamaTool.schema[3].tool.execute(
+        {
+          coins: ["ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1"],
+        },
+        executionOptions
+      );
+
+      expect(result).toBe(
+        "Error executing get_token_price_percentage_change tool"
+      );
     });
   });
 });

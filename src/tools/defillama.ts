@@ -58,8 +58,8 @@ const GetTokenPriceToolSchema = {
     searchWidth: SearchWidthParamSchema,
   }),
   execute: async (args: { coins: string[]; searchWidth?: string }) => {
-    const tool = new DefiLlamaTool();
-    return tool.executeCurrent(args);
+    const tool = new CurrentPriceExecutor();
+    return tool.execute(args);
   },
 };
 
@@ -79,8 +79,8 @@ const GetHistoricalTokenPriceToolSchema = {
     timestamp: number;
     searchWidth?: string;
   }) => {
-    const tool = new DefiLlamaTool();
-    return tool.executeHistorical(args);
+    const tool = new HistoricalPriceExecutor();
+    return tool.execute(args);
   },
 };
 
@@ -126,67 +126,92 @@ const GetTokenPriceChartToolSchema = {
     period?: string;
     searchWidth?: string;
   }) => {
-    const tool = new DefiLlamaTool();
-    return tool.executeChart(args);
+    const tool = new ChartExecutor();
+    return tool.execute(args);
   },
 };
 
-export class DefiLlamaTool extends APITool<{
-  coins: string[];
-  searchWidth?: string;
-}> {
-  schema = [
-    { name: GetTokenPriceToolSchema.name, tool: tool(GetTokenPriceToolSchema) },
-    {
-      name: GetHistoricalTokenPriceToolSchema.name,
-      tool: tool(GetHistoricalTokenPriceToolSchema),
-    },
-    {
-      name: GetTokenPriceChartToolSchema.name,
-      tool: tool(GetTokenPriceChartToolSchema),
-    },
-  ];
+const DefiLlamaPercentageResponseSchema = z.object({
+  coins: z.record(z.string(), z.number()),
+});
 
-  constructor() {
-    super({
-      name: GetTokenPriceToolSchema.name,
-      description: GetTokenPriceToolSchema.description,
-      baseUrl: DEFILLAMA_BASE_URL,
-    });
-  }
-
-  async executeCurrent(args: { coins: string[]; searchWidth?: string }) {
-    return this.withErrorHandling("get_token_price", async () => {
-      const parsedResponse = await this.getRawData(args);
-      return this.parseResult(parsedResponse);
-    });
-  }
-
-  async executeHistorical(args: {
+const GetTokenPricePercentageChangeToolSchema = {
+  name: "get_token_price_percentage_change",
+  description:
+    "Fetches percentage change in token prices over specified time period",
+  parameters: z.object({
+    coins: z.array(TokenIdentifierSchema),
+    timestamp: z
+      .number()
+      .optional()
+      .describe("UNIX timestamp of reference point, defaults to current time"),
+    lookForward: z
+      .boolean()
+      .optional()
+      .default(false)
+      .describe(
+        "Whether to look forward from timestamp (true) or backward (false)"
+      ),
+    period: z
+      .string()
+      .optional()
+      .describe(
+        "Time period for percentage calculation. Examples: '1d', '3w', '1m'. Defaults to 24 hours."
+      ),
+  }),
+  execute: async (args: {
     coins: string[];
-    timestamp: number;
-    searchWidth?: string;
-  }) {
-    return this.withErrorHandling("get_historical_token_price", async () => {
-      const url = this.buildUrl("historical", args);
+    timestamp?: number;
+    lookForward?: boolean;
+    period?: string;
+  }) => {
+    const tool = new PercentageExecutor();
+    return tool.execute(args);
+  },
+};
+
+abstract class DefiLlamaExecutor {
+  protected async fetchFromDefiLlama(url: string): Promise<any> {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`API request failed with status: ${response.status}`);
+    }
+    return response.json();
+  }
+
+  protected async withErrorHandling<T>(
+    operation: string,
+    action: () => Promise<T>
+  ): Promise<T | string> {
+    try {
+      return await action();
+    } catch (error) {
+      logger.error(`Error executing ${operation}`, error);
+      return `Error executing ${operation} tool`;
+    }
+  }
+
+  abstract execute(args: any): Promise<any>;
+}
+
+class CurrentPriceExecutor extends DefiLlamaExecutor {
+  async execute(args: { coins: string[]; searchWidth?: string }) {
+    return this.withErrorHandling("get_token_price", async () => {
+      const url = this.buildUrl(args);
       const data = await this.fetchFromDefiLlama(url);
       const parsedResponse = DefiLlamaPriceResponseSchema.parse(data);
       return this.parseResult(parsedResponse);
     });
   }
 
-  // Let's expose only current prices for external agents for now
-  async getRawData(params: {
-    coins: string[];
-    searchWidth?: string;
-  }): Promise<z.infer<typeof DefiLlamaPriceResponseSchema>> {
-    const url = this.buildUrl("current", params);
-    const data = await this.fetchFromDefiLlama(url);
-    return DefiLlamaPriceResponseSchema.parse(data);
+  private buildUrl(params: { coins: string[]; searchWidth?: string }): string {
+    const searchWidth = params.searchWidth || "4h";
+    const coinsString = params.coins.join(",");
+    return `${DEFILLAMA_BASE_URL}/prices/current/${coinsString}?searchWidth=${searchWidth}`;
   }
 
-  private parseResult<T extends z.infer<typeof DefiLlamaPriceResponseSchema>>(
-    parsedResponse: T
+  private parseResult(
+    parsedResponse: z.infer<typeof DefiLlamaPriceResponseSchema>
   ) {
     const results = Object.entries(parsedResponse.coins).map(
       ([tokenKey, tokenData]) => {
@@ -210,47 +235,62 @@ export class DefiLlamaTool extends APITool<{
 
     return { prices: results };
   }
+}
 
-  private async fetchFromDefiLlama(
-    url: string
-  ): Promise<z.infer<typeof DefiLlamaPriceResponseSchema>> {
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error(`API request failed with status: ${response.status}`);
-    }
-
-    return response.json();
+class HistoricalPriceExecutor extends DefiLlamaExecutor {
+  async execute(args: {
+    coins: string[];
+    timestamp: number;
+    searchWidth?: string;
+  }) {
+    return this.withErrorHandling("get_historical_token_price", async () => {
+      const url = this.buildUrl(args);
+      const data = await this.fetchFromDefiLlama(url);
+      const parsedResponse = DefiLlamaPriceResponseSchema.parse(data);
+      return this.parseResult(parsedResponse);
+    });
   }
 
-  private buildUrl(
-    endpoint: "current" | "historical",
-    params: {
-      coins: string[];
-      timestamp?: number;
-      searchWidth?: string;
-    }
-  ): string {
+  private buildUrl(params: {
+    coins: string[];
+    timestamp?: number;
+    searchWidth?: string;
+  }) {
     const searchWidth = params.searchWidth || "4h";
     const coinsString = params.coins.join(",");
     const timestampSegment = params.timestamp ? `/${params.timestamp}` : "";
-
-    return `${DEFILLAMA_BASE_URL}/prices/${endpoint}${timestampSegment}/${coinsString}?searchWidth=${searchWidth}`;
+    return `${DEFILLAMA_BASE_URL}/prices/historical${timestampSegment}/${coinsString}?searchWidth=${searchWidth}`;
   }
 
-  private async withErrorHandling<T>(
-    operation: string,
-    action: () => Promise<T>
-  ): Promise<T | string> {
-    try {
-      return await action();
-    } catch (error) {
-      logger.error(`Error executing ${operation}`, error);
-      return `Error executing ${operation} tool`;
-    }
-  }
+  private parseResult(
+    parsedResponse: z.infer<typeof DefiLlamaPriceResponseSchema>
+  ) {
+    const results = Object.entries(parsedResponse.coins).map(
+      ([tokenKey, tokenData]) => {
+        if (tokenData.confidence < MIN_CONFIDENCE) {
+          return {
+            token: tokenKey,
+            error: `Price data has low confidence (${tokenData.confidence})`,
+          };
+        }
 
-  async executeChart(args: {
+        return {
+          token: tokenKey,
+          symbol: tokenData.symbol,
+          price: tokenData.price,
+          decimals: tokenData.decimals,
+          timestamp: tokenData.timestamp,
+          confidence: tokenData.confidence,
+        };
+      }
+    );
+
+    return { prices: results };
+  }
+}
+
+class ChartExecutor extends DefiLlamaExecutor {
+  async execute(args: {
     coins: string[];
     start: number;
     end?: number;
@@ -259,7 +299,6 @@ export class DefiLlamaTool extends APITool<{
     searchWidth?: string;
   }) {
     return this.withErrorHandling("get_token_price_chart", async () => {
-      // If both start and end are provided, prioritize start and ignore end
       const params = { ...args };
       if (params.start && params.end) {
         params.end = undefined; // Ignore end if start is provided
@@ -268,29 +307,40 @@ export class DefiLlamaTool extends APITool<{
       const url = this.buildChartUrl(params);
       const data = await this.fetchFromDefiLlama(url);
       const parsedResponse = DefiLlamaChartResponseSchema.parse(data);
-
-      const tokens = Object.entries(parsedResponse.coins).map(
-        ([tokenKey, tokenData]) => {
-          const result: any = {
-            token: tokenKey,
-            symbol: tokenData.symbol,
-            confidence: tokenData.confidence,
-            prices: tokenData.prices,
-          };
-
-          if (tokenData.decimals !== undefined) {
-            result.decimals = tokenData.decimals;
-          }
-
-          if (tokenData.confidence < MIN_CONFIDENCE) {
-            result.error = `Price data has low confidence (${tokenData.confidence})`;
-          }
-
-          return result;
-        }
-      );
+      const tokens = this.parseResult(parsedResponse);
 
       return { tokens };
+    });
+  }
+
+  private parseResult(parsedResponse: {
+    coins: Record<
+      string,
+      {
+        symbol: string;
+        confidence: number;
+        prices: { price: number; timestamp: number }[];
+        decimals?: number | undefined;
+      }
+    >;
+  }) {
+    return Object.entries(parsedResponse.coins).map(([tokenKey, tokenData]) => {
+      const result: any = {
+        token: tokenKey,
+        symbol: tokenData.symbol,
+        confidence: tokenData.confidence,
+        prices: tokenData.prices,
+      };
+
+      if (tokenData.decimals !== undefined) {
+        result.decimals = tokenData.decimals;
+      }
+
+      if (tokenData.confidence < MIN_CONFIDENCE) {
+        result.error = `Price data has low confidence (${tokenData.confidence})`;
+      }
+
+      return result;
     });
   }
 
@@ -324,5 +374,100 @@ export class DefiLlamaTool extends APITool<{
     }
 
     return `${DEFILLAMA_BASE_URL}/chart/${coinsString}?${queryParams.toString()}`;
+  }
+}
+
+class PercentageExecutor extends DefiLlamaExecutor {
+  async execute(args: {
+    coins: string[];
+    timestamp?: number;
+    lookForward?: boolean;
+    period?: string;
+  }) {
+    return this.withErrorHandling(
+      "get_token_price_percentage_change",
+      async () => {
+        const url = this.buildPercentageUrl(args);
+        const response = await this.fetchFromDefiLlama(url);
+        const parsedResponse =
+          DefiLlamaPercentageResponseSchema.parse(response);
+        const changes = this.parseResult(parsedResponse);
+
+        return { changes };
+      }
+    );
+  }
+
+  private parseResult(parsedResponse: { coins: Record<string, number> }) {
+    return Object.entries(parsedResponse.coins).map(
+      ([token, percentageChange]) => ({
+        token,
+        percentageChange,
+      })
+    );
+  }
+
+  private buildPercentageUrl(params: {
+    coins: string[];
+    timestamp?: number;
+    lookForward?: boolean;
+    period?: string;
+  }): string {
+    const coinsString = params.coins.join(",");
+
+    const queryParams = new URLSearchParams();
+
+    if (params.timestamp) {
+      queryParams.append("timestamp", params.timestamp.toString());
+    }
+
+    if (params.lookForward !== undefined) {
+      queryParams.append("lookForward", params.lookForward.toString());
+    }
+
+    if (params.period) {
+      queryParams.append("period", params.period);
+    }
+
+    const queryString = queryParams.toString();
+    return `${DEFILLAMA_BASE_URL}/percentage/${coinsString}${queryString ? "?" + queryString : ""}`;
+  }
+}
+
+export class DefiLlamaTool extends APITool<{
+  coins: string[];
+  searchWidth?: string;
+}> {
+  private static readonly currentExecutor = new CurrentPriceExecutor();
+
+  schema = [
+    {
+      name: GetTokenPriceToolSchema.name,
+      tool: tool(GetTokenPriceToolSchema),
+    },
+    {
+      name: GetHistoricalTokenPriceToolSchema.name,
+      tool: tool(GetHistoricalTokenPriceToolSchema),
+    },
+    {
+      name: GetTokenPriceChartToolSchema.name,
+      tool: tool(GetTokenPriceChartToolSchema),
+    },
+    {
+      name: GetTokenPricePercentageChangeToolSchema.name,
+      tool: tool(GetTokenPricePercentageChangeToolSchema),
+    },
+  ];
+
+  constructor() {
+    super({
+      name: GetTokenPriceToolSchema.name,
+      description: GetTokenPriceToolSchema.description,
+      baseUrl: DEFILLAMA_BASE_URL,
+    });
+  }
+
+  async getRawData(params: { coins: string[]; searchWidth?: string }) {
+    return DefiLlamaTool.currentExecutor.execute(params);
   }
 }
