@@ -14,4 +14,5 @@ export enum ToolName {
   DEFILLAMA = "defillama",
   ASK_SPECIALTY = "ask_specialty",
   TIMESTAMP_CONVERTER = "timestamp_converter",
+  CALCULATOR = "calculator",
 }
