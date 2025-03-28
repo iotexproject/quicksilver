@@ -13,6 +13,7 @@ export enum DomainName {
   BLOCKCHAIN = "blockchain",
   FINANCE = "finance",
   NAVIGATION = "navigation",
+  UTILITY = "utility",
 }
 
 export const domains = new Map<string, DomainConfig>([
@@ -102,6 +103,23 @@ export const domains = new Map<string, DomainConfig>([
         "dimo",
       ],
       tools: [ToolName.MAPBOX, ToolName.LUMA, ToolName.DIMO],
+    },
+  ],
+  [
+    DomainName.UTILITY,
+    {
+      name: "Utility",
+      description:
+        "General-purpose utility tools for common operations including mathematical calculations, time conversions, and data formatting. Don't try to make conversions and calculations yourself, use these tools.",
+      capabilities: [
+        "math",
+        "time",
+        "conversion",
+        "formatting",
+        "calculation",
+        "utility",
+      ],
+      tools: [ToolName.CALCULATOR, ToolName.TIMESTAMP_CONVERTER],
     },
   ],
 ]);
