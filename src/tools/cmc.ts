@@ -170,6 +170,9 @@ export class CMCBaseTool extends APITool<CMCBaseParams> {
       description: GetTokenMapToolSchema.description,
       baseUrl: CMC_BASE_URL,
     });
+    if (!process.env.CMC_API_KEY) {
+      throw new Error("CMC_API_KEY environment variable is required");
+    }
   }
 
   async getRawData(

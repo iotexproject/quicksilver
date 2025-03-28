@@ -65,8 +65,7 @@ abstract class BaseWeatherAPITool extends APITool<CoordinatesInput> {
       twitterAccount: "nubilanetwork",
     });
     if (!process.env.NUBILA_API_KEY) {
-      logger.error("Please set the NUBILA_API_KEY environment variable.");
-      return;
+      throw new Error("NUBILA_API_KEY environment variable is required");
     }
   }
 

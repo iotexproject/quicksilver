@@ -1,5 +1,5 @@
 import { mockLLMService } from "../../__tests__/mocks";
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { CMCBaseTool, CMC_BASE_URL } from "../cmc";
 import { LLMService } from "../../llm/llm-service";
 
@@ -86,10 +86,17 @@ describe("CMCBaseTool", () => {
     ] as AuxField[],
   };
 
+  const originalEnv = process.env.CMC_API_KEY;
+
   beforeEach(() => {
+    process.env.CMC_API_KEY = "test-api-key";
     cmcTool = new CMCBaseTool();
     vi.stubGlobal("fetch", vi.fn());
     vi.mock("../../llm/llm-service", () => mockLLMService);
+  });
+
+  afterEach(() => {
+    process.env.CMC_API_KEY = originalEnv;
   });
 
   it("should initialize with correct properties", () => {
@@ -114,7 +121,7 @@ describe("CMCBaseTool", () => {
         expect.stringContaining(`${CMC_BASE_URL}/cryptocurrency/map`),
         expect.objectContaining({
           headers: {
-            "X-CMC_PRO_API_KEY": "",
+            "X-CMC_PRO_API_KEY": "test-api-key",
           },
         })
       );
@@ -147,7 +154,7 @@ describe("CMCBaseTool", () => {
         "https://pro-api.coinmarketcap.com/v1/cryptocurrency/map?start=10&limit=50&sort=cmc_rank&listing_status=active%2Cuntracked&aux=platform%2Cfirst_historical_data%2Clast_historical_data%2Cis_active%2Cstatus",
         expect.objectContaining({
           headers: {
-            "X-CMC_PRO_API_KEY": "",
+            "X-CMC_PRO_API_KEY": "test-api-key",
           },
         })
       );
@@ -170,9 +177,16 @@ describe("CMCBaseTool", () => {
         "https://pro-api.coinmarketcap.com/v1/cryptocurrency/map?start=1&limit=100&sort=id&listing_status=active&aux=platform%2Cfirst_historical_data%2Clast_historical_data%2Cis_active&symbol=BTC%2CETH%2CUSDT",
         expect.objectContaining({
           headers: {
-            "X-CMC_PRO_API_KEY": "",
+            "X-CMC_PRO_API_KEY": "test-api-key",
           },
         })
+      );
+    });
+
+    it("should throw error when API key is not set", () => {
+      delete process.env.CMC_API_KEY;
+      expect(() => new CMCBaseTool()).toThrow(
+        "CMC_API_KEY environment variable is required"
       );
     });
 
