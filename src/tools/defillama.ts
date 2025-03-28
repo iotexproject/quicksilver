@@ -15,15 +15,6 @@ const TokenDataSchema = z.object({
 });
 
 const DefiLlamaPriceResponseSchema = z.object({
-  coins: z.record(
-    z.string(),
-    TokenDataSchema.extend({
-      decimals: z.number(),
-    })
-  ),
-});
-
-const DefiLlamaHistoricalPriceResponseSchema = z.object({
   coins: z.record(z.string(), TokenDataSchema),
 });
 
@@ -40,7 +31,7 @@ const SearchWidthParamSchema = z
 const TokenIdentifierSchema = z
   .string()
   .describe(
-    "Token identifier in format {chain}:{address} (e.g., 'ethereum:0x...')"
+    "Token identifier in format {chain}:{address} (e.g., 'ethereum:0x...') or for native tokens use coingecko:{chain} (e.g., 'coingecko:ethereum', 'coingecko:bitcoin')"
   );
 
 const GetTokenPriceToolSchema = {
@@ -113,7 +104,7 @@ export class DefiLlamaTool extends APITool<{
     return this.withErrorHandling("get_historical_token_price", async () => {
       const url = this.buildUrl("historical", args);
       const data = await this.fetchFromDefiLlama(url);
-      const parsedResponse = DefiLlamaHistoricalPriceResponseSchema.parse(data);
+      const parsedResponse = DefiLlamaPriceResponseSchema.parse(data);
       return this.parseResult(parsedResponse);
     });
   }
@@ -128,11 +119,9 @@ export class DefiLlamaTool extends APITool<{
     return DefiLlamaPriceResponseSchema.parse(data);
   }
 
-  private parseResult<
-    T extends
-      | z.infer<typeof DefiLlamaPriceResponseSchema>
-      | z.infer<typeof DefiLlamaHistoricalPriceResponseSchema>,
-  >(parsedResponse: T) {
+  private parseResult<T extends z.infer<typeof DefiLlamaPriceResponseSchema>>(
+    parsedResponse: T
+  ) {
     const results = Object.entries(parsedResponse.coins).map(
       ([tokenKey, tokenData]) => {
         if (tokenData.confidence < MIN_CONFIDENCE) {
@@ -158,10 +147,7 @@ export class DefiLlamaTool extends APITool<{
 
   private async fetchFromDefiLlama(
     url: string
-  ): Promise<
-    | z.infer<typeof DefiLlamaPriceResponseSchema>
-    | z.infer<typeof DefiLlamaHistoricalPriceResponseSchema>
-  > {
+  ): Promise<z.infer<typeof DefiLlamaPriceResponseSchema>> {
     const response = await fetch(url);
 
     if (!response.ok) {
