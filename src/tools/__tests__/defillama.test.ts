@@ -33,7 +33,7 @@ describe("DefiLlamaTool", () => {
     expect(defillamaTool.description).toContain(
       "Fetches token prices from DefiLlama"
     );
-    expect(defillamaTool.schema).toHaveLength(2);
+    expect(defillamaTool.schema).toHaveLength(3);
     expect(defillamaTool.schema[0].name).toBe("get_token_price");
   });
 
@@ -363,6 +363,275 @@ describe("DefiLlamaTool", () => {
       );
 
       expect(result).toBe("Error executing get_historical_token_price tool");
+    });
+  });
+
+  describe("executeChart", () => {
+    const executionOptions = {
+      toolCallId: "test-call-id",
+      messages: [],
+      llm: new LLMService(llmServiceParams),
+    };
+
+    it("should fetch chart data for a token", async () => {
+      const chartResponse = {
+        coins: {
+          "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1": {
+            symbol: "HUSD",
+            confidence: 0.99,
+            decimals: 8,
+            prices: [
+              { timestamp: 1664364295, price: 0.9935534119681249 },
+              { timestamp: 1664537423, price: 0.9914483744619215 },
+              { timestamp: 1664709926, price: 0.9885029770209419 },
+            ],
+          },
+        },
+      };
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(chartResponse),
+      } as Response);
+
+      const result = await defillamaTool.schema[2].tool.execute(
+        {
+          coins: ["ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1"],
+          start: 1664364537,
+          span: 3,
+          period: "2d",
+          searchWidth: "600",
+        },
+        executionOptions
+      );
+
+      expect(result).toEqual({
+        tokens: [
+          {
+            token: "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1",
+            symbol: "HUSD",
+            decimals: 8,
+            confidence: 0.99,
+            prices: [
+              { timestamp: 1664364295, price: 0.9935534119681249 },
+              { timestamp: 1664537423, price: 0.9914483744619215 },
+              { timestamp: 1664709926, price: 0.9885029770209419 },
+            ],
+          },
+        ],
+      });
+
+      expect(fetch).toHaveBeenCalledWith(
+        `${DEFILLAMA_BASE_URL}/chart/ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1?start=1664364537&span=3&period=2d&searchWidth=600`
+      );
+    });
+
+    it("should fetch chart data for multiple tokens", async () => {
+      const chartResponse = {
+        coins: {
+          "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1": {
+            symbol: "HUSD",
+            confidence: 0.99,
+            decimals: 8,
+            prices: [
+              { timestamp: 1664364295, price: 0.9935534119681249 },
+              { timestamp: 1664537423, price: 0.9914483744619215 },
+            ],
+          },
+          "coingecko:ethereum": {
+            symbol: "ETH",
+            confidence: 0.99,
+            prices: [
+              { timestamp: 1664364547, price: 1294.8704281123682 },
+              { timestamp: 1664537404, price: 1337.6638792936722 },
+            ],
+          },
+        },
+      };
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(chartResponse),
+      } as Response);
+
+      const result = await defillamaTool.schema[2].tool.execute(
+        {
+          coins: [
+            "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1",
+            "coingecko:ethereum",
+          ],
+          start: 1664364537,
+          span: 2,
+          period: "2d",
+          searchWidth: "600",
+        },
+        executionOptions
+      );
+
+      expect(result).toEqual({
+        tokens: [
+          {
+            token: "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1",
+            symbol: "HUSD",
+            decimals: 8,
+            confidence: 0.99,
+            prices: [
+              { timestamp: 1664364295, price: 0.9935534119681249 },
+              { timestamp: 1664537423, price: 0.9914483744619215 },
+            ],
+          },
+          {
+            token: "coingecko:ethereum",
+            symbol: "ETH",
+            confidence: 0.99,
+            prices: [
+              { timestamp: 1664364547, price: 1294.8704281123682 },
+              { timestamp: 1664537404, price: 1337.6638792936722 },
+            ],
+          },
+        ],
+      });
+
+      expect(fetch).toHaveBeenCalledWith(
+        `${DEFILLAMA_BASE_URL}/chart/ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1,coingecko:ethereum?start=1664364537&span=2&period=2d&searchWidth=600`
+      );
+    });
+
+    it("should handle optional end parameter", async () => {
+      const chartResponse = {
+        coins: {
+          "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1": {
+            symbol: "HUSD",
+            confidence: 0.99,
+            decimals: 8,
+            prices: [
+              { timestamp: 1664364295, price: 0.9935534119681249 },
+              { timestamp: 1664537423, price: 0.9914483744619215 },
+            ],
+          },
+        },
+      };
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(chartResponse),
+      } as Response);
+
+      await defillamaTool.schema[2].tool.execute(
+        {
+          coins: ["ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1"],
+          start: 1664364537,
+          end: 1664537500,
+          period: "2d",
+          searchWidth: "600",
+        },
+        executionOptions
+      );
+
+      expect(fetch).toHaveBeenCalledWith(
+        `${DEFILLAMA_BASE_URL}/chart/ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1?start=1664364537&period=2d&searchWidth=600`
+      );
+    });
+
+    it("should handle default parameters", async () => {
+      const chartResponse = {
+        coins: {
+          "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1": {
+            symbol: "HUSD",
+            confidence: 0.99,
+            decimals: 8,
+            prices: [{ timestamp: 1664364295, price: 0.9935534119681249 }],
+          },
+        },
+      };
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(chartResponse),
+      } as Response);
+
+      await defillamaTool.schema[2].tool.execute(
+        {
+          coins: ["ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1"],
+          start: 1664364537,
+        },
+        executionOptions
+      );
+
+      expect(fetch).toHaveBeenCalledWith(
+        `${DEFILLAMA_BASE_URL}/chart/ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1?start=1664364537`
+      );
+    });
+
+    it("should handle low confidence price data", async () => {
+      const lowConfidenceResponse = {
+        coins: {
+          "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1": {
+            symbol: "HUSD",
+            confidence: 0.5,
+            decimals: 8,
+            prices: [{ timestamp: 1664364295, price: 0.9935534119681249 }],
+          },
+        },
+      };
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(lowConfidenceResponse),
+      } as Response);
+
+      const result = await defillamaTool.schema[2].tool.execute(
+        {
+          coins: ["ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1"],
+          start: 1664364537,
+          period: "2d",
+        },
+        executionOptions
+      );
+
+      expect(result).toEqual({
+        tokens: [
+          {
+            token: "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1",
+            symbol: "HUSD",
+            decimals: 8,
+            confidence: 0.5,
+            error: "Price data has low confidence (0.5)",
+            prices: [{ timestamp: 1664364295, price: 0.9935534119681249 }],
+          },
+        ],
+      });
+    });
+
+    it("should handle API errors", async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+      } as Response);
+
+      const result = await defillamaTool.schema[2].tool.execute(
+        {
+          coins: ["ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1"],
+          start: 1664364537,
+        },
+        executionOptions
+      );
+
+      expect(result).toBe("Error executing get_token_price_chart tool");
+    });
+
+    it("should handle network errors", async () => {
+      vi.mocked(fetch).mockRejectedValueOnce(new Error("Network error"));
+
+      const result = await defillamaTool.schema[2].tool.execute(
+        {
+          coins: ["ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1"],
+          start: 1664364537,
+        },
+        executionOptions
+      );
+
+      expect(result).toBe("Error executing get_token_price_chart tool");
     });
   });
 });

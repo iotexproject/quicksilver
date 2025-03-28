@@ -18,7 +18,23 @@ const DefiLlamaPriceResponseSchema = z.object({
   coins: z.record(z.string(), TokenDataSchema),
 });
 
-// Shared parameter schema for search width
+const PricePointSchema = z.object({
+  timestamp: z.number(),
+  price: z.number(),
+});
+
+const DefiLlamaChartResponseSchema = z.object({
+  coins: z.record(
+    z.string(),
+    z.object({
+      symbol: z.string(),
+      confidence: z.number(),
+      decimals: z.number().optional(),
+      prices: z.array(PricePointSchema),
+    })
+  ),
+});
+
 const SearchWidthParamSchema = z
   .string()
   .optional()
@@ -27,7 +43,6 @@ const SearchWidthParamSchema = z
     "Time range on either side to find price data. Accepts candle notation: W (week), D (day), H (hour), M (minute). Examples: '4h', '1d', '30m'."
   );
 
-// Shared parameter schema for token identifier format
 const TokenIdentifierSchema = z
   .string()
   .describe(
@@ -69,6 +84,53 @@ const GetHistoricalTokenPriceToolSchema = {
   },
 };
 
+const GetTokenPriceChartToolSchema = {
+  name: "get_token_price_chart",
+  description:
+    "Fetches token price charts from DefiLlama with regular time intervals",
+  parameters: z.object({
+    coins: z.array(TokenIdentifierSchema),
+    start: z
+      .number()
+      .describe(
+        "UNIX timestamp of earliest data point requested. Use either start OR end, not both."
+      ),
+    end: z
+      .number()
+      .optional()
+      .describe(
+        "UNIX timestamp of latest data point requested. Note: If both start and end are provided, start will be used and end will be ignored."
+      ),
+    span: z
+      .number()
+      .optional()
+      .describe("Number of data points to return, defaults to 0"),
+    period: z
+      .string()
+      .optional()
+      .describe(
+        "DIFFERENT from searchWidth: Time interval between data points (sampling frequency). Defaults to 24 hours. Examples: '1d', '12h'."
+      ),
+    searchWidth: z
+      .string()
+      .optional()
+      .describe(
+        "DIFFERENT from period: Buffer time around each data point to find price. Defaults to 10% of period. Examples: '600' (seconds), '1h'."
+      ),
+  }),
+  execute: async (args: {
+    coins: string[];
+    start: number;
+    end?: number;
+    span?: number;
+    period?: string;
+    searchWidth?: string;
+  }) => {
+    const tool = new DefiLlamaTool();
+    return tool.executeChart(args);
+  },
+};
+
 export class DefiLlamaTool extends APITool<{
   coins: string[];
   searchWidth?: string;
@@ -78,6 +140,10 @@ export class DefiLlamaTool extends APITool<{
     {
       name: GetHistoricalTokenPriceToolSchema.name,
       tool: tool(GetHistoricalTokenPriceToolSchema),
+    },
+    {
+      name: GetTokenPriceChartToolSchema.name,
+      tool: tool(GetTokenPriceChartToolSchema),
     },
   ];
 
@@ -182,5 +248,81 @@ export class DefiLlamaTool extends APITool<{
       logger.error(`Error executing ${operation}`, error);
       return `Error executing ${operation} tool`;
     }
+  }
+
+  async executeChart(args: {
+    coins: string[];
+    start: number;
+    end?: number;
+    span?: number;
+    period?: string;
+    searchWidth?: string;
+  }) {
+    return this.withErrorHandling("get_token_price_chart", async () => {
+      // If both start and end are provided, prioritize start and ignore end
+      const params = { ...args };
+      if (params.start && params.end) {
+        params.end = undefined; // Ignore end if start is provided
+      }
+
+      const url = this.buildChartUrl(params);
+      const data = await this.fetchFromDefiLlama(url);
+      const parsedResponse = DefiLlamaChartResponseSchema.parse(data);
+
+      const tokens = Object.entries(parsedResponse.coins).map(
+        ([tokenKey, tokenData]) => {
+          const result: any = {
+            token: tokenKey,
+            symbol: tokenData.symbol,
+            confidence: tokenData.confidence,
+            prices: tokenData.prices,
+          };
+
+          if (tokenData.decimals !== undefined) {
+            result.decimals = tokenData.decimals;
+          }
+
+          if (tokenData.confidence < MIN_CONFIDENCE) {
+            result.error = `Price data has low confidence (${tokenData.confidence})`;
+          }
+
+          return result;
+        }
+      );
+
+      return { tokens };
+    });
+  }
+
+  private buildChartUrl(params: {
+    coins: string[];
+    start: number;
+    end?: number;
+    span?: number;
+    period?: string;
+    searchWidth?: string;
+  }): string {
+    const coinsString = params.coins.join(",");
+
+    const queryParams = new URLSearchParams();
+    queryParams.append("start", params.start.toString());
+
+    if (params.end) {
+      queryParams.append("end", params.end.toString());
+    }
+
+    if (params.span) {
+      queryParams.append("span", params.span.toString());
+    }
+
+    if (params.period) {
+      queryParams.append("period", params.period);
+    }
+
+    if (params.searchWidth) {
+      queryParams.append("searchWidth", params.searchWidth);
+    }
+
+    return `${DEFILLAMA_BASE_URL}/chart/${coinsString}?${queryParams.toString()}`;
   }
 }
