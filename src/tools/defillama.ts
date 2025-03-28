@@ -22,9 +22,9 @@ const DefiLlamaPriceResponseSchema = z.object({
 const SearchWidthParamSchema = z
   .string()
   .optional()
-  .default("4h")
+  .default("6h")
   .describe(
-    "Time range on either side to find price data, defaults to 6 hours"
+    "Time range on either side to find price data. Accepts candle notation: W (week), D (day), H (hour), M (minute). Examples: '4h', '1d', '30m'."
   );
 
 // Shared parameter schema for token identifier format
