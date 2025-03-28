@@ -14,6 +14,7 @@ import { CMCBaseTool } from "../tools/cmc";
 import { DefiLlamaTool } from "../tools/defillama";
 import { AskSpecialtyTool } from "../tools/askSpecialty";
 import { ToolName } from "./toolNames";
+import { TimestampConverterTool } from "../tools/time";
 
 export const availableTools = [
   {
@@ -71,5 +72,9 @@ export const availableTools = [
   {
     name: ToolName.ASK_SPECIALTY,
     toolClass: AskSpecialtyTool,
+  },
+  {
+    name: ToolName.TIMESTAMP_CONVERTER,
+    toolClass: TimestampConverterTool,
   },
 ];
