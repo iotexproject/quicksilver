@@ -1,5 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { logger } from "../../logger/winston";
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 
 import { CurrentWeatherAPITool, ForecastWeatherAPITool } from "../nubila";
 import { ZodError } from "zod";
@@ -15,11 +14,17 @@ describe("CurrentWeatherAPITool", () => {
     });
   };
 
+  const originalEnv = process.env.NUBILA_API_KEY;
+
   beforeEach(() => {
     process.env.NUBILA_API_KEY = "test-api-key";
     tool = new CurrentWeatherAPITool();
     mockFetch = vi.fn();
     global.fetch = mockFetch;
+  });
+
+  afterEach(() => {
+    process.env.NUBILA_API_KEY = originalEnv;
   });
 
   it("should initialize with correct properties", () => {
@@ -34,10 +39,8 @@ describe("CurrentWeatherAPITool", () => {
 
   it("should return error message when API key is not set", () => {
     delete process.env.NUBILA_API_KEY;
-    const consoleSpy = vi.spyOn(logger, "error");
-    new CurrentWeatherAPITool();
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "Please set the NUBILA_API_KEY environment variable."
+    expect(() => new CurrentWeatherAPITool()).toThrow(
+      "NUBILA_API_KEY environment variable is required"
     );
   });
 
@@ -143,10 +146,8 @@ describe("ForecastWeatherAPITool", () => {
 
   it("should return error message when API key is not set", () => {
     delete process.env.NUBILA_API_KEY;
-    const consoleSpy = vi.spyOn(logger, "error");
-    new ForecastWeatherAPITool();
-    expect(consoleSpy).toHaveBeenCalledWith(
-      "Please set the NUBILA_API_KEY environment variable."
+    expect(() => new ForecastWeatherAPITool()).toThrow(
+      "NUBILA_API_KEY environment variable is required"
     );
   });
 

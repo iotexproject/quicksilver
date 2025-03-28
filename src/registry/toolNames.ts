@@ -15,4 +15,5 @@ export enum ToolName {
   ASK_SPECIALTY = "ask_specialty",
   TIMESTAMP_CONVERTER = "timestamp_converter",
   CALCULATOR = "calculator",
+  AIR_QUALITY = "air_quality",
 }

@@ -16,6 +16,7 @@ import { AskSpecialtyTool } from "../tools/askSpecialty";
 import { ToolName } from "./toolNames";
 import { TimestampConverterTool } from "../tools/time";
 import { CalculatorTool } from "../tools/calculator";
+import { AirQualityTool } from "../tools/airquality";
 
 export const availableTools = [
   {
@@ -81,5 +82,9 @@ export const availableTools = [
   {
     name: ToolName.CALCULATOR,
     toolClass: CalculatorTool,
+  },
+  {
+    name: ToolName.AIR_QUALITY,
+    toolClass: AirQualityTool,
   },
 ];
