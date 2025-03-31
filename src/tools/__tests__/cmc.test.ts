@@ -104,7 +104,7 @@ describe("CMCBaseTool", () => {
     expect(cmcTool.description).toContain(
       "Fetches token mapping data from CoinMarketCap"
     );
-    expect(cmcTool.schema).toHaveLength(1);
+    expect(cmcTool.schema).toHaveLength(2);
     expect(cmcTool.schema[0].name).toBe("get_cmc_token_map");
   });
 
@@ -303,6 +303,96 @@ describe("CMCBaseTool", () => {
       }
 
       expect(result.tokens[0].platform).toBeNull();
+    });
+  });
+
+  describe("getMetadataV2", () => {
+    const executionOptions = {
+      toolCallId: "test-call-id",
+      messages: [],
+      llm: new LLMService(llmServiceParams),
+    };
+    const mockMetadataResponse = {
+      status: {
+        timestamp: "2024-03-20T12:00:00.000Z",
+        error_code: 0,
+        error_message: null,
+        elapsed: 10,
+        credit_count: 1,
+        notice: null,
+      },
+      data: {
+        BTC: {
+          id: 1,
+          name: "Bitcoin",
+          symbol: "BTC",
+          category: "coin",
+          description: "Bitcoin description",
+          slug: "bitcoin",
+          logo: "https://example.com/btc.png",
+          subreddit: "bitcoin",
+          notice: "",
+          tags: ["store-of-value"],
+          "tag-names": ["Store of Value"],
+          "tag-groups": ["CATEGORY"],
+          urls: {
+            website: ["https://bitcoin.org"],
+            twitter: ["https://twitter.com/bitcoin"],
+          },
+          platform: null,
+          date_added: "2013-04-28T00:00:00.000Z",
+          twitter_username: "bitcoin",
+          is_hidden: 0,
+        },
+      },
+    };
+
+    it("should fetch and validate metadata v2 data", async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockMetadataResponse),
+      } as Response);
+
+      const result = await cmcTool.schema[1].tool.execute(
+        { id: "1" },
+        executionOptions
+      );
+
+      if (typeof result === "string") {
+        throw new Error("Expected result to be an object");
+      }
+
+      expect(result.metadata).toEqual({
+        timestamp: "2024-03-20T12:00:00.000Z",
+        errorCode: 0,
+        errorMessage: null,
+        elapsed: 10,
+        creditCount: 1,
+        notice: null,
+      });
+
+      expect(result.tokens.BTC).toEqual({
+        id: 1,
+        name: "Bitcoin",
+        symbol: "BTC",
+        category: "coin",
+        description: "Bitcoin description",
+        slug: "bitcoin",
+        logo: "https://example.com/btc.png",
+        subreddit: "bitcoin",
+        notice: "",
+        tags: ["store-of-value"],
+        "tag-names": ["Store of Value"],
+        "tag-groups": ["CATEGORY"],
+        urls: {
+          website: ["https://bitcoin.org"],
+          twitter: ["https://twitter.com/bitcoin"],
+        },
+        platform: null,
+        date_added: "2013-04-28T00:00:00.000Z",
+        twitter_username: "bitcoin",
+        is_hidden: 0,
+      });
     });
   });
 });
