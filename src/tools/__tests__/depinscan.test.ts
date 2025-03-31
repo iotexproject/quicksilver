@@ -252,9 +252,7 @@ describe("DePINProjectsTool", () => {
 
   it("should initialize with correct properties", () => {
     expect(projectsTool.name).toBe("get_depin_projects");
-    expect(projectsTool.description).toBe(
-      "Fetches DePINScan projects and their metrics"
-    );
+    expect(projectsTool.description).toContain("Fetches DePINScan projects");
     expect(projectsTool.schema).toHaveLength(1);
     expect(projectsTool.schema[0].name).toBe("get_depin_projects");
   });
@@ -393,7 +391,9 @@ describe("DePINProjectsTool", () => {
 
     it("should return all projects with transformed data", async () => {
       const result = await projectsTool.schema[0].tool.execute(
-        {},
+        {
+          requireDescription: true,
+        },
         executionOptions
       );
 
@@ -483,6 +483,213 @@ describe("DePINProjectsTool", () => {
       expect(solana!.avgDeviceCost).toBe("0");
       expect(solana!.estimatedDailyEarnings).toBe("0");
       expect(solana!.daysToBreakeven).toBe(0);
+    });
+
+    it("should filter out projects with undefined token when requireToken is true", async () => {
+      const mockProjectsWithNullToken = [
+        { ...mockProjects[0], token: null },
+        { ...mockProjects[1], token: undefined },
+        { ...mockProjects[2] }, // has token
+      ];
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockProjectsWithNullToken),
+      } as Response);
+
+      const result = await projectsTool.schema[0].tool.execute(
+        { requireToken: true },
+        executionOptions
+      );
+
+      expect(result.totalProjects).toBe(1);
+      expect(result.projects[0].name).toBe("IoTeX");
+    });
+
+    it("should filter projects by minimum token price", async () => {
+      const result = await projectsTool.schema[0].tool.execute(
+        { minTokenPrice: 1.0 },
+        executionOptions
+      );
+
+      expect(result.totalProjects).toBe(1);
+      expect(result.projects[0].name).toBe("Solana");
+    });
+
+    it("should filter projects by minimum estimated daily earnings", async () => {
+      const result = await projectsTool.schema[0].tool.execute(
+        { minDailyEarnings: 1.5 },
+        executionOptions
+      );
+
+      expect(result.totalProjects).toBe(2);
+      expect(result.projects.map((p) => p.name)).toEqual(["Filecoin", "IoTeX"]);
+    });
+
+    it("should filter projects by maximum days to breakeven", async () => {
+      const result = await projectsTool.schema[0].tool.execute(
+        { maxDaysToBreakeven: 50 },
+        executionOptions
+      );
+
+      expect(result.totalProjects).toBe(1);
+      expect(result.projects[0].name).toBe("Filecoin");
+    });
+
+    it("should combine multiple filters correctly", async () => {
+      const result = await projectsTool.schema[0].tool.execute(
+        {
+          requireToken: true,
+          minTokenPrice: 0.02,
+          minDailyEarnings: 1.0,
+          maxDaysToBreakeven: 100,
+        },
+        executionOptions
+      );
+
+      expect(result.totalProjects).toBe(1);
+      expect(result.projects[0].name).toBe("IoTeX");
+    });
+
+    it("should exclude descriptions when requireDescription is false", async () => {
+      const result = await projectsTool.schema[0].tool.execute(
+        { requireDescription: false },
+        executionOptions
+      );
+
+      expect(result.totalProjects).toBe(3);
+      expect(result.projects[0]).not.toHaveProperty("description");
+      expect(result.projects[1]).not.toHaveProperty("description");
+      expect(result.projects[2]).not.toHaveProperty("description");
+    });
+
+    it("should include descriptions when requireDescription is true", async () => {
+      const result = await projectsTool.schema[0].tool.execute(
+        { requireDescription: true },
+        executionOptions
+      );
+
+      expect(result.totalProjects).toBe(3);
+      expect(result.projects[0].description).toBe(
+        "Solana is a general purpose layer 1 blockchain..."
+      );
+      expect(result.projects[1].description).toBe(
+        "Filecoin is a peer-to-peer network..."
+      );
+      expect(result.projects[2].description).toBe("IoTeX network...");
+    });
+
+    it("should exclude descriptions by default", async () => {
+      const result = await projectsTool.schema[0].tool.execute(
+        {},
+        executionOptions
+      );
+
+      expect(result.totalProjects).toBe(3);
+      expect(result.projects[0]).not.toHaveProperty("description");
+      expect(result.projects[1]).not.toHaveProperty("description");
+      expect(result.projects[2]).not.toHaveProperty("description");
+    });
+
+    describe("numeric filters", () => {
+      const mockProjectsWithZeros = [
+        {
+          ...mockProjects[0],
+          estimated_daily_earnings: "0",
+          market_cap: "0",
+          token_price: "0",
+          total_devices: "0",
+          days_to_breakeven: "0",
+        },
+        {
+          ...mockProjects[1],
+          estimated_daily_earnings: "10",
+          market_cap: "1000000",
+          token_price: "1.5",
+          total_devices: "100",
+          days_to_breakeven: "30",
+        },
+        {
+          ...mockProjects[2],
+          estimated_daily_earnings: null,
+          market_cap: undefined,
+          token_price: null,
+          total_devices: "0",
+          days_to_breakeven: undefined,
+        },
+      ];
+
+      beforeEach(() => {
+        vi.mocked(fetch).mockResolvedValue({
+          ok: true,
+          json: () => Promise.resolve(mockProjectsWithZeros),
+        } as Response);
+      });
+
+      it("should filter out zero and null/undefined values for minDailyEarnings", async () => {
+        const result = await projectsTool.schema[0].tool.execute(
+          { minDailyEarnings: 0 },
+          executionOptions
+        );
+
+        expect(result.totalProjects).toBe(1);
+        expect(result.projects[0].name).toBe("Filecoin");
+      });
+
+      it("should filter out zero and null/undefined values for minMarketCap", async () => {
+        const result = await projectsTool.schema[0].tool.execute(
+          { minMarketCap: 0 },
+          executionOptions
+        );
+
+        expect(result.totalProjects).toBe(1);
+        expect(result.projects[0].name).toBe("Filecoin");
+      });
+
+      it("should filter out zero and null/undefined values for minTokenPrice", async () => {
+        const result = await projectsTool.schema[0].tool.execute(
+          { minTokenPrice: 0 },
+          executionOptions
+        );
+
+        expect(result.totalProjects).toBe(1);
+        expect(result.projects[0].name).toBe("Filecoin");
+      });
+
+      it("should filter out zero and null/undefined values for minDevices", async () => {
+        const result = await projectsTool.schema[0].tool.execute(
+          { minDevices: 0 },
+          executionOptions
+        );
+
+        expect(result.totalProjects).toBe(1);
+        expect(result.projects[0].name).toBe("Filecoin");
+      });
+
+      it("should filter out zero and null/undefined values for maxDaysToBreakeven", async () => {
+        const result = await projectsTool.schema[0].tool.execute(
+          { maxDaysToBreakeven: 100 },
+          executionOptions
+        );
+
+        expect(result.totalProjects).toBe(1);
+        expect(result.projects[0].name).toBe("Filecoin");
+      });
+
+      it("should combine multiple numeric filters correctly", async () => {
+        const result = await projectsTool.schema[0].tool.execute(
+          {
+            minDailyEarnings: 0,
+            minMarketCap: 0,
+            minTokenPrice: 0,
+            maxDaysToBreakeven: 100,
+          },
+          executionOptions
+        );
+
+        expect(result.totalProjects).toBe(1);
+        expect(result.projects[0].name).toBe("Filecoin");
+      });
     });
   });
 });

@@ -54,6 +54,7 @@ const DepinScanProjectSchema = z.object({
   market_cap: z
     .union([z.string(), z.number()])
     .nullable()
+    .optional()
     .describe("Market capitalization of the project"),
   token_price: z
     .union([z.string(), z.number()])
@@ -130,9 +131,19 @@ const GetMetricsToolSchema = {
   },
 };
 
-const GetProjectsToolSchema = {
+const GetProjectsToolSchema: {
+  name: string;
+  description: string;
+  parameters: any;
+  execute: (args: any) => Promise<any>;
+} = {
   name: "get_depin_projects",
-  description: "Fetches DePINScan projects and their metrics",
+  description:
+    "Fetches DePINScan projects and their metrics. For optimal performance and relevance, use available filters:\n" +
+    "- Applying multiple filters reduces data processing and improves response relevance\n" +
+    "- When specific values aren't provided, use sensible defaults (e.g., minMarketCap > 0 for market-related queries)\n" +
+    "- Filter out projects with missing or invalid data when the field is relevant to the query\n" +
+    "- Set requireDescription to true only when project descriptions are needed to save processing tokens",
   parameters: z.object({
     category: z
       .enum([
@@ -158,62 +169,72 @@ const GetProjectsToolSchema = {
       ])
       .optional()
       .describe(
-        "Filter projects by category. Must be one of the supported categories."
+        "Filter by project category. Use when analyzing specific sector or comparing similar projects"
       ),
     layer1: z
       .string()
       .optional()
       .describe(
-        "Filter projects by layer 1 blockchain. Can be any valid blockchain name."
+        "Filter by blockchain network. Use when analyzing projects on specific chains or comparing cross-chain metrics"
       ),
-    minMarketCap: z.number().optional().describe("Minimum market cap filter"),
+    minMarketCap: z
+      .number()
+      .optional()
+      .describe(
+        "Filter by minimum market cap. For market-related queries, use minMarketCap > 0 to exclude projects without market data"
+      ),
     minDevices: z
       .number()
       .optional()
-      .describe("Minimum number of devices filter"),
+      .describe(
+        "Filter by minimum devices. For network size analysis, use minDevices > 0 to exclude inactive or pre-launch projects"
+      ),
+    requireToken: z
+      .boolean()
+      .optional()
+      .describe(
+        "Filter out projects without tokens. Set to true when analyzing token metrics or tokenomics"
+      ),
+    minTokenPrice: z
+      .number()
+      .optional()
+      .describe(
+        "Filter by minimum token price. For token analysis, use minTokenPrice > 0 to exclude inactive or unlaunched tokens"
+      ),
+    minDailyEarnings: z
+      .number()
+      .optional()
+      .describe(
+        "Filter by minimum daily earnings. For profitability analysis, use minDailyEarnings > 0 to exclude non-earning projects"
+      ),
+    maxDaysToBreakeven: z
+      .number()
+      .optional()
+      .describe(
+        "Filter by maximum days to breakeven. For ROI analysis, exclude projects with unrealistic or missing breakeven data"
+      ),
+    requireDescription: z
+      .boolean()
+      .default(false)
+      .describe(
+        "Include project descriptions in the response. Set to true only when descriptions are needed"
+      ),
   }),
-  execute: async (args: {
-    category?: string;
-    layer1?: string;
-    minMarketCap?: number;
-    minDevices?: number;
-  }) => {
+  execute: async (args: z.infer<typeof GetProjectsToolSchema.parameters>) => {
     try {
       const tool = new DePINScanProjectsTool();
       const projectsData = await tool.getRawData();
       const projects = z.array(DepinScanProjectSchema).parse(projectsData);
 
-      let filteredProjects = projects;
-      if (args.category) {
-        filteredProjects = filteredProjects.filter((p) => {
-          const lowerCaseCategory = args.category!.toLowerCase();
-          return (
-            p.categories?.some((c) => c.toLowerCase() === lowerCaseCategory) ??
-            false
-          );
-        });
-      }
-      if (args.layer1) {
-        filteredProjects = filteredProjects.filter((p) => {
-          return p.layer_1?.includes(args.layer1!) ?? false;
-        });
-      }
-      if (args.minMarketCap) {
-        filteredProjects = filteredProjects.filter(
-          (p) => Number(p.market_cap) >= args.minMarketCap!
-        );
-      }
-      if (args.minDevices) {
-        filteredProjects = filteredProjects.filter(
-          (p) => Number(p.total_devices) >= args.minDevices!
-        );
-      }
+      let filteredProjects = filterProjects(projects, args);
 
       return {
         totalProjects: filteredProjects.length,
         projects: filteredProjects.map((p) => ({
           name: p.project_name,
-          description: p.description || "",
+          ...(args.requireDescription
+            ? { description: p.description || "" }
+            : {}),
           token: p.token || "",
           marketCap: Number(p.market_cap || 0).toLocaleString(),
           tokenPrice: Number(p.token_price || 0).toLocaleString(),
@@ -233,6 +254,77 @@ const GetProjectsToolSchema = {
     }
   },
 };
+
+function filterProjects(
+  projects: z.infer<typeof DepinScanProjectSchema>[],
+  args: z.infer<typeof GetProjectsToolSchema.parameters>
+) {
+  let filteredProjects = projects;
+  if (args.category) {
+    filteredProjects = filteredProjects.filter((p) => {
+      const lowerCaseCategory = args.category!.toLowerCase();
+      return (
+        p.categories?.some((c) => c.toLowerCase() === lowerCaseCategory) ??
+        false
+      );
+    });
+  }
+  if (args.layer1) {
+    filteredProjects = filteredProjects.filter((p) => {
+      return p.layer_1?.includes(args.layer1!) ?? false;
+    });
+  }
+  if (args.minMarketCap !== undefined) {
+    filteredProjects = filteredProjects.filter(
+      (p) =>
+        p.market_cap &&
+        Number(p.market_cap) > 0 &&
+        Number(p.market_cap) >= (args.minMarketCap ?? 0)
+    );
+  }
+  if (args.minDevices !== undefined) {
+    filteredProjects = filteredProjects.filter(
+      (p) =>
+        p.total_devices &&
+        Number(p.total_devices) > 0 &&
+        Number(p.total_devices) >= (args.minDevices ?? 0)
+    );
+  }
+
+  if (args.requireToken) {
+    filteredProjects = filteredProjects.filter(
+      (p) => p.token && p.token.length > 0
+    );
+  }
+
+  if (args.minTokenPrice !== undefined) {
+    filteredProjects = filteredProjects.filter(
+      (p) =>
+        p.token_price &&
+        Number(p.token_price) > 0 &&
+        Number(p.token_price) >= (args.minTokenPrice ?? 0)
+    );
+  }
+
+  if (args.minDailyEarnings !== undefined) {
+    filteredProjects = filteredProjects.filter(
+      (p) =>
+        p.estimated_daily_earnings &&
+        Number(p.estimated_daily_earnings) > 0 &&
+        Number(p.estimated_daily_earnings) >= (args.minDailyEarnings ?? 0)
+    );
+  }
+
+  if (args.maxDaysToBreakeven !== undefined) {
+    filteredProjects = filteredProjects.filter(
+      (p) =>
+        p.days_to_breakeven &&
+        Number(p.days_to_breakeven) > 0 &&
+        Number(p.days_to_breakeven) <= (args.maxDaysToBreakeven ?? Infinity)
+    );
+  }
+  return filteredProjects;
+}
 
 type DepinScanMetricsParams = {
   isLatest?: boolean;
