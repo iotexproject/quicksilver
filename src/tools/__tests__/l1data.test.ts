@@ -372,9 +372,18 @@ describe("L1DataTool getDailyData", () => {
   it("should handle API errors", async () => {
     vi.mocked(fetch).mockRejectedValueOnce(new Error("Network error"));
 
-    await expect(l1DataTool.getDailyData("2024-01-01")).rejects.toThrow(
-      "Failed to fetch dailyTxCount: Network error"
-    );
+    const result = await l1DataTool.getDailyData("2024-01-01");
+    expect(result).toStrictEqual({
+      date: "2024-01-01",
+      transactions: 0,
+      tx_volume: 0,
+      sum_gas: 0,
+      avg_gas: 0,
+      active_wallets: 0,
+      peak_tps: 0,
+      tvl: 0,
+      holders: 0,
+    });
   });
 
   it("should handle malformed response data", async () => {
@@ -385,7 +394,18 @@ describe("L1DataTool getDailyData", () => {
       } as Response)
     );
 
-    await expect(l1DataTool.getDailyData("2024-01-01")).rejects.toThrow();
+    const result = await l1DataTool.getDailyData("2024-01-01");
+    expect(result).toStrictEqual({
+      date: "2024-01-01",
+      transactions: NaN,
+      tx_volume: 0,
+      sum_gas: 0,
+      avg_gas: 0,
+      active_wallets: 0,
+      peak_tps: 0,
+      tvl: 0,
+      holders: 0,
+    });
   });
 
   it("should handle empty holders data", async () => {
@@ -399,6 +419,97 @@ describe("L1DataTool getDailyData", () => {
     await expect(l1DataTool["fetchDailyHolders"]("2024-01-01")).rejects.toThrow(
       "Failed to fetch daily holders: No holders data returned"
     );
+  });
+
+  it("should return partial data when some fetches fail", async () => {
+    // Mock successful responses for some endpoints and failures for others
+    vi.mocked(fetch)
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([{ tx_count: 50000 }]),
+        } as Response)
+      ) // transactions succeeds
+      .mockImplementationOnce(() => Promise.reject(new Error("Network error"))) // tx_volume fails
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          text: () => Promise.resolve('"100.5"'),
+        } as Response)
+      ) // sum_gas succeeds
+      .mockImplementationOnce(() => Promise.reject(new Error("API error"))) // avg_gas fails
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([{ total: 1500 }]),
+        } as Response)
+      ) // active_wallets succeeds
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([{ max_tps: '"45.5"' }]),
+        } as Response)
+      ) // peak_tps succeeds
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([{ tvl: '"31946444.838592477"' }]),
+        } as Response)
+      ) // tvl succeeds
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([{ holders: 150000 }]),
+        } as Response)
+      ); // holders succeeds
+
+    const result = await l1DataTool.getDailyData("2024-01-01");
+
+    // Check that successful fetches returned data
+    expect(result.transactions).toBe(50000);
+    expect(result.sum_gas).toBe(100.5);
+    expect(result.active_wallets).toBe(1500);
+    expect(result.peak_tps).toBe(45.5);
+    expect(result.tvl).toBe(31946444.838592477);
+    expect(result.holders).toBe(150000);
+
+    // Check that failed fetches returned default values
+    expect(result.tx_volume).toBe(0);
+    expect(result.avg_gas).toBe(0);
+
+    // All fields should be present
+    expect(result).toEqual({
+      date: "2024-01-01",
+      transactions: 50000,
+      tx_volume: 0,
+      sum_gas: 100.5,
+      avg_gas: 0,
+      active_wallets: 1500,
+      peak_tps: 45.5,
+      tvl: 31946444.838592477,
+      holders: 150000,
+    });
+  });
+
+  it("should return all zero values when all fetches fail", async () => {
+    // Mock all endpoints to fail
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.reject(new Error("Network error"))
+    );
+
+    const result = await l1DataTool.getDailyData("2024-01-01");
+
+    expect(result).toEqual({
+      date: "2024-01-01",
+      transactions: 0,
+      tx_volume: 0,
+      sum_gas: 0,
+      avg_gas: 0,
+      active_wallets: 0,
+      peak_tps: 0,
+      tvl: 0,
+      holders: 0,
+    });
   });
 });
 

@@ -129,6 +129,12 @@ interface GraphQLResponse {
   data: ChainStats;
 }
 
+// Add a helper type for fetch results
+type FetchResult<T> = {
+  value: T | null;
+  error?: string;
+};
+
 export class L1DataTool extends APITool<void> {
   schema = [
     { name: GetL1StatsToolSchema.name, tool: tool(GetL1StatsToolSchema) },
@@ -337,37 +343,60 @@ export class L1DataTool extends APITool<void> {
       throw new Error("Can only fetch historical data (yesterday or earlier)");
     }
 
-    const [
-      transactions,
-      tx_volume,
-      sum_gas,
-      avg_gas,
-      active_wallets,
-      peak_tps,
-      tvl,
-      holders,
-    ] = await Promise.all([
-      this.fetchDailyTransactionCount(date),
-      this.fetchDailyTxVolume(date),
-      this.fetchDailySumGas(date),
-      this.fetchDailyAvgGas(date),
-      this.fetchDailyActiveWallets(date),
-      this.fetchDailyPeakTps(date),
-      this.fetchDailyTvl(date),
-      this.fetchDailyHolders(date),
+    const results = await Promise.all([
+      this.safeFetch(() => this.fetchDailyTransactionCount(date)),
+      this.safeFetch(() => this.fetchDailyTxVolume(date)),
+      this.safeFetch(() => this.fetchDailySumGas(date)),
+      this.safeFetch(() => this.fetchDailyAvgGas(date)),
+      this.safeFetch(() => this.fetchDailyActiveWallets(date)),
+      this.safeFetch(() => this.fetchDailyPeakTps(date)),
+      this.safeFetch(() => this.fetchDailyTvl(date)),
+      this.safeFetch(() => this.fetchDailyHolders(date)),
     ]);
+
+    // Log any errors that occurred
+    results.forEach((result, index) => {
+      if (result.error) {
+        const metrics = [
+          "transactions",
+          "tx_volume",
+          "sum_gas",
+          "avg_gas",
+          "active_wallets",
+          "peak_tps",
+          "tvl",
+          "holders",
+        ];
+        logger.error(`Error fetching ${metrics[index]}: ${result.error}`);
+      }
+    });
 
     return {
       date,
-      transactions,
-      tx_volume,
-      sum_gas,
-      avg_gas,
-      active_wallets,
-      peak_tps,
-      tvl,
-      holders,
+      transactions: Number(results[0].value ?? 0),
+      tx_volume: Number(results[1].value ?? 0),
+      sum_gas: Number(results[2].value ?? 0),
+      avg_gas: Number(results[3].value ?? 0),
+      active_wallets: Number(results[4].value ?? 0),
+      peak_tps: Number(results[5].value ?? 0),
+      tvl: Number(results[6].value ?? 0),
+      holders: Number(results[7].value ?? 0),
     };
+  }
+
+  // Add helper method for safe fetching
+  private async safeFetch<T>(
+    fetchFn: () => Promise<T>
+  ): Promise<FetchResult<T>> {
+    try {
+      const value = await fetchFn();
+      return { value };
+    } catch (error: any) {
+      return {
+        value: null,
+        error: error.message,
+      };
+    }
   }
 
   private async fetchDailyTransactionCount(date: string): Promise<number> {
