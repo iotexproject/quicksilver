@@ -250,6 +250,7 @@ describe("GetL1DailyStatsToolSchema execute function", () => {
       active_wallets: 1500,
       peak_tps: 45.5,
       tvl: 31946444.838592477,
+      holders: 150000,
     };
 
     // Spy on getDailyData and make it return our mock data
@@ -345,7 +346,13 @@ describe("L1DataTool getDailyData", () => {
           ok: true,
           json: () => Promise.resolve([{ tvl: '"31946444.838592477"' }]),
         } as Response)
-      ); // tvl
+      ) // tvl
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([{ holders: 150000 }]),
+        } as Response)
+      ); // holders
 
     const result = await l1DataTool.getDailyData("2024-01-01");
 
@@ -358,6 +365,7 @@ describe("L1DataTool getDailyData", () => {
       active_wallets: 1500,
       peak_tps: 45.5,
       tvl: 31946444.838592477,
+      holders: 150000,
     });
   });
 
@@ -378,6 +386,19 @@ describe("L1DataTool getDailyData", () => {
     );
 
     await expect(l1DataTool.getDailyData("2024-01-01")).rejects.toThrow();
+  });
+
+  it("should handle empty holders data", async () => {
+    vi.mocked(fetch).mockImplementationOnce(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve([]),
+      } as Response)
+    );
+
+    await expect(l1DataTool["fetchDailyHolders"]("2024-01-01")).rejects.toThrow(
+      "Failed to fetch daily holders: No holders data returned"
+    );
   });
 });
 
@@ -416,6 +437,7 @@ describe("GetL1DailyStatsToolSchema date validation", () => {
         active_wallets: 1500,
         peak_tps: 45.5,
         tvl: 31946444.838592477,
+        holders: 150000,
       });
 
     const result = await GetL1DailyStatsToolSchema.execute({
@@ -441,6 +463,7 @@ describe("GetL1DailyStatsToolSchema date validation", () => {
         active_wallets: 1500,
         peak_tps: 45.5,
         tvl: 31946444.838592477,
+        holders: 150000,
       });
 
     const result = await GetL1DailyStatsToolSchema.execute({ date: pastDate });

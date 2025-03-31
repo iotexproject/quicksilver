@@ -58,6 +58,7 @@ const L1DailyStatsSchema = z.object({
   active_wallets: z.number().describe("Number of active wallets for the day"),
   peak_tps: z.number().describe("Peak transactions per second for the day"),
   tvl: z.number().describe("Total Value Locked for the day"),
+  holders: z.number().describe("Number of IOTX holders for the day"),
 });
 
 // Export for testing
@@ -344,6 +345,7 @@ export class L1DataTool extends APITool<void> {
       active_wallets,
       peak_tps,
       tvl,
+      holders,
     ] = await Promise.all([
       this.fetchDailyTransactionCount(date),
       this.fetchDailyTxVolume(date),
@@ -352,6 +354,7 @@ export class L1DataTool extends APITool<void> {
       this.fetchDailyActiveWallets(date),
       this.fetchDailyPeakTps(date),
       this.fetchDailyTvl(date),
+      this.fetchDailyHolders(date),
     ]);
 
     return {
@@ -363,6 +366,7 @@ export class L1DataTool extends APITool<void> {
       active_wallets,
       peak_tps,
       tvl,
+      holders,
     };
   }
 
@@ -440,6 +444,20 @@ export class L1DataTool extends APITool<void> {
       return parseFloat(tvl.replace(/"/g, ""));
     } catch (error: any) {
       throw new Error(`Failed to fetch daily TVL: ${error.message}`);
+    }
+  }
+
+  private async fetchDailyHolders(date: string): Promise<number> {
+    try {
+      const res = await this.sendDailyRequest("dailyIoTexHolder", date);
+      const data = await res.json();
+      logger.info("dailyIoTexHolder", data);
+      if (!data.length) {
+        throw new Error("No holders data returned");
+      }
+      return data[0].holders;
+    } catch (error: any) {
+      throw new Error(`Failed to fetch daily holders: ${error.message}`);
     }
   }
 
