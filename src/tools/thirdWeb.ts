@@ -31,7 +31,9 @@ const AskNebulaToolSchema = {
     message: z
       .string()
       .min(20)
-      .describe("The blockchain-related question to ask ThirdWeb"),
+      .describe(
+        "The blockchain-related question to ask ThirdWeb. When querying ERC20 token metrics (supply, balance, etc.), always request token decimals information to ensure accurate number formatting. Example: Instead of 'What is the total supply?' use 'What is the total supply? Include token decimals and calculate the human-readable amount.'"
+      ),
   }),
   execute: async (input: ThirdWebParams) => {
     try {
@@ -57,11 +59,15 @@ export class ThirdWebTool extends APITool<ThirdWebParams> {
     });
 
     if (!process.env.THIRDWEB_SECRET_KEY) {
-      throw new Error("Please set the THIRDWEB_SECRET_KEY environment variable.");
+      throw new Error(
+        "Please set the THIRDWEB_SECRET_KEY environment variable."
+      );
     }
 
     if (!process.env.THIRDWEB_SESSION_ID) {
-      throw new Error("Please set the THIRDWEB_SESSION_ID environment variable.");
+      throw new Error(
+        "Please set the THIRDWEB_SESSION_ID environment variable."
+      );
     }
   }
 
@@ -88,21 +94,23 @@ export class ThirdWebTool extends APITool<ThirdWebParams> {
             "x-secret-key": secretKey,
             "Content-Type": "application/json",
           },
-          timeout: timeout
+          timeout: timeout,
         }
       );
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        if (error.code === 'ECONNABORTED') {
-          throw new Error(`Request timed out after ${timeout/1000} seconds`);
+        if (error.code === "ECONNABORTED") {
+          throw new Error(`Request timed out after ${timeout / 1000} seconds`);
         }
         if (error.response?.status === 401) {
           throw new Error("Authentication failed: Invalid ThirdWeb secret key");
         } else if (error.response?.status === 422) {
           throw new Error("Invalid request parameters");
         } else if (error.response?.status === 524) {
-          throw new Error("Server timeout: The ThirdWeb API took too long to respond");
+          throw new Error(
+            "Server timeout: The ThirdWeb API took too long to respond"
+          );
         }
       }
       throw error;
