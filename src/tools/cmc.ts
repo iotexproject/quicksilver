@@ -7,7 +7,7 @@ import { logger } from "../logger/winston";
 export const CMC_BASE_URL = "https://pro-api.coinmarketcap.com/v1";
 
 const CMCPlatformSchema = z.object({
-  id: z.number().describe("Platform ID"),
+  id: z.union([z.number(), z.string()]).describe("Platform ID"),
   name: z.string().describe("Platform name"),
   symbol: z.string().describe("Platform symbol"),
   slug: z.string().describe("Platform slug"),
@@ -44,6 +44,51 @@ const CMCResponseSchema = z.object({
     elapsed: z.number().describe("Request processing time"),
     credit_count: z.number().describe("API credit count used"),
     notice: z.string().nullable().describe("Additional notice if any"),
+  }),
+});
+
+const CMCMetadataV2Schema = z.object({
+  data: z.record(
+    z.object({
+      id: z.number().describe("CoinMarketCap ID"),
+      name: z.string().describe("Token name"),
+      symbol: z.string().describe("Token symbol"),
+      category: z.string().describe("Token category"),
+      description: z.string().describe("Token description"),
+      slug: z.string().describe("Token slug"),
+      logo: z.string().optional().describe("Token logo URL"),
+      subreddit: z.string().optional().describe("Token subreddit"),
+      notice: z.string().optional().describe("Token notice"),
+      tags: z.array(z.string()).optional().describe("Token tags"),
+      "tag-names": z.array(z.string()).optional().describe("Token tag names"),
+      "tag-groups": z.array(z.string()).optional().describe("Token tag groups"),
+      urls: z
+        .object({
+          website: z.array(z.string()).optional(),
+          twitter: z.array(z.string()).optional(),
+          message_board: z.array(z.string()).optional(),
+          chat: z.array(z.string()).optional(),
+          facebook: z.array(z.string()).optional(),
+          explorer: z.array(z.string()).optional(),
+          reddit: z.array(z.string()).optional(),
+          technical_doc: z.array(z.string()).optional(),
+          source_code: z.array(z.string()).optional(),
+          announcement: z.array(z.string()).optional(),
+        })
+        .optional(),
+      platform: CMCPlatformSchema.nullable().optional(),
+      date_added: z.string().optional(),
+      twitter_username: z.string().optional(),
+      is_hidden: z.number().optional(),
+    })
+  ),
+  status: z.object({
+    timestamp: z.string(),
+    error_code: z.number(),
+    error_message: z.string().nullable(),
+    elapsed: z.number(),
+    credit_count: z.number(),
+    notice: z.string().nullable(),
   }),
 });
 
@@ -150,6 +195,62 @@ const GetTokenMapToolSchema = {
   },
 };
 
+const GetMetadataV2ToolSchema = {
+  name: "get_cmc_metadata_v2",
+  description:
+    "Fetches detailed metadata for cryptocurrencies including logo, description, website URLs, and social links.\n" +
+    "If you don't know the token id, use get_cmc_token_map tool to get the token id first.",
+  parameters: z.object({
+    id: z
+      .string()
+      .optional()
+      .describe("Comma-separated CoinMarketCap cryptocurrency IDs"),
+    address: z.string().optional().describe("Contract address"),
+    skip_invalid: z.boolean().optional().default(false),
+    aux: z
+      .string()
+      .optional()
+      .default("urls,logo,description,tags,platform,date_added,notice")
+      .describe(
+        "Only include necessary fields to reduce response size. Can be a single value or comma-separated list"
+      ),
+  }),
+  execute: async (args: {
+    id?: string;
+    slug?: string;
+    symbol?: string;
+    address?: string;
+    skip_invalid?: boolean;
+    aux?: string;
+  }) => {
+    try {
+      const tool = new CMCBaseTool();
+      const response = await tool.getMetadataV2(args);
+      const parsedResponse = CMCMetadataV2Schema.parse(response);
+
+      return {
+        tokens: Object.fromEntries(
+          Object.entries(parsedResponse.data).map(([symbol, tokens]) => [
+            symbol,
+            tokens,
+          ])
+        ),
+        metadata: {
+          timestamp: parsedResponse.status.timestamp,
+          errorCode: parsedResponse.status.error_code,
+          errorMessage: parsedResponse.status.error_message,
+          elapsed: parsedResponse.status.elapsed,
+          creditCount: parsedResponse.status.credit_count,
+          notice: parsedResponse.status.notice,
+        },
+      };
+    } catch (error) {
+      logger.error("Error executing get_cmc_metadata_v2 tool", error);
+      return `Error executing get_cmc_metadata_v2 tool`;
+    }
+  },
+};
+
 type CMCBaseParams = {
   start?: number;
   limit?: number;
@@ -162,6 +263,7 @@ type CMCBaseParams = {
 export class CMCBaseTool extends APITool<CMCBaseParams> {
   schema = [
     { name: GetTokenMapToolSchema.name, tool: tool(GetTokenMapToolSchema) },
+    { name: GetMetadataV2ToolSchema.name, tool: tool(GetMetadataV2ToolSchema) },
   ];
 
   constructor() {
@@ -194,6 +296,39 @@ export class CMCBaseTool extends APITool<CMCBaseParams> {
 
     const res = await fetch(
       `${CMC_BASE_URL}/cryptocurrency/map?${queryParams.toString()}`,
+      {
+        headers: {
+          "X-CMC_PRO_API_KEY": process.env.CMC_API_KEY || "",
+        },
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error(`API request failed with status: ${res.status}`);
+    }
+
+    return await res.json();
+  }
+
+  async getMetadataV2(params: {
+    id?: string;
+    slug?: string;
+    symbol?: string;
+    address?: string;
+    skip_invalid?: boolean;
+    aux?: string;
+  }) {
+    const queryParams = new URLSearchParams();
+
+    if (params.id) queryParams.set("id", params.id);
+    if (params.slug) queryParams.set("slug", params.slug);
+    if (params.symbol) queryParams.set("symbol", params.symbol);
+    if (params.address) queryParams.set("address", params.address);
+    if (params.skip_invalid) queryParams.set("skip_invalid", "true");
+    if (params.aux) queryParams.set("aux", params.aux);
+
+    const res = await fetch(
+      `${CMC_BASE_URL}/cryptocurrency/info?${queryParams.toString()}`,
       {
         headers: {
           "X-CMC_PRO_API_KEY": process.env.CMC_API_KEY || "",
