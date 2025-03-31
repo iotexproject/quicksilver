@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { L1DataTool, GetL1StatsToolSchema } from "../l1data";
+import {
+  L1DataTool,
+  GetL1StatsToolSchema,
+  GetL1DailyStatsToolSchema,
+} from "../l1data";
 import { ZodError } from "zod";
 
 describe("L1DataTool", () => {
@@ -15,7 +19,7 @@ describe("L1DataTool", () => {
     expect(l1DataTool.description).toBe(
       "Fetches IoTeX L1 chain statistics and metrics: TVL, contracts, staking, nodes, dapps, tps, transactions, supply, holders, xrc20, xrc721"
     );
-    expect(l1DataTool.schema).toHaveLength(1);
+    expect(l1DataTool.schema).toHaveLength(2);
     expect(l1DataTool.schema[0].name).toBe("get_l1_stats");
   });
 
@@ -232,5 +236,217 @@ describe("GetL1StatsToolSchema execute function", () => {
 
     // Clean up
     getRawDataSpy.mockRestore();
+  });
+});
+
+describe("GetL1DailyStatsToolSchema execute function", () => {
+  it("should correctly format daily stats data", async () => {
+    const mockDailyStats = {
+      date: "2024-01-01",
+      transactions: 50000,
+      tx_volume: 1234567.89,
+      sum_gas: 100.5,
+      avg_gas: 0.002,
+      active_wallets: 1500,
+      peak_tps: 45.5,
+      tvl: 31946444.838592477,
+    };
+
+    // Spy on getDailyData and make it return our mock data
+    const getDailyDataSpy = vi
+      .spyOn(L1DataTool.prototype, "getDailyData")
+      .mockResolvedValue(mockDailyStats);
+
+    const result = await GetL1DailyStatsToolSchema.execute({
+      date: "2024-01-01",
+    });
+
+    expect(result).toEqual({
+      ...mockDailyStats,
+      tx_volume: 1234567.89,
+      sum_gas: 100.5,
+      avg_gas: 0.002,
+      peak_tps: 45.5,
+      currency: {
+        tx_volume: "USD",
+        sum_gas: "IOTX",
+        avg_gas: "IOTX",
+        tvl: "USD",
+      },
+    });
+
+    expect(getDailyDataSpy).toHaveBeenCalledWith("2024-01-01");
+    getDailyDataSpy.mockRestore();
+  });
+
+  it("should handle API errors gracefully", async () => {
+    const getDailyDataSpy = vi
+      .spyOn(L1DataTool.prototype, "getDailyData")
+      .mockRejectedValue(new Error("API Error"));
+
+    const result = await GetL1DailyStatsToolSchema.execute({
+      date: "2024-01-01",
+    });
+    expect(result).toBe("Error executing get_l1_daily_stats tool");
+
+    getDailyDataSpy.mockRestore();
+  });
+});
+
+describe("L1DataTool getDailyData", () => {
+  let l1DataTool: L1DataTool;
+
+  beforeEach(() => {
+    l1DataTool = new L1DataTool();
+    vi.stubGlobal("fetch", vi.fn());
+  });
+
+  it("should fetch and process daily L1 data", async () => {
+    // Mock responses for each endpoint
+    vi.mocked(fetch)
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([{ tx_count: 50000 }]),
+        } as Response)
+      ) // transactions
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          text: () => Promise.resolve('"1234567.89"'),
+        } as Response)
+      ) // tx_volume
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          text: () => Promise.resolve('"100.5"'),
+        } as Response)
+      ) // sum_gas
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          text: () => Promise.resolve('"0.002"'),
+        } as Response)
+      ) // avg_gas
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([{ total: 1500 }]),
+        } as Response)
+      ) // active_wallets
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([{ max_tps: '"45.5"' }]),
+        } as Response)
+      ) // peak_tps
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([{ tvl: '"31946444.838592477"' }]),
+        } as Response)
+      ); // tvl
+
+    const result = await l1DataTool.getDailyData("2024-01-01");
+
+    expect(result).toEqual({
+      date: "2024-01-01",
+      transactions: 50000,
+      tx_volume: 1234567.89,
+      sum_gas: 100.5,
+      avg_gas: 0.002,
+      active_wallets: 1500,
+      peak_tps: 45.5,
+      tvl: 31946444.838592477,
+    });
+  });
+
+  it("should handle API errors", async () => {
+    vi.mocked(fetch).mockRejectedValueOnce(new Error("Network error"));
+
+    await expect(l1DataTool.getDailyData("2024-01-01")).rejects.toThrow(
+      "Failed to fetch dailyTxCount: Network error"
+    );
+  });
+
+  it("should handle malformed response data", async () => {
+    vi.mocked(fetch).mockImplementationOnce(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve([{ tx_count: "invalid-number" }]),
+      } as Response)
+    );
+
+    await expect(l1DataTool.getDailyData("2024-01-01")).rejects.toThrow();
+  });
+});
+
+describe("GetL1DailyStatsToolSchema date validation", () => {
+  it("should reject current date", async () => {
+    const currentDate = new Date().toISOString().split("T")[0];
+
+    const res = await GetL1DailyStatsToolSchema.execute({ date: currentDate });
+    expect(res).toBe("Error executing get_l1_daily_stats tool");
+  });
+
+  it("should reject future date", async () => {
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 1);
+    const futureDateStr = futureDate.toISOString().split("T")[0];
+
+    const res = await GetL1DailyStatsToolSchema.execute({
+      date: futureDateStr,
+    });
+    expect(res).toBe("Error executing get_l1_daily_stats tool");
+  });
+
+  it("should accept yesterday's date", async () => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+    const getDailyDataSpy = vi
+      .spyOn(L1DataTool.prototype, "getDailyData")
+      .mockResolvedValue({
+        date: yesterdayStr,
+        transactions: 50000,
+        tx_volume: 1234567.89,
+        sum_gas: 100.5,
+        avg_gas: 0.002,
+        active_wallets: 1500,
+        peak_tps: 45.5,
+        tvl: 31946444.838592477,
+      });
+
+    const result = await GetL1DailyStatsToolSchema.execute({
+      date: yesterdayStr,
+    });
+    expect(result).toBeTruthy();
+    expect(getDailyDataSpy).toHaveBeenCalledWith(yesterdayStr);
+
+    getDailyDataSpy.mockRestore();
+  });
+
+  it("should accept historical date", async () => {
+    const pastDate = "2024-01-01";
+
+    const getDailyDataSpy = vi
+      .spyOn(L1DataTool.prototype, "getDailyData")
+      .mockResolvedValue({
+        date: pastDate,
+        transactions: 50000,
+        tx_volume: 1234567.89,
+        sum_gas: 100.5,
+        avg_gas: 0.002,
+        active_wallets: 1500,
+        peak_tps: 45.5,
+        tvl: 31946444.838592477,
+      });
+
+    const result = await GetL1DailyStatsToolSchema.execute({ date: pastDate });
+    expect(result).toBeTruthy();
+    expect(getDailyDataSpy).toHaveBeenCalledWith(pastDate);
+
+    getDailyDataSpy.mockRestore();
   });
 });
