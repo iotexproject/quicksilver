@@ -86,7 +86,12 @@ export const domains = new Map<string, DomainConfig>([
         "coinmarketcap",
         "defillama",
       ],
-      tools: [ToolName.CMC, ToolName.DEFILLAMA, ToolName.TIMESTAMP_CONVERTER],
+      tools: [
+        ToolName.CMC,
+        ToolName.DEFILLAMA,
+        ToolName.TIMESTAMP_CONVERTER,
+        ToolName.DEPIN_NINJA,
+      ],
     },
   ],
   [

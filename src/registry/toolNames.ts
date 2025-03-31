@@ -16,4 +16,5 @@ export enum ToolName {
   TIMESTAMP_CONVERTER = "timestamp_converter",
   CALCULATOR = "calculator",
   AIR_QUALITY = "air_quality",
+  DEPIN_NINJA = "depin_ninja",
 }
