@@ -42,7 +42,7 @@ describe("DePINNinjaTool", () => {
   it("should initialize with correct properties", () => {
     expect(depinNinjaTool.name).toBe("get_depin_revenue_by_date");
     expect(depinNinjaTool.description).toContain(
-      "Fetches DePIN projects' revenue data"
+      "Fetches total revenue breakdown"
     );
     expect(depinNinjaTool.schema).toHaveLength(2);
     expect(depinNinjaTool.schema[0].name).toBe("get_depin_revenue_by_date");
@@ -191,7 +191,7 @@ describe("GetRevenueDataTool", () => {
       );
 
       expect(fetch).toHaveBeenCalledWith(
-        "https://api.depin.ninja/external-access/revenue?page=1&limit=10",
+        "https://api.depin.ninja/external-access/revenue?page=1&limit=10&projectName=iotex",
         expect.any(Object)
       );
     });
@@ -271,11 +271,11 @@ describe("GetRevenueDataTool", () => {
 
       expect(fetch).toHaveBeenCalledTimes(2);
       expect(fetch).toHaveBeenCalledWith(
-        "https://api.depin.ninja/external-access/revenue?page=1&limit=10",
+        "https://api.depin.ninja/external-access/revenue?page=1&limit=10&projectName=iotex",
         expect.any(Object)
       );
       expect(fetch).toHaveBeenCalledWith(
-        "https://api.depin.ninja/external-access/revenue?page=3&limit=50",
+        "https://api.depin.ninja/external-access/revenue?page=3&limit=10&projectName=iotex",
         expect.any(Object)
       );
     });
@@ -319,7 +319,7 @@ describe("GetRevenueDataTool", () => {
         executionOptions
       );
 
-      expect(result).toBe("Error executing get_depin_revenue_data tool");
+      expect(result).toBe("Error executing get_last_depin_revenue_data tool");
     });
   });
 });

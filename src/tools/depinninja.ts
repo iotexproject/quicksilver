@@ -41,10 +41,12 @@ const RevenueDataResponseSchema = z.object({
   data: z.array(RevenueProjectSchema),
 });
 
-const GetDePINRevenueByDateToolSchema = {
+const GetDePINRevenueToolSchema = {
   name: "get_depin_revenue_by_date",
   description:
-    "Fetches DePIN projects' revenue data in USD from DePIN Ninja API for a specific date",
+    "Fetches total revenue breakdown by project for a specific date. Returns a list of all projects' revenues in USD for that day. " +
+    "Use this when you need to compare multiple projects' revenues on a specific date. " +
+    "To get detailed revenue metrics for a specific project, use get_last_depin_revenue_data instead.",
   parameters: z.object({
     date: z.string().describe("Date in YYYY-MM-DD format"),
   }),
@@ -55,22 +57,27 @@ const GetDePINRevenueByDateToolSchema = {
 };
 
 const GetDePINRevenueDataToolSchema = {
-  name: "get_depin_revenue_data",
+  name: "get_last_depin_revenue_data",
   description:
-    "Fetches latest DePIN project revenue data including: ARR (Annual Recurring Revenue)," +
-    " MRR (Monthly Recurring Revenue), normalized revenue for last 30 days," +
-    " and optional historical daily revenue data",
+    "Fetches detailed revenue metrics for a specific DePIN project. " +
+    "Use this when you need information about a particular project's revenue performance. Returns: " +
+    "- ARR (Annual Recurring Revenue) " +
+    "- MRR (Monthly Recurring Revenue) " +
+    "- Normalized revenue for last 30 days " +
+    "- Optional historical daily revenue data (use only when trend analysis is needed) " +
+    "\nExample: For questions like 'How is Filecoin performing?' or 'What's the recent revenue of IoTeX?', use this tool with the appropriate project name.",
   parameters: z.object({
     projectName: z
       .string()
       .default("iotex")
-      .describe("Project name to fetch data for (defaults to 'iotex')"),
+      .describe(
+        "Project name to fetch data for (defaults to 'iotex'). Example: 'filecoin', 'iotex', 'akash'"
+      ),
     getRevenueHistoricalData: z
       .boolean()
       .optional()
       .describe(
-        "Include historical daily revenue data in the response. Use only when historical" +
-          " analysis is required as it significantly increases response size"
+        "Include historical daily revenue data in the response. Use only when historical analysis is required as it significantly increases response size"
       ),
   }),
   execute: async (args: {
@@ -78,7 +85,10 @@ const GetDePINRevenueDataToolSchema = {
     getRevenueHistoricalData?: boolean;
   }) => {
     const tool = new RevenueDataExecutor();
-    return tool.execute(args);
+    return tool.execute({
+      ...args,
+      projectName: args.projectName ?? "iotex",
+    });
   },
 };
 
@@ -132,7 +142,7 @@ class RevenueDataExecutor extends BaseDepiNinjaExecutor {
     projectName: string;
     getRevenueHistoricalData?: boolean;
   }) {
-    return this.withErrorHandling("get_depin_revenue_data", async () => {
+    return this.withErrorHandling("get_last_depin_revenue_data", async () => {
       return this.getProjectData(
         args.projectName,
         args.getRevenueHistoricalData
@@ -147,20 +157,20 @@ class RevenueDataExecutor extends BaseDepiNinjaExecutor {
     // First, get total pages
     const initialUrl = this.buildUrl({
       page: 1,
-      limit: 10,
       projectName,
       getRevenueHistoricalData: includeHistory,
     });
+    console.log("initialUrl", initialUrl);
     const initialData = await this.fetchFromDePINNinja(initialUrl);
     const { totalPages } = RevenueDataResponseSchema.parse(initialData);
 
     // Fetch the last page
     const lastPageUrl = this.buildUrl({
       page: totalPages,
-      limit: 50,
       projectName,
       getRevenueHistoricalData: includeHistory,
     });
+    console.log("lastPageUrl", lastPageUrl);
     const lastPageData = await this.fetchFromDePINNinja(lastPageUrl);
     const parsedData = RevenueDataResponseSchema.parse(lastPageData);
 
@@ -172,16 +182,15 @@ class RevenueDataExecutor extends BaseDepiNinjaExecutor {
 
   private buildUrl(params: {
     page: number;
-    limit: 10 | 20 | 50;
-    projectName?: string;
+    projectName: string;
     getRevenueHistoricalData?: boolean;
   }): string {
     const queryParams = new URLSearchParams();
 
     queryParams.append("page", params.page.toString());
-    queryParams.append("limit", params.limit.toString());
-    if (params.projectName)
-      queryParams.append("projectName", params.projectName);
+    // API only allows 10, 20 or 50 projects per page
+    queryParams.append("limit", "10");
+    queryParams.append("projectName", params.projectName);
     if (params.getRevenueHistoricalData)
       queryParams.append("getRevenueHistoricalData", "true");
 
@@ -196,8 +205,8 @@ export class DePINNinjaTool extends APITool<{
 
   schema = [
     {
-      name: GetDePINRevenueByDateToolSchema.name,
-      tool: tool(GetDePINRevenueByDateToolSchema),
+      name: GetDePINRevenueToolSchema.name,
+      tool: tool(GetDePINRevenueToolSchema),
     },
     {
       name: GetDePINRevenueDataToolSchema.name,
@@ -207,9 +216,10 @@ export class DePINNinjaTool extends APITool<{
 
   constructor() {
     super({
-      name: GetDePINRevenueByDateToolSchema.name,
-      description: GetDePINRevenueByDateToolSchema.description,
+      name: GetDePINRevenueToolSchema.name,
+      description: GetDePINRevenueToolSchema.description,
       baseUrl: DEPINNINJA_BASE_URL,
+      twitterAccount: "EV3ventures",
     });
     if (!process.env.DEPINNINJA_API_KEY) {
       throw new Error("DEPINNINJA_API_KEY environment variable is not set");
