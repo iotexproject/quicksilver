@@ -48,6 +48,20 @@ const ChainStatsSchema = z.object({
   }),
 });
 
+// Add new Zod schemas
+const L1DailyStatsSchema = z.object({
+  date: z.string().describe("Date for which stats are fetched (YYYY-MM-DD)"),
+  transactions: z.number().describe("Number of transactions for the day"),
+  tx_volume: z.number().describe("Total transaction volume for the day"),
+  sum_gas: z.number().describe("Total gas fees spent for the day"),
+  avg_gas: z.number().describe("Average gas fee per transaction"),
+  active_wallets: z.number().describe("Number of active wallets for the day"),
+  peak_tps: z.number().describe("Peak transactions per second for the day"),
+  tvl: z.number().describe("Total Value Locked for the day"),
+  holders: z.number().describe("Number of IOTX holders for the day"),
+  avg_staking_duration: z.number().describe("Average staking duration in days"),
+});
+
 // Export for testing
 export const GetL1StatsToolSchema = {
   name: "get_l1_stats",
@@ -71,17 +85,64 @@ export const GetL1StatsToolSchema = {
   },
 };
 
+// Update the GetL1DailyStatsToolSchema with date validation
+export const GetL1DailyStatsToolSchema = {
+  name: "get_l1_daily_stats",
+  description:
+    "Fetches IoTeX L1 chain historical daily statistics (before current date) including transactions, volume, gas fees, active wallets, TPS, and TVL",
+  parameters: z.object({
+    date: z
+      .string()
+      .describe(
+        "Date must be in YYYY-MM-DD format. Can only fetch historical data (yesterday or earlier)"
+      ),
+  }),
+  execute: async (args: { date: string }) => {
+    try {
+      const tool = new L1DataTool();
+      const stats = await tool.getDailyData(args.date);
+      return {
+        ...stats,
+        tx_volume: Number(stats.tx_volume.toFixed(2)),
+        sum_gas: Number(stats.sum_gas.toFixed(2)),
+        avg_gas: Number(stats.avg_gas.toFixed(4)),
+        peak_tps: Number(stats.peak_tps.toFixed(4)),
+        currency: {
+          tx_volume: "USD",
+          sum_gas: "IOTX",
+          avg_gas: "IOTX",
+          tvl: "USD",
+        },
+      };
+    } catch (error) {
+      logger.error("Error executing get_l1_daily_stats tool", error);
+      return `Error executing get_l1_daily_stats tool`;
+    }
+  },
+};
+
 // Types
 type L1Stats = z.infer<typeof L1StatsSchema>;
 type ChainStats = z.infer<typeof ChainStatsSchema>;
+type L1DailyStats = z.infer<typeof L1DailyStatsSchema>;
 
 interface GraphQLResponse {
   data: ChainStats;
 }
 
+// Add a helper type for fetch results
+type FetchResult<T> = {
+  value: T | null;
+  error?: string;
+};
+
 export class L1DataTool extends APITool<void> {
   schema = [
     { name: GetL1StatsToolSchema.name, tool: tool(GetL1StatsToolSchema) },
+    {
+      name: GetL1DailyStatsToolSchema.name,
+      tool: tool(GetL1DailyStatsToolSchema),
+    },
   ];
 
   constructor() {
@@ -273,4 +334,204 @@ export class L1DataTool extends APITool<void> {
   private calcStakingRatio(totalStaked: number, totalSupply: number): number {
     return totalStaked / totalSupply;
   }
+
+  async getDailyData(date: string): Promise<L1DailyStats> {
+    // Validate date is not current or future
+    const inputDate = new Date(date);
+    const yesterday = new Date(getYesterday());
+
+    if (inputDate > yesterday) {
+      throw new Error("Can only fetch historical data (yesterday or earlier)");
+    }
+
+    const results = await Promise.all([
+      this.safeFetch(() => this.fetchDailyTransactionCount(date)),
+      this.safeFetch(() => this.fetchDailyTxVolume(date)),
+      this.safeFetch(() => this.fetchDailySumGas(date)),
+      this.safeFetch(() => this.fetchDailyAvgGas(date)),
+      this.safeFetch(() => this.fetchDailyActiveWallets(date)),
+      this.safeFetch(() => this.fetchDailyPeakTps(date)),
+      this.safeFetch(() => this.fetchDailyTvl(date)),
+      this.safeFetch(() => this.fetchDailyHolders(date)),
+      this.safeFetch(() => this.fetchDailyStakingDuration(date)),
+    ]);
+
+    // Log any errors that occurred
+    results.forEach((result, index) => {
+      if (result.error) {
+        const metrics = [
+          "transactions",
+          "tx_volume",
+          "sum_gas",
+          "avg_gas",
+          "active_wallets",
+          "peak_tps",
+          "tvl",
+          "holders",
+          "avg_staking_duration",
+        ];
+        logger.error(`Error fetching ${metrics[index]}: ${result.error}`);
+      }
+    });
+
+    return {
+      date,
+      transactions: Number(results[0].value ?? 0),
+      tx_volume: Number(results[1].value ?? 0),
+      sum_gas: Number(results[2].value ?? 0),
+      avg_gas: Number(results[3].value ?? 0),
+      active_wallets: Number(results[4].value ?? 0),
+      peak_tps: Number(results[5].value ?? 0),
+      tvl: Number(results[6].value ?? 0),
+      holders: Number(results[7].value ?? 0),
+      avg_staking_duration: Number(results[8].value ?? 0),
+    };
+  }
+
+  // Add helper method for safe fetching
+  private async safeFetch<T>(
+    fetchFn: () => Promise<T>
+  ): Promise<FetchResult<T>> {
+    try {
+      const value = await fetchFn();
+      return { value };
+    } catch (error: any) {
+      return {
+        value: null,
+        error: error.message,
+      };
+    }
+  }
+
+  private async fetchDailyTransactionCount(date: string): Promise<number> {
+    const res = await this.sendDailyRequest("dailyTxCount", date);
+    const data = await res.json();
+    logger.info("dailyTxCount", data);
+    return data[0].tx_count;
+  }
+
+  private async fetchDailyTxVolume(date: string): Promise<number> {
+    try {
+      const res = await this.sendDailyRequest("avgDailyTxVolume", date);
+      const volume = await res.text();
+      logger.info("avgDailyTxVolume", volume);
+      return parseFloat(volume.replace(/"/g, ""));
+    } catch (error: any) {
+      throw new Error(
+        `Failed to fetch daily transaction volume: ${error.message}`
+      );
+    }
+  }
+
+  private async fetchDailySumGas(date: string): Promise<number> {
+    try {
+      const res = await this.sendDailyRequest("sumGasFeeIotx", date);
+      const sum = await res.text();
+      logger.info("sumGasFeeIotx", sum);
+      return parseFloat(sum.replace(/"/g, ""));
+    } catch (error: any) {
+      throw new Error(`Failed to fetch daily sum gas: ${error.message}`);
+    }
+  }
+
+  private async fetchDailyAvgGas(date: string): Promise<number> {
+    try {
+      const res = await this.sendDailyRequest("avgGasFeeIotx", date);
+      const avg = await res.text();
+      logger.info("avgGasFeeIotx", avg);
+      return parseFloat(avg.replace(/"/g, ""));
+    } catch (error: any) {
+      throw new Error(`Failed to fetch daily average gas: ${error.message}`);
+    }
+  }
+
+  private async fetchDailyActiveWallets(date: string): Promise<number> {
+    try {
+      const res = await this.sendDailyRequest("activeWalletCount", date);
+      const data = await res.json();
+      logger.info("activeWalletCount", data);
+      return data[0].total;
+    } catch (error: any) {
+      throw new Error(`Failed to fetch daily active wallets: ${error.message}`);
+    }
+  }
+
+  private async fetchDailyPeakTps(date: string): Promise<number> {
+    try {
+      const res = await this.sendDailyRequest("dailyPeakTps", date);
+      const data = await res.json();
+      logger.info("dailyPeakTps", data);
+      const tps = data[0].max_tps.replace(/"/g, "");
+      return parseFloat(tps);
+    } catch (error: any) {
+      throw new Error(`Failed to fetch daily peak TPS: ${error.message}`);
+    }
+  }
+
+  private async fetchDailyTvl(date: string): Promise<number> {
+    try {
+      const res = await this.sendDailyRequest("dailyTvl", date);
+      const data = await res.json();
+      logger.info("dailyTvl", data);
+      const tvl = data[0]?.tvl || "0.0";
+      return parseFloat(tvl.replace(/"/g, ""));
+    } catch (error: any) {
+      throw new Error(`Failed to fetch daily TVL: ${error.message}`);
+    }
+  }
+
+  private async fetchDailyHolders(date: string): Promise<number> {
+    try {
+      const res = await this.sendDailyRequest("dailyIoTexHolder", date);
+      const data = await res.json();
+      logger.info("dailyIoTexHolder", data);
+      if (!data.length) {
+        throw new Error("No holders data returned");
+      }
+      return data[0].holders;
+    } catch (error: any) {
+      throw new Error(`Failed to fetch daily holders: ${error.message}`);
+    }
+  }
+
+  private async fetchDailyStakingDuration(date: string): Promise<number> {
+    try {
+      const res = await this.sendDailyRequest(
+        "avgStakingDurationHistory",
+        date
+      );
+      const data = await res.json();
+      logger.info("avgStakingDurationHistory", data);
+      if (!data.length) {
+        return 0;
+      }
+      return data[0].avg_staking_duration;
+    } catch (error: any) {
+      throw new Error(
+        `Failed to fetch daily staking duration: ${error.message}`
+      );
+    }
+  }
+
+  private async sendDailyRequest(
+    path: string,
+    date: string
+  ): Promise<Response> {
+    try {
+      const url = `${ANALYTICS_API}/${path}?start_date=${date}&end_date=${date}`;
+      const res = await fetch(url);
+      if (!res.ok) {
+        throw new Error(`Response status: ${res.status}`);
+      }
+      return res;
+    } catch (error: any) {
+      throw new Error(`Failed to fetch ${path}: ${error.message}`);
+    }
+  }
+}
+
+function getYesterday(): string {
+  const date = new Date();
+  date.setDate(date.getDate() - 1);
+  return date.toISOString().split("T")[0];
 }
