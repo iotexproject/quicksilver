@@ -352,7 +352,13 @@ describe("L1DataTool getDailyData", () => {
           ok: true,
           json: () => Promise.resolve([{ holders: 150000 }]),
         } as Response)
-      ); // holders
+      ) // holders
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([{ avg_staking_duration: 365.5 }]),
+        } as Response)
+      ); // avg_staking_duration
 
     const result = await l1DataTool.getDailyData("2024-01-01");
 
@@ -366,6 +372,7 @@ describe("L1DataTool getDailyData", () => {
       peak_tps: 45.5,
       tvl: 31946444.838592477,
       holders: 150000,
+      avg_staking_duration: 365.5,
     });
   });
 
@@ -383,6 +390,7 @@ describe("L1DataTool getDailyData", () => {
       peak_tps: 0,
       tvl: 0,
       holders: 0,
+      avg_staking_duration: 0,
     });
   });
 
@@ -405,6 +413,7 @@ describe("L1DataTool getDailyData", () => {
       peak_tps: 0,
       tvl: 0,
       holders: 0,
+      avg_staking_duration: 0,
     });
   });
 
@@ -461,7 +470,13 @@ describe("L1DataTool getDailyData", () => {
           ok: true,
           json: () => Promise.resolve([{ holders: 150000 }]),
         } as Response)
-      ); // holders succeeds
+      ) // holders succeeds
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([{ avg_staking_duration: 365.5 }]),
+        } as Response)
+      ); // avg_staking_duration succeeds
 
     const result = await l1DataTool.getDailyData("2024-01-01");
 
@@ -472,6 +487,7 @@ describe("L1DataTool getDailyData", () => {
     expect(result.peak_tps).toBe(45.5);
     expect(result.tvl).toBe(31946444.838592477);
     expect(result.holders).toBe(150000);
+    expect(result.avg_staking_duration).toBe(365.5);
 
     // Check that failed fetches returned default values
     expect(result.tx_volume).toBe(0);
@@ -488,6 +504,7 @@ describe("L1DataTool getDailyData", () => {
       peak_tps: 45.5,
       tvl: 31946444.838592477,
       holders: 150000,
+      avg_staking_duration: 365.5,
     });
   });
 
@@ -509,7 +526,20 @@ describe("L1DataTool getDailyData", () => {
       peak_tps: 0,
       tvl: 0,
       holders: 0,
+      avg_staking_duration: 0,
     });
+  });
+
+  it("should handle empty staking duration data", async () => {
+    vi.mocked(fetch).mockImplementationOnce(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve([]),
+      } as Response)
+    );
+
+    const result = await l1DataTool["fetchDailyStakingDuration"]("2024-01-01");
+    expect(result).toBe(0);
   });
 });
 
@@ -549,6 +579,7 @@ describe("GetL1DailyStatsToolSchema date validation", () => {
         peak_tps: 45.5,
         tvl: 31946444.838592477,
         holders: 150000,
+        avg_staking_duration: 365.5,
       });
 
     const result = await GetL1DailyStatsToolSchema.execute({
@@ -575,6 +606,7 @@ describe("GetL1DailyStatsToolSchema date validation", () => {
         peak_tps: 45.5,
         tvl: 31946444.838592477,
         holders: 150000,
+        avg_staking_duration: 365.5,
       });
 
     const result = await GetL1DailyStatsToolSchema.execute({ date: pastDate });

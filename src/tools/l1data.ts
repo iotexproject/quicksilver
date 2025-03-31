@@ -59,6 +59,7 @@ const L1DailyStatsSchema = z.object({
   peak_tps: z.number().describe("Peak transactions per second for the day"),
   tvl: z.number().describe("Total Value Locked for the day"),
   holders: z.number().describe("Number of IOTX holders for the day"),
+  avg_staking_duration: z.number().describe("Average staking duration in days"),
 });
 
 // Export for testing
@@ -352,6 +353,7 @@ export class L1DataTool extends APITool<void> {
       this.safeFetch(() => this.fetchDailyPeakTps(date)),
       this.safeFetch(() => this.fetchDailyTvl(date)),
       this.safeFetch(() => this.fetchDailyHolders(date)),
+      this.safeFetch(() => this.fetchDailyStakingDuration(date)),
     ]);
 
     // Log any errors that occurred
@@ -366,6 +368,7 @@ export class L1DataTool extends APITool<void> {
           "peak_tps",
           "tvl",
           "holders",
+          "avg_staking_duration",
         ];
         logger.error(`Error fetching ${metrics[index]}: ${result.error}`);
       }
@@ -381,6 +384,7 @@ export class L1DataTool extends APITool<void> {
       peak_tps: Number(results[5].value ?? 0),
       tvl: Number(results[6].value ?? 0),
       holders: Number(results[7].value ?? 0),
+      avg_staking_duration: Number(results[8].value ?? 0),
     };
   }
 
@@ -487,6 +491,25 @@ export class L1DataTool extends APITool<void> {
       return data[0].holders;
     } catch (error: any) {
       throw new Error(`Failed to fetch daily holders: ${error.message}`);
+    }
+  }
+
+  private async fetchDailyStakingDuration(date: string): Promise<number> {
+    try {
+      const res = await this.sendDailyRequest(
+        "avgStakingDurationHistory",
+        date
+      );
+      const data = await res.json();
+      logger.info("avgStakingDurationHistory", data);
+      if (!data.length) {
+        return 0;
+      }
+      return data[0].avg_staking_duration;
+    } catch (error: any) {
+      throw new Error(
+        `Failed to fetch daily staking duration: ${error.message}`
+      );
     }
   }
 
