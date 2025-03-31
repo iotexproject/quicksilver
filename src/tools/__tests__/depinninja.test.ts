@@ -40,10 +40,12 @@ describe("DePINNinjaTool", () => {
   });
 
   it("should initialize with correct properties", () => {
-    expect(depinNinjaTool.name).toBe("get_depin_revenue");
-    expect(depinNinjaTool.description).toContain("Fetches DePIN revenue data");
-    expect(depinNinjaTool.schema).toHaveLength(1);
-    expect(depinNinjaTool.schema[0].name).toBe("get_depin_revenue");
+    expect(depinNinjaTool.name).toBe("get_depin_revenue_by_date");
+    expect(depinNinjaTool.description).toContain(
+      "Fetches DePIN projects' revenue data"
+    );
+    expect(depinNinjaTool.schema).toHaveLength(2);
+    expect(depinNinjaTool.schema[0].name).toBe("get_depin_revenue_by_date");
   });
 
   describe("execute", () => {
@@ -102,7 +104,7 @@ describe("DePINNinjaTool", () => {
         executionOptions
       );
 
-      expect(result).toBe("Error executing get_depin_revenue tool");
+      expect(result).toBe("Error executing get_depin_revenue_by_date tool");
     });
 
     it("should handle network errors", async () => {
@@ -115,7 +117,7 @@ describe("DePINNinjaTool", () => {
         executionOptions
       );
 
-      expect(result).toBe("Error executing get_depin_revenue tool");
+      expect(result).toBe("Error executing get_depin_revenue_by_date tool");
     });
 
     it("should handle missing API key", () => {
@@ -125,6 +127,199 @@ describe("DePINNinjaTool", () => {
         "DEPINNINJA_API_KEY environment variable is not set"
       );
       process.env.DEPINNINJA_API_KEY = originalEnv;
+    });
+  });
+});
+
+describe("GetRevenueDataTool", () => {
+  let depinNinjaTool: DePINNinjaTool;
+  const executionOptions = {
+    toolCallId: "test-call-id",
+    messages: [],
+    llm: new LLMService(llmServiceParams),
+  };
+  const mockRevenueData = {
+    page: 1,
+    limit: 10,
+    totalPages: 3,
+    data: [
+      {
+        id: 89969,
+        createdAt: "2025-02-01T00:21:29.009Z",
+        updatedAt: "2025-02-01T00:21:29.009Z",
+        arr: 1015120,
+        mrr: 132828,
+        normalizedRevenueFor30Days: 84593,
+        projectId: "oqhdss",
+        name: "IoTeX",
+        category: "BLOCKCHAIN_INFRA",
+        chain: "IOTEX",
+        revenueData: [
+          {
+            date: "2024-10-01T00:00:00.000Z",
+            revenue: 178.68417198474202,
+          },
+        ],
+      },
+    ],
+  };
+
+  beforeEach(() => {
+    const originalEnv = process.env.DEPINNINJA_API_KEY;
+    process.env.DEPINNINJA_API_KEY = "test-api-key";
+    depinNinjaTool = new DePINNinjaTool();
+    vi.stubGlobal("fetch", vi.fn());
+    vi.mock("../../llm/llm-service", () => mockLLMService);
+    process.env.DEPINNINJA_API_KEY = originalEnv;
+  });
+
+  describe("execute", () => {
+    it("should use 'iotex' as default project name", async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ ...mockRevenueData, totalPages: 3 }),
+      } as Response);
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockRevenueData),
+      } as Response);
+
+      const result = await depinNinjaTool.schema[1].tool.execute(
+        {},
+        executionOptions
+      );
+
+      expect(fetch).toHaveBeenCalledWith(
+        "https://api.depin.ninja/external-access/revenue?page=1&limit=10",
+        expect.any(Object)
+      );
+    });
+
+    it("should fetch latest revenue data for a specified project", async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ ...mockRevenueData, totalPages: 3 }),
+      } as Response);
+
+      const lastPageData = {
+        ...mockRevenueData,
+        page: 3,
+        data: [
+          {
+            ...mockRevenueData.data[0],
+            name: "Akash",
+            updatedAt: "2025-02-02T00:21:29.009Z",
+          },
+        ],
+      };
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(lastPageData),
+      } as Response);
+
+      const result = await depinNinjaTool.schema[1].tool.execute(
+        {
+          projectName: "Akash",
+        },
+        executionOptions
+      );
+
+      expect(result).toEqual({
+        project: lastPageData.data[0],
+      });
+
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining("projectName=Akash"),
+        expect.any(Object)
+      );
+    });
+
+    it("should fetch latest revenue data for all projects", async () => {
+      const mockMultipleProjects = {
+        ...mockRevenueData,
+        data: [
+          mockRevenueData.data[0],
+          {
+            ...mockRevenueData.data[0],
+            name: "Akash",
+            updatedAt: "2025-02-02T00:21:29.009Z",
+          },
+        ],
+      };
+
+      // Mock first call to get total pages
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ ...mockMultipleProjects, totalPages: 3 }),
+      } as Response);
+
+      // Mock second call to get last page
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockMultipleProjects),
+      } as Response);
+
+      const result = await depinNinjaTool.schema[1].tool.execute(
+        {},
+        executionOptions
+      );
+
+      expect(result).toEqual({
+        project: mockMultipleProjects.data[1],
+      });
+
+      expect(fetch).toHaveBeenCalledTimes(2);
+      expect(fetch).toHaveBeenCalledWith(
+        "https://api.depin.ninja/external-access/revenue?page=1&limit=10",
+        expect.any(Object)
+      );
+      expect(fetch).toHaveBeenCalledWith(
+        "https://api.depin.ninja/external-access/revenue?page=3&limit=50",
+        expect.any(Object)
+      );
+    });
+
+    it("should include historical data when requested", async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ ...mockRevenueData, totalPages: 1 }),
+      } as Response);
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockRevenueData),
+      } as Response);
+
+      const result = await depinNinjaTool.schema[1].tool.execute(
+        {
+          projectName: "IoTeX",
+          getRevenueHistoricalData: true,
+        },
+        executionOptions
+      );
+
+      expect(result.project.revenueData).toBeDefined();
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining("getRevenueHistoricalData=true"),
+        expect.any(Object)
+      );
+    });
+
+    it("should handle API errors", async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+      } as Response);
+
+      const result = await depinNinjaTool.schema[1].tool.execute(
+        {
+          projectName: "IoTeX",
+        },
+        executionOptions
+      );
+
+      expect(result).toBe("Error executing get_depin_revenue_data tool");
     });
   });
 });
