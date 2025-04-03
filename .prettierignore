@@ -9,3 +9,5 @@ configs
 .vscode
 .DS_Store
 .idea
+.eslintrc.js
+pnpm-lock.yaml
