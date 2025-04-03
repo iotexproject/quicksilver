@@ -48,7 +48,11 @@ export class CalculatorTool extends APITool<{
     return this.performOperation(operation, operand1, operand2);
   }
 
-  async execute(args: { operation: z.infer<typeof OperationSchema>; operand1: number; operand2?: number }) {
+  async execute(args: {
+    operation: z.infer<typeof OperationSchema>;
+    operand1: number;
+    operand2?: number;
+  }): Promise<string> {
     return this.withErrorHandling('calculator', async () => {
       const result = await this.getRawData(args);
       return this.formatResult(result);

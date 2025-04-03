@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ZodError } from 'zod';
 
 import { L1DataTool, GetL1StatsToolSchema, GetL1DailyStatsToolSchema } from '../l1data';
 

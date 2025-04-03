@@ -49,7 +49,7 @@ export class AskSpecialtyTool extends APITool<{
     });
   }
 
-  async execute(args: { domain: string; question: string }) {
+  async execute(args: { domain: string; question: string }): Promise<{ domain: string; response: string } | string> {
     try {
       const domain = this.getDomain(args.domain);
       if (typeof domain === 'string') {
@@ -99,7 +99,7 @@ export class AskSpecialtyTool extends APITool<{
     });
   }
 
-  async getRawData() {
+  async getRawData(): Promise<null> {
     // Not needed for this tool as it's not making direct API calls
     return null;
   }

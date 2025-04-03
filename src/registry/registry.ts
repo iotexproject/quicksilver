@@ -14,7 +14,7 @@ export class ToolRegistry {
     });
   }
 
-  static register(name: ToolName, factory: () => QSTool) {
+  static register(name: ToolName, factory: () => QSTool): void {
     this.tools.set(name, factory);
   }
 

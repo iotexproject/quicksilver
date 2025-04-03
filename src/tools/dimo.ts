@@ -172,7 +172,7 @@ export class DimoTool extends APITool<DimoParams> {
     });
   }
 
-  private buildLatestSignalsQuery(tokenId: string, signals: string[]) {
+  private buildLatestSignalsQuery(tokenId: string, signals: string[]): string {
     return `{ signalsLatest(tokenId: ${tokenId}) {
         ${signals
           .map(

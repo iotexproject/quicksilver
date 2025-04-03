@@ -17,7 +17,7 @@ const DateRangeSchema = z
   })
   .refine(data => new Date(data.start) <= new Date(data.end), 'Start date must be before or equal to end date');
 
-const NuclearOutageDataSchema = z.object({
+const _NuclearOutageDataSchema = z.object({
   period: z.string().describe('The date of the measurement'),
   outage: z.string().describe('Amount of nuclear power plant outage'),
   capacity: z.string().describe('Total nuclear power plant capacity'),
@@ -69,7 +69,7 @@ const GetNuclearOutagesToolSchema = {
 };
 
 type DateRange = z.infer<typeof DateRangeSchema>;
-type NuclearOutageData = z.infer<typeof NuclearOutageDataSchema>;
+type NuclearOutageData = z.infer<typeof _NuclearOutageDataSchema>;
 
 export class NuclearOutagesTool extends APITool<DateRange> {
   schema = [

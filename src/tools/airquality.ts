@@ -28,6 +28,8 @@ const AirQualityResponseSchema = z.object({
   }),
 });
 
+type AirQualityResponse = z.infer<typeof AirQualityResponseSchema>;
+
 const GetNearestCityAirQualityToolSchema = {
   name: 'get_nearest_city_air_quality',
   description: 'Fetches air quality data for the nearest city using specified GPS coordinates. ',
@@ -63,7 +65,7 @@ abstract class AirQualityExecutor {
 }
 
 class NearestCityExecutor extends AirQualityExecutor {
-  async execute(args: { latitude: number; longitude: number }) {
+  async execute(args: { latitude: number; longitude: number }): Promise<any> {
     return this.withErrorHandling('get_nearest_city_air_quality', async () => {
       const url = this.buildUrl(args);
       const data = await this.fetchFromAirVisual(url);
@@ -77,7 +79,7 @@ class NearestCityExecutor extends AirQualityExecutor {
     return `${AIRVISUAL_BASE_URL}/nearest_city?lat=${latitude}&lon=${longitude}&key=${process.env.AIRVISUAL_API_KEY}`;
   }
 
-  private parseResult(parsedResponse: z.infer<typeof AirQualityResponseSchema>) {
+  private parseResult(parsedResponse: AirQualityResponse): any {
     const { data } = parsedResponse;
     return {
       city: data.city,
@@ -144,7 +146,7 @@ export class AirQualityTool extends APITool<{
     }
   }
 
-  async getRawData(params: { latitude: number; longitude: number }) {
+  async getRawData(params: { latitude: number; longitude: number }): Promise<any> {
     return AirQualityTool.nearestCityExecutor.execute(params);
   }
 }

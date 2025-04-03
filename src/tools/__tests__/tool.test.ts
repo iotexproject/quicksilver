@@ -13,7 +13,7 @@ class TestAPITool extends APITool<ToolInput> {
     return `Executed with input: ${JSON.stringify(parsedInput)}`;
   }
 
-  async parseInput(input: string): Promise<ToolInput> {
+  async parseInput(_input: string): Promise<ToolInput> {
     return { lat: 0, lon: 0 };
   }
 

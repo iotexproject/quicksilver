@@ -182,7 +182,7 @@ describe('GetRevenueDataTool', () => {
         json: () => Promise.resolve(mockRevenueData),
       } as Response);
 
-      const result = await depinNinjaTool.schema[1].tool.execute({}, executionOptions);
+      await depinNinjaTool.schema[1].tool.execute({}, executionOptions);
 
       expect(fetch).toHaveBeenCalledWith(
         'https://api.depin.ninja/external-access/revenue?page=1&limit=10&projectName=iotex',
