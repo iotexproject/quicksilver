@@ -72,7 +72,7 @@ abstract class BaseWeatherAPITool extends APITool<CoordinatesInput> {
     return this.fetchWeather(lat, lon);
   }
 
-  private async fetchWeather(lat: number, lon: number) {
+  private async fetchWeather(lat: number, lon: number): Promise<WeatherData | WeatherForecast> {
     const url = `${this.baseUrl}?lat=${lat}&lon=${lon}`;
     const apiKey = process.env.NUBILA_API_KEY as string;
     const response = await fetch(url, {

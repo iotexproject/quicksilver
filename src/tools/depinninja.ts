@@ -42,6 +42,9 @@ const RevenueDataResponseSchema = z.object({
   data: z.array(RevenueProjectSchema),
 });
 
+type RevenueResponse = z.infer<typeof RevenueResponseSchema>;
+type RevenueProjectResponse = z.infer<typeof RevenueProjectSchema>;
+
 const GetDePINRevenueToolSchema = {
   name: 'get_depin_revenue_by_date',
   description:
@@ -116,8 +119,8 @@ abstract class BaseDepiNinjaExecutor {
 }
 
 class RevenueExecutor extends BaseDepiNinjaExecutor {
-  async execute(args: { date: string }) {
-    return this.withErrorHandling('get_depin_revenue_by_date', async () => {
+  async execute(args: { date: string }): Promise<RevenueResponse | string> {
+    return this.withErrorHandling<RevenueResponse>('get_depin_revenue_by_date', async () => {
       const url = this.buildUrl(args);
       const data = await this.fetchFromDePINNinja(url);
       const parsedResponse = RevenueResponseSchema.parse(data);
@@ -131,8 +134,11 @@ class RevenueExecutor extends BaseDepiNinjaExecutor {
 }
 
 class RevenueDataExecutor extends BaseDepiNinjaExecutor {
-  async execute(args: { projectName: string; getRevenueHistoricalData?: boolean }) {
-    return this.withErrorHandling('get_last_depin_revenue_data', async () => {
+  async execute(args: {
+    projectName: string;
+    getRevenueHistoricalData?: boolean;
+  }): Promise<{ project: RevenueProjectResponse } | string> {
+    return this.withErrorHandling<{ project: RevenueProjectResponse }>('get_last_depin_revenue_data', async () => {
       return this.getProjectData(args.projectName, args.getRevenueHistoricalData);
     });
   }
@@ -140,7 +146,7 @@ class RevenueDataExecutor extends BaseDepiNinjaExecutor {
   private async getProjectData(
     projectName: string,
     includeHistory?: boolean
-  ): Promise<{ project: z.infer<typeof RevenueProjectSchema> }> {
+  ): Promise<{ project: RevenueProjectResponse }> {
     // First, get total pages
     const initialUrl = this.buildUrl({
       page: 1,
@@ -209,7 +215,7 @@ export class DePINNinjaTool extends APITool<{
   }
 
   // Only enable revenue by specific data for raw data
-  async getRawData(params: { date: string }) {
+  async getRawData(params: { date: string }): Promise<RevenueResponse | string> {
     return DePINNinjaTool.revenueExecutor.execute(params);
   }
 }

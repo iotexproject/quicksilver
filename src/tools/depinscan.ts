@@ -198,10 +198,16 @@ const GetProjectsToolSchema: {
   },
 };
 
+type DepinScanMetricsParams = {
+  isLatest?: boolean;
+};
+type DepinScanMetricsResponse = z.infer<typeof DepinScanMetricsSchema>[];
+type DepinScanProjectResponse = z.infer<typeof DepinScanProjectSchema>[];
+
 function filterProjects(
-  projects: z.infer<typeof DepinScanProjectSchema>[],
+  projects: DepinScanProjectResponse,
   args: z.infer<typeof GetProjectsToolSchema.parameters>
-) {
+): DepinScanProjectResponse {
   let filteredProjects = projects;
   if (args.category) {
     filteredProjects = filteredProjects.filter(p => {
@@ -255,10 +261,6 @@ function filterProjects(
   return filteredProjects;
 }
 
-type DepinScanMetricsParams = {
-  isLatest?: boolean;
-};
-
 export class DePINScanMetricsTool extends APITool<DepinScanMetricsParams> {
   schema = [{ name: GetMetricsToolSchema.name, tool: tool(GetMetricsToolSchema) }];
 
@@ -270,7 +272,7 @@ export class DePINScanMetricsTool extends APITool<DepinScanMetricsParams> {
     });
   }
 
-  async getRawData(params: DepinScanMetricsParams): Promise<z.infer<typeof DepinScanMetricsSchema>[]> {
+  async getRawData(params: DepinScanMetricsParams): Promise<DepinScanMetricsResponse> {
     const res = await fetch(DEPIN_METRICS_URL + `${params.isLatest ? '?is_latest=true' : ''}`);
     if (!res.ok) {
       throw new Error(`API request failed with status: ${res.status}`);
@@ -290,7 +292,7 @@ export class DePINScanProjectsTool extends APITool<void> {
     });
   }
 
-  async getRawData(): Promise<z.infer<typeof DepinScanProjectSchema>[]> {
+  async getRawData(): Promise<DepinScanProjectResponse> {
     const res = await fetch(DEPIN_PROJECTS_URL);
     if (!res.ok) {
       throw new Error(`API request failed with status: ${res.status}`);

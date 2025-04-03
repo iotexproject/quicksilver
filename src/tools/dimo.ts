@@ -93,7 +93,7 @@ export class DimoTool extends APITool<DimoParams> {
     this.initializeDimo();
   }
 
-  private initializeDimo() {
+  private initializeDimo(): void {
     const client_id = process.env.CLIENT_ID;
     const domain = process.env.REDIRECT_URI;
     const private_key = process.env.API_KEY;

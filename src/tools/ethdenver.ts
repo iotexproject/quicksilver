@@ -52,7 +52,7 @@ export class ETHDenverTool extends APITool<{ query: string }> {
     });
   }
 
-  async initialize() {
+  async initialize(): Promise<void> {
     if (!process.env.VECTOR_DB_URI) {
       throw new Error('Please set the VECTOR_DB_URI environment variable.');
     }
