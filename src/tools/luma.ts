@@ -1,5 +1,3 @@
-import { UUID } from 'crypto';
-
 import { tool } from 'ai';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
@@ -209,25 +207,6 @@ export class LumaEventsTool extends APITool<LumaParams> {
     }
 
     return undefined;
-  }
-
-  // Optional method to store events in knowledge base if needed
-  async storeEventsInKnowledgeBase(events: LumaEvent[], runtime: any): Promise<void> {
-    for (const event of events) {
-      await runtime.ragKnowledgeManager.createKnowledge({
-        id: uuidv4() as UUID,
-        agentId: runtime.agentId,
-        content: {
-          text: JSON.stringify(event),
-          metadata: {
-            title: event.title,
-            isMain: true,
-            isChunk: false,
-            type: 'event',
-          },
-        },
-      });
-    }
   }
 }
 
