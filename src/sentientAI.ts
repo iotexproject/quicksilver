@@ -1,12 +1,12 @@
 import { ToolSet } from 'ai';
 
-import { QueryOrchestrator } from './workflow';
 import { LLMService } from './llm/llm-service';
-import { ToolRegistry } from './registry/registry';
-import { QSTool } from './types';
-import { RawDataProvider } from './raw-data-provider';
 import { logger } from './logger/winston';
+import { RawDataProvider } from './raw-data-provider';
+import { ToolRegistry } from './registry/registry';
 import { ToolName } from './registry/toolNames';
+import { QSTool } from './types';
+import { QueryOrchestrator } from './workflow';
 export class SentientAI {
   orchestrator: QueryOrchestrator;
   private toolSet: ToolSet;

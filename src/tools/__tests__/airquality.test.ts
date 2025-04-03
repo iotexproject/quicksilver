@@ -1,7 +1,8 @@
-import { mockLLMService } from '../../__tests__/mocks';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { AirQualityTool, AIRVISUAL_BASE_URL } from '../airquality';
+
+import { mockLLMService } from '../../__tests__/mocks';
 import { LLMService } from '../../llm/llm-service';
+import { AirQualityTool, AIRVISUAL_BASE_URL } from '../airquality';
 
 const llmServiceParams = {
   fastLLMModel: 'test-fast-provider',

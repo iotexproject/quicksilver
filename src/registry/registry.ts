@@ -1,9 +1,9 @@
 import { ToolSet } from 'ai';
 
-import { QSTool } from '../types';
 import { logger } from '../logger/winston';
-import { ToolName } from './toolNames';
+import { QSTool } from '../types';
 import { availableTools } from './toolClasses';
+import { ToolName } from './toolNames';
 
 export class ToolRegistry {
   private static tools = new Map<ToolName, () => QSTool>();

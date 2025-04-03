@@ -1,8 +1,8 @@
-import { mockLLMService } from '../../__tests__/mocks';
-
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { DePINScanMetricsTool, DePINScanProjectsTool, DEPIN_METRICS_URL, DEPIN_PROJECTS_URL } from '../depinscan';
+
+import { mockLLMService } from '../../__tests__/mocks';
 import { LLMService } from '../../llm/llm-service';
+import { DePINScanMetricsTool, DePINScanProjectsTool, DEPIN_METRICS_URL, DEPIN_PROJECTS_URL } from '../depinscan';
 
 const llmServiceParams = {
   fastLLMModel: 'test-fast-provider',

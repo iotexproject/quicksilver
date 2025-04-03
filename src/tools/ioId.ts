@@ -1,5 +1,6 @@
-import { QSTool } from '../types';
 import { ethers } from 'ethers';
+
+import { QSTool } from '../types';
 
 export class IoIDTool implements QSTool {
   name: string = 'IoIDTool';

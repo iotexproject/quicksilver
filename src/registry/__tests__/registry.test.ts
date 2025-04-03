@@ -1,8 +1,9 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { ToolRegistry } from '../registry';
-import { QSTool } from '../../types';
-import { logger } from '../../logger/winston';
 import { Tool } from 'ai';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+
+import { logger } from '../../logger/winston';
+import { QSTool } from '../../types';
+import { ToolRegistry } from '../registry';
 
 const mockToolSchema: { name: string; tool: Tool } = {
   name: 'Test Tool',

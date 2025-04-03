@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import axios from 'axios';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ZodError } from 'zod';
 
 import { NewsAPITool } from '../newsapi';

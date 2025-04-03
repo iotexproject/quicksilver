@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { L1DataTool, GetL1StatsToolSchema, GetL1DailyStatsToolSchema } from '../l1data';
 import { ZodError } from 'zod';
+
+import { L1DataTool, GetL1StatsToolSchema, GetL1DailyStatsToolSchema } from '../l1data';
 
 describe('L1DataTool', () => {
   let l1DataTool: L1DataTool;

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-import { handleStreamResponse } from '../stream_utils';
+
 import { logger } from '../../logger/winston';
+import { handleStreamResponse } from '../stream_utils';
 
 describe('handleStreamResponse', () => {
   it('should handle empty stream', async () => {

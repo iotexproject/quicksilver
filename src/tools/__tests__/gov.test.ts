@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { NuclearOutagesTool } from '../gov';
 import { ZodError } from 'zod';
+
+import { NuclearOutagesTool } from '../gov';
 
 describe('NuclearOutagesTool', () => {
   let nuclearTool: NuclearOutagesTool;

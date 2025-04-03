@@ -1,10 +1,12 @@
-import { logger } from '../logger/winston';
-import { z } from 'zod';
-import { tool } from 'ai';
-import { v4 as uuidv4 } from 'uuid';
 import { UUID } from 'crypto';
 
+import { tool } from 'ai';
+import { v4 as uuidv4 } from 'uuid';
+import { z } from 'zod';
+
+
 import { APITool } from './tool';
+import { logger } from '../logger/winston';
 import { LumaEvent, LumaParams, ICalEvent } from './types/luma';
 
 // Default ETHDenver Luma calendar URL

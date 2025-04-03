@@ -1,7 +1,8 @@
-import { mockLLMService } from '../../__tests__/mocks';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { CMCBaseTool, CMC_BASE_URL } from '../cmc';
+
+import { mockLLMService } from '../../__tests__/mocks';
 import { LLMService } from '../../llm/llm-service';
+import { CMCBaseTool, CMC_BASE_URL } from '../cmc';
 
 const llmServiceParams = {
   fastLLMModel: 'test-fast-provider',

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { MessariTool } from '../messari';
+
 import { logger } from '../../logger/winston';
+import { MessariTool } from '../messari';
 
 vi.mock('global', () => ({
   fetch: vi.fn(),

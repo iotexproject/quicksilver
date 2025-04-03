@@ -1,8 +1,9 @@
+import { tool } from 'ai';
 import axios from 'axios';
 import { z } from 'zod';
-import { tool } from 'ai';
-import { logger } from '../logger/winston';
+
 import { APITool } from './tool';
+import { logger } from '../logger/winston';
 
 interface NebulaAction {
   session_id: string;

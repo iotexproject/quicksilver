@@ -1,7 +1,8 @@
-import { mockLLMService } from '../../__tests__/mocks';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { DePINNinjaTool } from '../depinninja';
+
+import { mockLLMService } from '../../__tests__/mocks';
 import { LLMService } from '../../llm/llm-service';
+import { DePINNinjaTool } from '../depinninja';
 
 const llmServiceParams = {
   fastLLMModel: 'test-fast-provider',

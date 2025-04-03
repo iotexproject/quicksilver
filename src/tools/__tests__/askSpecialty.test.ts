@@ -1,10 +1,11 @@
-import { mockLLMService } from '../../__tests__/mocks';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { AskSpecialtyTool } from '../askSpecialty';
+
+import { mockLLMService } from '../../__tests__/mocks';
 import { LLMService } from '../../llm/llm-service';
 import { ToolRegistry } from '../../registry/registry';
-import { QueryOrchestrator } from '../../workflow';
 import { ToolName } from '../../registry/toolNames';
+import { QueryOrchestrator } from '../../workflow';
+import { AskSpecialtyTool } from '../askSpecialty';
 import { DomainName } from '../specialtyDomains';
 
 const llmServiceParams = {

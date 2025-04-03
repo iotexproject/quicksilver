@@ -1,6 +1,6 @@
-import { z } from 'zod';
 import { tool } from 'ai';
 import { formatEther } from 'ethers';
+import { z } from 'zod';
 
 import { APITool } from './tool';
 import { logger } from '../logger/winston';

@@ -1,7 +1,7 @@
 import { ToolSet } from 'ai';
 
-import { logger } from './logger/winston';
 import { LLMService } from './llm/llm-service';
+import { logger } from './logger/winston';
 
 export class QueryOrchestrator {
   llmService: LLMService;

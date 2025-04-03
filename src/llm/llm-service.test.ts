@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterAll } from 'vitest';
-import { LLMService } from './llm-service';
+
 import { ModelAdapter } from './llm';
+import { LLMService } from './llm-service';
 
 // Mock environment variables
 const originalEnv = process.env;

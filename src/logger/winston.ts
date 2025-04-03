@@ -1,5 +1,5 @@
-import { createLogger, format, transports } from 'winston';
 import { TransformableInfo } from 'logform';
+import { createLogger, format, transports } from 'winston';
 
 const { combine, timestamp, printf, errors } = format;
 

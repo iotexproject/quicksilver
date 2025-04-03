@@ -1,12 +1,12 @@
-import { z } from 'zod';
 import { tool } from 'ai';
+import { z } from 'zod';
 
-import { APITool } from './tool';
-import { ToolRegistry } from '../registry/registry';
-import { LLMService } from '../llm/llm-service';
-import { QueryOrchestrator } from '../workflow';
-import { logger } from '../logger/winston';
 import { DomainConfig, domains, DomainName } from './specialtyDomains';
+import { APITool } from './tool';
+import { LLMService } from '../llm/llm-service';
+import { logger } from '../logger/winston';
+import { ToolRegistry } from '../registry/registry';
+import { QueryOrchestrator } from '../workflow';
 
 const generateDescription = (domainMap: Map<string, DomainConfig>): string => {
   const baseDescription = 'Routes queries to specialized domain agents based on the domain expertise required.';

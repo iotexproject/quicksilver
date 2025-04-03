@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { ZodError } from 'zod';
 
 import { CurrentWeatherAPITool, ForecastWeatherAPITool } from '../nubila';
-import { ZodError } from 'zod';
 
 describe('CurrentWeatherAPITool', () => {
   let tool: CurrentWeatherAPITool;

@@ -1,15 +1,15 @@
-import { logger } from '../logger/winston';
-import { QdrantClient } from '@qdrant/js-client-rest';
-import { QdrantVectorStore } from '@langchain/qdrant';
-import { OpenAIEmbeddings } from '@langchain/openai';
-import { ParentDocumentRetriever } from 'langchain/retrievers/parent_document';
-import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
-import { Redis } from '@upstash/redis';
 import { UpstashRedisStore } from '@langchain/community/storage/upstash_redis';
-import { z } from 'zod';
+import { OpenAIEmbeddings } from '@langchain/openai';
+import { QdrantVectorStore } from '@langchain/qdrant';
+import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
+import { QdrantClient } from '@qdrant/js-client-rest';
+import { Redis } from '@upstash/redis';
 import { tool } from 'ai';
+import { ParentDocumentRetriever } from 'langchain/retrievers/parent_document';
+import { z } from 'zod';
 
 import { APITool } from './tool';
+import { logger } from '../logger/winston';
 
 const NUMBER_OF_DOCS = 10;
 const COLLECTION_NAME = 'ethdenver_2';

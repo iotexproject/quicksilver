@@ -1,7 +1,8 @@
-import { mockLLMService } from '../../__tests__/mocks';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { DefiLlamaTool, DEFILLAMA_BASE_URL } from '../defillama';
+
+import { mockLLMService } from '../../__tests__/mocks';
 import { LLMService } from '../../llm/llm-service';
+import { DefiLlamaTool, DEFILLAMA_BASE_URL } from '../defillama';
 
 const llmServiceParams = {
   fastLLMModel: 'test-fast-provider',

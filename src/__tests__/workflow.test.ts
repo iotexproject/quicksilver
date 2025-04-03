@@ -1,10 +1,11 @@
-import { mockLLMService } from './mocks';
+import { Tool } from 'ai';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
-import { QueryOrchestrator } from '../workflow';
+import { mockLLMService } from './mocks';
 import { LLMService } from '../llm/llm-service';
 import { APITool } from '../tools/tool';
-import { Tool } from 'ai';
+import { QueryOrchestrator } from '../workflow';
+
 
 class TestAPITool extends APITool<any> {
   schema: { name: string; tool: Tool }[] = [

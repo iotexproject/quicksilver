@@ -1,10 +1,11 @@
-const { DIMO } = require('@dimo-network/data-sdk');
-import { z } from 'zod';
 import { tool } from 'ai';
+import { z } from 'zod';
 
 import { APITool } from './tool';
 import { Vehicle, Signal, LatestSignals, DimoParams } from './types/dimo';
 import { logger } from '../logger/winston';
+
+const { DIMO } = require('@dimo-network/data-sdk');
 const ListVehiclesToolSchema = {
   name: 'list_vehicles',
   description: 'Lists all vehicles accessible to the user',
