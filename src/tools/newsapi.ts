@@ -1,20 +1,13 @@
-import axios from "axios";
-import { z } from "zod";
-import { tool } from "ai";
-import { logger } from "../logger/winston";
-import { APITool } from "./tool";
+import { tool } from 'ai';
+import axios from 'axios';
+import { z } from 'zod';
+
+import { APITool } from './tool';
+import { logger } from '../logger/winston';
 
 const CategoryEnum = z
-  .enum([
-    "business",
-    "entertainment",
-    "general",
-    "health",
-    "science",
-    "sports",
-    "technology",
-  ])
-  .describe("News category to fetch headlines for");
+  .enum(['business', 'entertainment', 'general', 'health', 'science', 'sports', 'technology'])
+  .describe('News category to fetch headlines for');
 
 // Can be used to parse the response if needed
 // const NewsArticleSchema = z.object({
@@ -44,24 +37,20 @@ interface NewsAPIParams {
 }
 
 const GetHeadlinesToolSchema = {
-  name: "get_headlines",
-  description:
-    "Fetches today's top headlines from News API. You can filter by country, category, and search keywords.",
+  name: 'get_headlines',
+  description: "Fetches today's top headlines from News API. You can filter by country, category, and search keywords.",
   parameters: z.object({
     category: CategoryEnum.optional().describe(
-      "Category to filter headlines by: business, entertainment, general, health, science, sports, technology"
+      'Category to filter headlines by: business, entertainment, general, health, science, sports, technology'
     ),
-    q: z
-      .string()
-      .optional()
-      .describe("Keywords or phrase to search for in the headlines"),
+    q: z.string().optional().describe('Keywords or phrase to search for in the headlines'),
   }),
   execute: async (input: NewsAPIParams) => {
     try {
       const tool = new NewsAPITool();
       return await tool.getRawData(input);
     } catch (error) {
-      logger.error("Error executing get_headlines tool", error);
+      logger.error('Error executing get_headlines tool', error);
       return `Error executing get_headlines tool`;
     }
   },
@@ -82,19 +71,17 @@ interface NewsAPIResponse {
 }
 
 export class NewsAPITool extends APITool<NewsAPIParams> {
-  schema = [
-    { name: GetHeadlinesToolSchema.name, tool: tool(GetHeadlinesToolSchema) },
-  ];
+  schema = [{ name: GetHeadlinesToolSchema.name, tool: tool(GetHeadlinesToolSchema) }];
 
   constructor() {
     super({
       name: GetHeadlinesToolSchema.name,
       description: GetHeadlinesToolSchema.description,
-      baseUrl: "https://newsapi.org/v2/top-headlines",
+      baseUrl: 'https://newsapi.org/v2/top-headlines',
     });
 
     if (!process.env.NEWSAPI_API_KEY) {
-      throw new Error("Please set the NEWSAPI_API_KEY environment variable.");
+      throw new Error('Please set the NEWSAPI_API_KEY environment variable.');
     }
   }
 
@@ -106,7 +93,7 @@ export class NewsAPITool extends APITool<NewsAPIParams> {
   private async fetchNews(params: NewsAPIParams): Promise<NewsAPIResponse> {
     const apiKey = process.env.NEWSAPI_API_KEY!;
     const queryParams = new URLSearchParams({
-      country: "us",
+      country: 'us',
       apiKey,
       ...(params.category && { category: params.category }),
       ...(params.q && { q: params.q }),

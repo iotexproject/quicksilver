@@ -3,14 +3,14 @@ services:
     image: ghcr.io/iotexproject/quicksilver:latest
     env_file: configs/.env.latest
     ports:
-      - "33333:3000"
-      - "8000:8000"
+      - '33333:3000'
+      - '8000:8000'
     restart: always
 
   dimo:
     image: ghcr.io/iotexproject/quicksilver:latest
     env_file: configs/.env.dimo
     ports:
-      - "33334:3000"
-      - "8001:8000"
+      - '33334:3000'
+      - '8001:8000'
     restart: always

@@ -1,19 +1,13 @@
-import { ToolSet } from "ai";
+import { ToolSet } from 'ai';
 
-import { logger } from "./logger/winston";
-import { LLMService } from "./llm/llm-service";
+import { LLMService } from './llm/llm-service';
+import { logger } from './logger/winston';
 
 export class QueryOrchestrator {
   llmService: LLMService;
   toolSet: ToolSet = {};
 
-  constructor({
-    toolSet,
-    llmService,
-  }: {
-    toolSet: ToolSet;
-    llmService: LLMService;
-  }) {
+  constructor({ toolSet, llmService }: { toolSet: ToolSet; llmService: LLMService }) {
     this.toolSet = toolSet;
     this.llmService = llmService;
   }
@@ -22,17 +16,17 @@ export class QueryOrchestrator {
     try {
       return await this.llmService.llm.generate(input, this.toolSet);
     } catch (error) {
-      logger.error("Error processing query", error);
-      return "Processing Error, please try again later.";
+      logger.error('Error processing query', error);
+      return 'Processing Error, please try again later.';
     }
   }
 
-  async processStream(input: string): Promise<any> {
+  async processStream(input: string): Promise<Response> {
     try {
       return await this.llmService.llm.stream(input, this.toolSet);
     } catch (error) {
-      logger.error("Error processing query", error);
-      return "Processing Error, please try again later.";
+      logger.error('Error processing query', error);
+      return new Response('Processing Error, please try again later.');
     }
   }
 }

@@ -1,20 +1,21 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { MessariTool } from "../messari";
-import { logger } from "../../logger/winston";
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-vi.mock("global", () => ({
+import { logger } from '../../logger/winston';
+import { MessariTool } from '../messari';
+
+vi.mock('global', () => ({
   fetch: vi.fn(),
 }));
 
-vi.mock("../../logger/winston", () => ({
+vi.mock('../../logger/winston', () => ({
   logger: {
     error: vi.fn(),
   },
 }));
 
-describe("MessariTool", () => {
+describe('MessariTool', () => {
   let tool: MessariTool;
-  const mockApiKey = "test-api-key";
+  const mockApiKey = 'test-api-key';
 
   beforeEach(() => {
     process.env.MESSARI_API_KEY = mockApiKey;
@@ -22,26 +23,22 @@ describe("MessariTool", () => {
     vi.clearAllMocks();
   });
 
-  it("should initialize with correct properties", () => {
-    expect(tool.name).toBe("MessariCopilot");
-    expect(tool.description).toContain(
-      "Tool for generating contextual crypto responses"
-    );
+  it('should initialize with correct properties', () => {
+    expect(tool.name).toBe('MessariCopilot');
+    expect(tool.description).toContain('Tool for generating contextual crypto responses');
     expect(tool.schema).toHaveLength(1);
-    expect(tool.schema[0].name).toBe("messari_copilot");
+    expect(tool.schema[0].name).toBe('messari_copilot');
   });
 
-  it("should throw error when API key is not set", () => {
+  it('should throw error when API key is not set', () => {
     delete process.env.MESSARI_API_KEY;
-    expect(() => new MessariTool()).toThrow(
-      "Missing MESSARI_API_KEY environment variable"
-    );
+    expect(() => new MessariTool()).toThrow('Missing MESSARI_API_KEY environment variable');
   });
 
-  describe("getCopilotResponse", () => {
+  describe('getCopilotResponse', () => {
     const mockMessages = [
       {
-        role: "user" as const,
+        role: 'user' as const,
         content: "Tell me about Bitcoin's market cap",
       },
     ];
@@ -56,7 +53,7 @@ describe("MessariTool", () => {
       ],
     };
 
-    it("should handle successful API response", async () => {
+    it('should handle successful API response', async () => {
       const mockFetch = vi.fn().mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockResponse),
@@ -66,30 +63,27 @@ describe("MessariTool", () => {
 
       const result = await tool.getCopilotResponse({
         messages: mockMessages,
-        verbosity: "balanced",
-        response_format: "markdown",
+        verbosity: 'balanced',
+        response_format: 'markdown',
       });
 
       expect(result).toEqual(mockResponse);
-      expect(mockFetch).toHaveBeenCalledWith(
-        "https://api.messari.io/ai/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            "x-messari-api-key": mockApiKey,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            messages: mockMessages,
-            verbosity: "balanced",
-            response_format: "markdown",
-          }),
-        }
-      );
+      expect(mockFetch).toHaveBeenCalledWith('https://api.messari.io/ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'x-messari-api-key': mockApiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: mockMessages,
+          verbosity: 'balanced',
+          response_format: 'markdown',
+        }),
+      });
     });
 
-    it("should handle API error response", async () => {
-      const errorMessage = "API Error";
+    it('should handle API error response', async () => {
+      const errorMessage = 'API Error';
       const mockFetch = vi.fn().mockResolvedValueOnce({
         ok: false,
         text: () => Promise.resolve(errorMessage),
@@ -104,7 +98,7 @@ describe("MessariTool", () => {
       ).rejects.toThrow(`Messari API error: ${errorMessage}`);
     });
 
-    it("should use default values for optional parameters", async () => {
+    it('should use default values for optional parameters', async () => {
       const mockFetch = vi.fn().mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockResponse),
@@ -117,7 +111,7 @@ describe("MessariTool", () => {
       });
 
       expect(mockFetch).toHaveBeenCalledWith(
-        "https://api.messari.io/ai/v1/chat/completions",
+        'https://api.messari.io/ai/v1/chat/completions',
         expect.objectContaining({
           body: expect.stringContaining('"verbosity":"balanced"'),
         })
@@ -125,12 +119,12 @@ describe("MessariTool", () => {
     });
   });
 
-  describe("getRawData", () => {
-    it("should delegate to getCopilotResponse", async () => {
+  describe('getRawData', () => {
+    it('should delegate to getCopilotResponse', async () => {
       const mockMessages = [
         {
-          role: "user" as const,
-          content: "Test message",
+          role: 'user' as const,
+          content: 'Test message',
         },
       ];
 
@@ -138,7 +132,7 @@ describe("MessariTool", () => {
         choices: [
           {
             message: {
-              content: "Test response",
+              content: 'Test response',
             },
           },
         ],
@@ -160,19 +154,19 @@ describe("MessariTool", () => {
     });
   });
 
-  describe("execute", () => {
+  describe('execute', () => {
     const mockInput = {
       messages: [
         {
-          role: "user" as const,
-          content: "Test message",
+          role: 'user' as const,
+          content: 'Test message',
         },
       ],
-      verbosity: "balanced" as const,
-      response_format: "markdown" as const,
+      verbosity: 'balanced' as const,
+      response_format: 'markdown' as const,
     };
     const executionOptions = {
-      toolCallId: "test-tool-call-id",
+      toolCallId: 'test-tool-call-id',
       messages: mockInput.messages,
     };
 
@@ -180,13 +174,13 @@ describe("MessariTool", () => {
       choices: [
         {
           message: {
-            content: "Test response",
+            content: 'Test response',
           },
         },
       ],
     };
 
-    it("should successfully execute the tool", async () => {
+    it('should successfully execute the tool', async () => {
       const mockFetch = vi.fn().mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockResponse),
@@ -194,39 +188,24 @@ describe("MessariTool", () => {
 
       global.fetch = mockFetch;
 
-      const result = await tool.schema[0].tool.execute(
-        mockInput,
-        executionOptions
-      );
+      const result = await tool.schema[0].tool.execute(mockInput, executionOptions);
 
       expect(result).toEqual(mockResponse);
-      expect(mockFetch).toHaveBeenCalledWith(
-        "https://api.messari.io/ai/v1/chat/completions",
-        expect.any(Object)
-      );
+      expect(mockFetch).toHaveBeenCalledWith('https://api.messari.io/ai/v1/chat/completions', expect.any(Object));
       expect(logger.error).not.toHaveBeenCalled();
     });
 
-    it("should handle errors and log them", async () => {
-      const mockError = new Error("API Error");
+    it('should handle errors and log them', async () => {
+      const mockError = new Error('API Error');
       const mockFetch = vi.fn().mockRejectedValueOnce(mockError);
 
       global.fetch = mockFetch;
 
-      const result = await tool.schema[0].tool.execute(
-        mockInput,
-        executionOptions
-      );
+      const result = await tool.schema[0].tool.execute(mockInput, executionOptions);
 
-      expect(result).toBe("Error executing messari_copilot tool");
-      expect(logger.error).toHaveBeenCalledWith(
-        "Error executing messari_copilot tool",
-        mockError
-      );
-      expect(mockFetch).toHaveBeenCalledWith(
-        "https://api.messari.io/ai/v1/chat/completions",
-        expect.any(Object)
-      );
+      expect(result).toBe('Error executing messari_copilot tool');
+      expect(logger.error).toHaveBeenCalledWith('Error executing messari_copilot tool', mockError);
+      expect(mockFetch).toHaveBeenCalledWith('https://api.messari.io/ai/v1/chat/completions', expect.any(Object));
     });
   });
 });

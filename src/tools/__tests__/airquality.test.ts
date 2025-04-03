@@ -1,41 +1,42 @@
-import { mockLLMService } from "../../__tests__/mocks";
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { AirQualityTool, AIRVISUAL_BASE_URL } from "../airquality";
-import { LLMService } from "../../llm/llm-service";
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+import { mockLLMService } from '../../__tests__/mocks';
+import { LLMService } from '../../llm/llm-service';
+import { AirQualityTool, AIRVISUAL_BASE_URL } from '../airquality';
 
 const llmServiceParams = {
-  fastLLMModel: "test-fast-provider",
-  llmModel: "test-provider",
+  fastLLMModel: 'test-fast-provider',
+  llmModel: 'test-provider',
 };
 
-describe("AirQualityTool", () => {
+describe('AirQualityTool', () => {
   let airQualityTool: AirQualityTool;
   const mockAirVisualResponse = {
-    status: "success",
+    status: 'success',
     data: {
-      city: "Voghera",
-      state: "Lombardy",
-      country: "Italy",
+      city: 'Voghera',
+      state: 'Lombardy',
+      country: 'Italy',
       location: {
-        type: "Point",
+        type: 'Point',
         coordinates: [9.00844961, 44.99955481],
       },
       current: {
         pollution: {
-          ts: "2025-03-28T09:00:00.000Z",
+          ts: '2025-03-28T09:00:00.000Z',
           aqius: 60,
-          mainus: "p2",
+          mainus: 'p2',
           aqicn: 20,
-          maincn: "p2",
+          maincn: 'p2',
         },
         weather: {
-          ts: "2025-03-28T10:00:00.000Z",
+          ts: '2025-03-28T10:00:00.000Z',
           tp: 17,
           pr: 1007,
           hu: 59,
           ws: 0.99,
           wd: 259,
-          ic: "04d",
+          ic: '04d',
         },
       },
     },
@@ -46,41 +47,37 @@ describe("AirQualityTool", () => {
     const originalEnv = process.env.AIRVISUAL_API_KEY;
 
     // Set mock API key
-    process.env.AIRVISUAL_API_KEY = "test-api-key";
+    process.env.AIRVISUAL_API_KEY = 'test-api-key';
 
     airQualityTool = new AirQualityTool();
-    vi.stubGlobal("fetch", vi.fn());
-    vi.mock("../../llm/llm-service", () => mockLLMService);
+    vi.stubGlobal('fetch', vi.fn());
+    vi.mock('../../llm/llm-service', () => mockLLMService);
 
     // Restore original env
     process.env.AIRVISUAL_API_KEY = originalEnv;
   });
 
-  it("should initialize with correct properties", () => {
-    expect(airQualityTool.name).toBe("get_nearest_city_air_quality");
-    expect(airQualityTool.description).toContain(
-      "Fetches air quality data for the nearest city"
-    );
+  it('should initialize with correct properties', () => {
+    expect(airQualityTool.name).toBe('get_nearest_city_air_quality');
+    expect(airQualityTool.description).toContain('Fetches air quality data for the nearest city');
     expect(airQualityTool.schema).toHaveLength(1);
-    expect(airQualityTool.schema[0].name).toBe("get_nearest_city_air_quality");
+    expect(airQualityTool.schema[0].name).toBe('get_nearest_city_air_quality');
   });
 
-  it("should throw error when API key is not set", () => {
+  it('should throw error when API key is not set', () => {
     // Temporarily remove API key
     const originalKey = process.env.AIRVISUAL_API_KEY;
     delete process.env.AIRVISUAL_API_KEY;
 
-    expect(() => new AirQualityTool()).toThrow(
-      "AIRVISUAL_API_KEY environment variable is required"
-    );
+    expect(() => new AirQualityTool()).toThrow('AIRVISUAL_API_KEY environment variable is required');
 
     // Restore API key
     process.env.AIRVISUAL_API_KEY = originalKey;
   });
 
-  describe("execute", () => {
+  describe('execute', () => {
     const executionOptions = {
-      toolCallId: "test-call-id",
+      toolCallId: 'test-call-id',
       messages: [],
       llm: new LLMService(llmServiceParams),
     };
@@ -92,7 +89,7 @@ describe("AirQualityTool", () => {
       } as Response);
     });
 
-    it("should fetch air quality data for given coordinates", async () => {
+    it('should fetch air quality data for given coordinates', async () => {
       const result = await airQualityTool.schema[0].tool.execute(
         {
           latitude: 44.99955481,
@@ -102,41 +99,41 @@ describe("AirQualityTool", () => {
       );
 
       expect(result).toEqual({
-        city: "Voghera",
-        state: "Lombardy",
-        country: "Italy",
+        city: 'Voghera',
+        state: 'Lombardy',
+        country: 'Italy',
         location: {
-          type: "Point",
+          type: 'Point',
           coordinates: [9.00844961, 44.99955481],
         },
         current: {
           pollution: {
-            timestamp: "2025-03-28T09:00:00.000Z",
+            timestamp: '2025-03-28T09:00:00.000Z',
             aqiUS: 60,
-            mainPollutantUS: "p2",
+            mainPollutantUS: 'p2',
             aqiCN: 20,
-            mainPollutantCN: "p2",
+            mainPollutantCN: 'p2',
           },
         },
         units: {
           pollutants: {
-            p2: { name: "PM2.5 (Fine particulate matter)", unit: "µg/m³" },
-            p1: { name: "PM10 (Coarse particulate matter)", unit: "µg/m³" },
-            o3: { name: "Ozone (O3)", unit: "ppb" },
-            n2: { name: "Nitrogen dioxide (NO2)", unit: "ppb" },
-            s2: { name: "Sulfur dioxide (SO2)", unit: "ppb" },
-            co: { name: "Carbon monoxide (CO)", unit: "ppm" },
+            p2: { name: 'PM2.5 (Fine particulate matter)', unit: 'µg/m³' },
+            p1: { name: 'PM10 (Coarse particulate matter)', unit: 'µg/m³' },
+            o3: { name: 'Ozone (O3)', unit: 'ppb' },
+            n2: { name: 'Nitrogen dioxide (NO2)', unit: 'ppb' },
+            s2: { name: 'Sulfur dioxide (SO2)', unit: 'ppb' },
+            co: { name: 'Carbon monoxide (CO)', unit: 'ppm' },
           },
           aqi: {
-            aqius: "US EPA standard (0-500 scale)",
-            aqicn: "China MEP standard (0-500 scale)",
+            aqius: 'US EPA standard (0-500 scale)',
+            aqicn: 'China MEP standard (0-500 scale)',
             pollutantCodes: {
-              p1: "PM10",
-              p2: "PM2.5",
-              o3: "Ozone",
-              n2: "NO2",
-              s2: "SO2",
-              co: "CO",
+              p1: 'PM10',
+              p2: 'PM2.5',
+              o3: 'Ozone',
+              n2: 'NO2',
+              s2: 'SO2',
+              co: 'CO',
             },
           },
         },
@@ -147,7 +144,7 @@ describe("AirQualityTool", () => {
       );
     });
 
-    it("should handle API errors", async () => {
+    it('should handle API errors', async () => {
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: false,
         status: 404,
@@ -161,11 +158,11 @@ describe("AirQualityTool", () => {
         executionOptions
       );
 
-      expect(result).toBe("Error executing get_nearest_city_air_quality tool");
+      expect(result).toBe('Error executing get_nearest_city_air_quality tool');
     });
 
-    it("should handle network errors", async () => {
-      vi.mocked(fetch).mockRejectedValueOnce(new Error("Network error"));
+    it('should handle network errors', async () => {
+      vi.mocked(fetch).mockRejectedValueOnce(new Error('Network error'));
 
       const result = await airQualityTool.schema[0].tool.execute(
         {
@@ -175,12 +172,12 @@ describe("AirQualityTool", () => {
         executionOptions
       );
 
-      expect(result).toBe("Error executing get_nearest_city_air_quality tool");
+      expect(result).toBe('Error executing get_nearest_city_air_quality tool');
     });
 
-    it("should handle invalid response format", async () => {
+    it('should handle invalid response format', async () => {
       const invalidResponse = {
-        status: "error",
+        status: 'error',
         data: null,
       };
 
@@ -197,7 +194,7 @@ describe("AirQualityTool", () => {
         executionOptions
       );
 
-      expect(result).toBe("Error executing get_nearest_city_air_quality tool");
+      expect(result).toBe('Error executing get_nearest_city_air_quality tool');
     });
   });
 });

@@ -202,8 +202,8 @@ You can configure both the fast LLM and primary LLM providers in the SentientAI 
 
 ```typescript
 new SentientAI({
-  fastLLMProvider: "openai", // For quick processing
-  llmProvider: "deepseek", // For main reasoning
+  fastLLMProvider: 'openai', // For quick processing
+  llmProvider: 'deepseek', // For main reasoning
 });
 ```
 
@@ -308,7 +308,7 @@ PORT=8003
 ### Docker Compose Example
 
 ```yaml
-version: "3"
+version: '3'
 
 services:
   # Weather instance
@@ -316,7 +316,7 @@ services:
     image: qs:main
     env_file: ${CONFIG_PATH:-configs/instances/weather.env}
     ports:
-      - "8001:8000"
+      - '8001:8000'
     restart: always
 
   # News instance
@@ -324,7 +324,7 @@ services:
     image: qs:main
     env_file: ${CONFIG_PATH:-configs/instances/news.env}
     ports:
-      - "8002:8000"
+      - '8002:8000'
     restart: always
 
   # IoT instance
@@ -332,7 +332,7 @@ services:
     image: qs:main
     env_file: ${CONFIG_PATH:-configs/instances/iot.env}
     ports:
-      - "8003:8000"
+      - '8003:8000'
     restart: always
 ```
 

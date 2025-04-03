@@ -1,0 +1,13 @@
+node_modules
+dist
+coverage
+.env
+.env.*
+configs
+.gitignore
+.git
+.vscode
+.DS_Store
+.idea
+.eslintrc.js
+pnpm-lock.yaml

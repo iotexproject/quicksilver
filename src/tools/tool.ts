@@ -1,6 +1,6 @@
-import { Tool } from "ai";
+import { Tool } from 'ai';
 
-import { QSTool } from "../types";
+import { QSTool } from '../types';
 
 export abstract class APITool<T> implements QSTool {
   name: string; // name of the tool, used in tool selection
@@ -10,15 +10,10 @@ export abstract class APITool<T> implements QSTool {
   baseUrl: string; // used to fetch data from the tool
   schema: { name: string; tool: Tool }[];
 
-  constructor(params: {
-    name: string;
-    description: string;
-    baseUrl: string;
-    twitterAccount?: string;
-  }) {
+  constructor(params: { name: string; description: string; baseUrl: string; twitterAccount?: string }) {
     this.name = params.name;
     this.description = params.description;
-    this.twitterAccount = params.twitterAccount || "";
+    this.twitterAccount = params.twitterAccount || '';
     this.baseUrl = params.baseUrl;
   }
 

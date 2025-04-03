@@ -1,3 +1,6 @@
+import { anthropic } from '@ai-sdk/anthropic';
+import { deepseek } from '@ai-sdk/deepseek';
+import { openai } from '@ai-sdk/openai';
 import {
   generateText,
   streamText,
@@ -5,20 +8,16 @@ import {
   ToolSet,
   createDataStreamResponse,
   smoothStream,
-} from "ai";
-import { openai } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { deepseek } from "@ai-sdk/deepseek";
+  StepResult,
+} from 'ai';
 
-import { logger } from "../logger/winston";
+import { logger } from '../logger/winston';
 
-export const TOOL_CALL_LIMIT = process.env.TOOL_CALL_LIMIT
-  ? parseInt(process.env.TOOL_CALL_LIMIT)
-  : 20;
+export const TOOL_CALL_LIMIT = process.env.TOOL_CALL_LIMIT ? parseInt(process.env.TOOL_CALL_LIMIT) : 20;
 
 export interface LLM {
   generate(prompt: string, tools?: ToolSet): Promise<string>;
-  stream(prompt: string, tools?: ToolSet): Promise<any>;
+  stream(prompt: string, tools?: ToolSet): Promise<Response>;
 }
 
 export class DummyLLM implements LLM {
@@ -30,8 +29,8 @@ export class DummyLLM implements LLM {
     });
   }
 
-  async stream(_: string): Promise<string> {
-    return "Dummy LLM Response to the user's request.";
+  async stream(_: string): Promise<Response> {
+    return new Response("Dummy LLM Response to the user's request.");
   }
 }
 
@@ -39,11 +38,11 @@ export class ModelAdapter implements LLM {
   model: LanguageModel;
 
   constructor({ provider, model }: { provider: string; model: string }) {
-    if (provider === "anthropic") {
+    if (provider === 'anthropic') {
       this.model = anthropic(model);
-    } else if (provider === "openai") {
+    } else if (provider === 'openai') {
       this.model = openai(model);
-    } else if (provider === "deepseek") {
+    } else if (provider === 'deepseek') {
       this.model = deepseek(model);
     } else {
       throw new Error(`Unsupported provider: ${provider}`);
@@ -63,25 +62,22 @@ export class ModelAdapter implements LLM {
         tools,
         maxSteps: TOOL_CALL_LIMIT,
         experimental_continueSteps: true,
-        onStepFinish(step: any) {
+        onStepFinish(step: StepResult<ToolSet>) {
           ModelAdapter.logStep(step);
         },
       });
       console.timeEnd(`generation with model: ${this.model.modelId}`);
       return response.text;
     } catch (error) {
-      logger.error(
-        `Error generating text with model ${this.model.modelId}:`,
-        error
-      );
-      throw new Error("Error generating response");
+      logger.error(`Error generating text with model ${this.model.modelId}:`, error);
+      throw new Error('Error generating response');
     }
   }
 
-  async stream(prompt: string, tools?: ToolSet) {
-    console.log("stream", prompt);
+  async stream(prompt: string, tools?: ToolSet): Promise<Response> {
+    console.log('stream', prompt);
     return createDataStreamResponse({
-      execute: (dataStream) => {
+      execute: dataStream => {
         const result = streamText({
           model: this.model,
           system:
@@ -92,9 +88,9 @@ export class ModelAdapter implements LLM {
           tools,
           maxSteps: TOOL_CALL_LIMIT,
           experimental_continueSteps: true,
-          experimental_transform: smoothStream({ chunking: "word" }),
+          experimental_transform: smoothStream({ chunking: 'word' }),
           experimental_generateMessageId: generateUUID,
-          onStepFinish(step: any) {
+          onStepFinish(step: StepResult<ToolSet>) {
             ModelAdapter.logStep(step);
           },
         });
@@ -106,19 +102,19 @@ export class ModelAdapter implements LLM {
     });
   }
 
-  static logStep(step: any) {
-    console.log("step: ", step.text);
-    console.log("toolCalls: ", step.toolCalls);
-    console.log("toolResults: ", step.toolResults);
-    console.log("finishReason: ", step.finishReason);
-    console.log("usage: ", step.usage);
+  static logStep(step: StepResult<ToolSet>): void {
+    console.log('step: ', step.text);
+    console.log('toolCalls: ', step.toolCalls);
+    console.log('toolResults: ', step.toolResults);
+    console.log('finishReason: ', step.finishReason);
+    console.log('usage: ', step.usage);
   }
 }
 
 function generateUUID(): string {
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
     const r = (Math.random() * 16) | 0;
-    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
 }

@@ -1,5 +1,5 @@
-import { QSTool } from "./types";
-import { APITool } from "./tools/tool";
+import { APITool } from './tools/tool';
+import { QSTool } from './types';
 
 export class RawDataProvider {
   async process(tool: QSTool, params: Record<string, any>): Promise<any> {
