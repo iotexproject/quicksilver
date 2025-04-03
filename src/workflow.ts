@@ -21,12 +21,12 @@ export class QueryOrchestrator {
     }
   }
 
-  async processStream(input: string): Promise<any> {
+  async processStream(input: string): Promise<Response> {
     try {
       return await this.llmService.llm.stream(input, this.toolSet);
     } catch (error) {
       logger.error('Error processing query', error);
-      return 'Processing Error, please try again later.';
+      return new Response('Processing Error, please try again later.');
     }
   }
 }
