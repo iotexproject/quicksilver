@@ -4,7 +4,6 @@ import { tool } from 'ai';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
-
 import { APITool } from './tool';
 import { logger } from '../logger/winston';
 import { LumaEvent, LumaParams, ICalEvent } from './types/luma';
@@ -102,7 +101,6 @@ export class LumaEventsTool extends APITool<LumaParams> {
     }
   }
 
-  // Simple iCalendar parser
   private parseICalendar(icsData: string): ICalEvent[] {
     const events: ICalEvent[] = [];
     let currentEvent: ICalEvent | null = null;
@@ -118,35 +116,49 @@ export class LumaEventsTool extends APITool<LumaParams> {
         events.push(currentEvent);
         currentEvent = null;
       } else if (currentEvent) {
-        // Handle property
-        if (line.startsWith(' ') && currentProperty) {
-          // This is a continuation of the previous property
-          const value = line.substring(1);
-          if (currentEvent[currentProperty as keyof ICalEvent]) {
-            currentEvent[currentProperty as keyof ICalEvent] += value;
-          }
-        } else {
-          const colonIndex = line.indexOf(':');
-          if (colonIndex > 0) {
-            const key = line.substring(0, colonIndex).toLowerCase();
-            const value = line.substring(colonIndex + 1);
-
-            // Handle common properties
-            if (key === 'uid' || key === 'summary' || key === 'description' || key === 'location') {
-              currentEvent[key] = value;
-            } else if (key.startsWith('dtstart')) {
-              currentEvent.dtstart = this.parseICalDate(value);
-            } else if (key.startsWith('dtend')) {
-              currentEvent.dtend = this.parseICalDate(value);
-            }
-
-            currentProperty = key;
-          }
-        }
+        currentProperty = this.handleProperty(line, currentProperty, currentEvent);
       }
     }
 
     return events;
+  }
+
+  private handleProperty(line: string, currentProperty: string, currentEvent: ICalEvent): string {
+    if (line.startsWith(' ') && currentProperty) {
+      this.continuePrevProperty(line, currentEvent, currentProperty);
+    } else {
+      currentProperty = this.startNewProperty(line, currentEvent, currentProperty);
+    }
+    return currentProperty;
+  }
+
+  private startNewProperty(line: string, currentEvent: ICalEvent, currentProperty: string): string {
+    const colonIndex = line.indexOf(':');
+    if (colonIndex > 0) {
+      const key = line.substring(0, colonIndex).toLowerCase();
+      const value = line.substring(colonIndex + 1);
+      this.handleCommonProperties(key, currentEvent, value);
+
+      currentProperty = key;
+    }
+    return currentProperty;
+  }
+
+  private continuePrevProperty(line: string, currentEvent: ICalEvent, currentProperty: string): void {
+    const value = line.substring(1);
+    if (currentEvent[currentProperty as keyof ICalEvent]) {
+      currentEvent[currentProperty as keyof ICalEvent] += value;
+    }
+  }
+
+  private handleCommonProperties(key: string, currentEvent: ICalEvent, value: string): void {
+    if (key === 'uid' || key === 'summary' || key === 'description' || key === 'location') {
+      currentEvent[key] = value;
+    } else if (key.startsWith('dtstart')) {
+      currentEvent.dtstart = this.parseICalDate(value);
+    } else if (key.startsWith('dtend')) {
+      currentEvent.dtend = this.parseICalDate(value);
+    }
   }
 
   // Parse iCalendar date format to ISO string
