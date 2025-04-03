@@ -1,8 +1,8 @@
-import { QSTool } from "../types";
-import { ethers } from "ethers";
+import { QSTool } from '../types';
+import { ethers } from 'ethers';
 
 export class IoIDTool implements QSTool {
-  name: string = "IoIDTool";
+  name: string = 'IoIDTool';
   description: string = `
     This tool can read the IoTeX blockchain to get information related to the 
     ioID decentralized identity framework. 
@@ -14,9 +14,7 @@ export class IoIDTool implements QSTool {
   provider: ethers.JsonRpcProvider;
 
   constructor() {
-    this.provider = new ethers.JsonRpcProvider(
-      "https://babel-api.mainnet.iotex.io"
-    );
+    this.provider = new ethers.JsonRpcProvider('https://babel-api.mainnet.iotex.io');
   }
 
   async execute(userInput: any): Promise<string> {
@@ -24,15 +22,15 @@ export class IoIDTool implements QSTool {
       // Parse user input to a JSON object
       userInput = JSON.parse(userInput);
     } catch (error) {
-      return "Invalid input. Please provide a JSON object with the correct query parameters.";
+      return 'Invalid input. Please provide a JSON object with the correct query parameters.';
     }
 
-    if (userInput.query === "getProjectID") {
+    if (userInput.query === 'getProjectID') {
       return await this.getProjectID(userInput.project_name);
-    } else if (userInput.query === "getProjectInfo") {
+    } else if (userInput.query === 'getProjectInfo') {
       return await this.getProjectInfo(userInput.ioID);
     } else {
-      return "Invalid query. Please provide a valid query parameter.";
+      return 'Invalid query. Please provide a valid query parameter.';
     }
   }
 
@@ -42,48 +40,44 @@ export class IoIDTool implements QSTool {
    * @returns {Promise<string>} - The project ID
    */
   async getProjectID(projectName: string): Promise<string> {
-    const contractAddress = "0xA596800891e6a95Bf737404411ef529c1F377b4e";
+    const contractAddress = '0xA596800891e6a95Bf737404411ef529c1F377b4e';
     const contractABI = [
       {
         inputs: [
           {
-            internalType: "uint256",
-            name: "_projectId",
-            type: "uint256",
+            internalType: 'uint256',
+            name: '_projectId',
+            type: 'uint256',
           },
         ],
-        name: "name",
+        name: 'name',
         outputs: [
           {
-            internalType: "string",
-            name: "",
-            type: "string",
+            internalType: 'string',
+            name: '',
+            type: 'string',
           },
         ],
-        stateMutability: "view",
-        type: "function",
+        stateMutability: 'view',
+        type: 'function',
       },
       {
         inputs: [],
-        name: "count",
+        name: 'count',
         outputs: [
           {
-            internalType: "uint256",
-            name: "",
-            type: "uint256",
+            internalType: 'uint256',
+            name: '',
+            type: 'uint256',
           },
         ],
-        stateMutability: "view",
-        type: "function",
+        stateMutability: 'view',
+        type: 'function',
       },
     ];
 
     // Create a contract instance
-    const projectContract = new ethers.Contract(
-      contractAddress,
-      contractABI,
-      this.provider
-    );
+    const projectContract = new ethers.Contract(contractAddress, contractABI, this.provider);
 
     try {
       // Compute the hash of the project name
@@ -100,9 +94,9 @@ export class IoIDTool implements QSTool {
         }
       }
 
-      return "Project not found.";
+      return 'Project not found.';
     } catch (error) {
-      return "Error retrieving project ID: " + error;
+      return 'Error retrieving project ID: ' + error;
     }
   }
 
@@ -113,6 +107,6 @@ export class IoIDTool implements QSTool {
    */
   async getProjectInfo(ioID: string): Promise<string> {
     // Not implemented yet
-    return "Not implemented yet";
+    return 'Not implemented yet';
   }
 }

@@ -1,9 +1,9 @@
-import { z } from "zod";
-import { tool } from "ai";
-import { APITool } from "./tool";
-import { logger } from "../logger/winston";
+import { z } from 'zod';
+import { tool } from 'ai';
+import { APITool } from './tool';
+import { logger } from '../logger/winston';
 
-export const DEFILLAMA_BASE_URL = "https://coins.llama.fi";
+export const DEFILLAMA_BASE_URL = 'https://coins.llama.fi';
 const MIN_CONFIDENCE = 0.8;
 
 const TokenDataSchema = z.object({
@@ -38,7 +38,7 @@ const DefiLlamaChartResponseSchema = z.object({
 const SearchWidthParamSchema = z
   .string()
   .optional()
-  .default("6h")
+  .default('6h')
   .describe(
     "Time range on either side to find price data. Accepts candle notation: W (week), D (day), H (hour), M (minute). Examples: '4h', '1d', '30m'."
   );
@@ -50,9 +50,9 @@ const TokenIdentifierSchema = z
   );
 
 const GetTokenPriceToolSchema = {
-  name: "get_token_price",
+  name: 'get_token_price',
   description:
-    "Fetches token prices from DefiLlama using chain and token addresses in the format {chain}:{address}. If no token address and chain is provided, try get_cmc_token_map tool to retrieve the token available networks and addresses.",
+    'Fetches token prices from DefiLlama using chain and token addresses in the format {chain}:{address}. If no token address and chain is provided, try get_cmc_token_map tool to retrieve the token available networks and addresses.',
   parameters: z.object({
     coins: z.array(TokenIdentifierSchema),
     searchWidth: SearchWidthParamSchema,
@@ -64,47 +64,32 @@ const GetTokenPriceToolSchema = {
 };
 
 const GetHistoricalTokenPriceToolSchema = {
-  name: "get_historical_token_price",
-  description:
-    "Fetches historical token prices from DefiLlama for specified tokens at a given timestamp",
+  name: 'get_historical_token_price',
+  description: 'Fetches historical token prices from DefiLlama for specified tokens at a given timestamp',
   parameters: z.object({
     coins: z.array(TokenIdentifierSchema),
-    timestamp: z
-      .number()
-      .describe("UNIX timestamp of time when you want historical prices"),
+    timestamp: z.number().describe('UNIX timestamp of time when you want historical prices'),
     searchWidth: SearchWidthParamSchema,
   }),
-  execute: async (args: {
-    coins: string[];
-    timestamp: number;
-    searchWidth?: string;
-  }) => {
+  execute: async (args: { coins: string[]; timestamp: number; searchWidth?: string }) => {
     const tool = new HistoricalPriceExecutor();
     return tool.execute(args);
   },
 };
 
 const GetTokenPriceChartToolSchema = {
-  name: "get_token_price_chart",
-  description:
-    "Fetches token price charts from DefiLlama with regular time intervals",
+  name: 'get_token_price_chart',
+  description: 'Fetches token price charts from DefiLlama with regular time intervals',
   parameters: z.object({
     coins: z.array(TokenIdentifierSchema),
-    start: z
-      .number()
-      .describe(
-        "UNIX timestamp of earliest data point requested. Use either start OR end, not both."
-      ),
+    start: z.number().describe('UNIX timestamp of earliest data point requested. Use either start OR end, not both.'),
     end: z
       .number()
       .optional()
       .describe(
-        "UNIX timestamp of latest data point requested. Note: If both start and end are provided, start will be used and end will be ignored."
+        'UNIX timestamp of latest data point requested. Note: If both start and end are provided, start will be used and end will be ignored.'
       ),
-    span: z
-      .number()
-      .optional()
-      .describe("Number of data points to return, defaults to 0"),
+    span: z.number().optional().describe('Number of data points to return, defaults to 0'),
     period: z
       .string()
       .optional()
@@ -136,35 +121,22 @@ const DefiLlamaPercentageResponseSchema = z.object({
 });
 
 const GetTokenPricePercentageChangeToolSchema = {
-  name: "get_token_price_percentage_change",
-  description:
-    "Fetches percentage change in token prices over specified time period",
+  name: 'get_token_price_percentage_change',
+  description: 'Fetches percentage change in token prices over specified time period',
   parameters: z.object({
     coins: z.array(TokenIdentifierSchema),
-    timestamp: z
-      .number()
-      .optional()
-      .describe("UNIX timestamp of reference point, defaults to current time"),
+    timestamp: z.number().optional().describe('UNIX timestamp of reference point, defaults to current time'),
     lookForward: z
       .boolean()
       .optional()
       .default(false)
-      .describe(
-        "Whether to look forward from timestamp (true) or backward (false)"
-      ),
+      .describe('Whether to look forward from timestamp (true) or backward (false)'),
     period: z
       .string()
       .optional()
-      .describe(
-        "Time period for percentage calculation. Examples: '1d', '3w', '1m'. Defaults to 24 hours."
-      ),
+      .describe("Time period for percentage calculation. Examples: '1d', '3w', '1m'. Defaults to 24 hours."),
   }),
-  execute: async (args: {
-    coins: string[];
-    timestamp?: number;
-    lookForward?: boolean;
-    period?: string;
-  }) => {
+  execute: async (args: { coins: string[]; timestamp?: number; lookForward?: boolean; period?: string }) => {
     const tool = new PercentageExecutor();
     return tool.execute(args);
   },
@@ -179,10 +151,7 @@ abstract class DefiLlamaExecutor {
     return response.json();
   }
 
-  protected async withErrorHandling<T>(
-    operation: string,
-    action: () => Promise<T>
-  ): Promise<T | string> {
+  protected async withErrorHandling<T>(operation: string, action: () => Promise<T>): Promise<T | string> {
     try {
       return await action();
     } catch (error) {
@@ -196,7 +165,7 @@ abstract class DefiLlamaExecutor {
 
 class CurrentPriceExecutor extends DefiLlamaExecutor {
   async execute(args: { coins: string[]; searchWidth?: string }) {
-    return this.withErrorHandling("get_token_price", async () => {
+    return this.withErrorHandling('get_token_price', async () => {
       const url = this.buildUrl(args);
       const data = await this.fetchFromDefiLlama(url);
       const parsedResponse = DefiLlamaPriceResponseSchema.parse(data);
@@ -205,45 +174,37 @@ class CurrentPriceExecutor extends DefiLlamaExecutor {
   }
 
   private buildUrl(params: { coins: string[]; searchWidth?: string }): string {
-    const searchWidth = params.searchWidth || "4h";
-    const coinsString = params.coins.join(",");
+    const searchWidth = params.searchWidth || '4h';
+    const coinsString = params.coins.join(',');
     return `${DEFILLAMA_BASE_URL}/prices/current/${coinsString}?searchWidth=${searchWidth}`;
   }
 
-  private parseResult(
-    parsedResponse: z.infer<typeof DefiLlamaPriceResponseSchema>
-  ) {
-    const results = Object.entries(parsedResponse.coins).map(
-      ([tokenKey, tokenData]) => {
-        if (tokenData.confidence < MIN_CONFIDENCE) {
-          return {
-            token: tokenKey,
-            error: `Price data has low confidence (${tokenData.confidence})`,
-          };
-        }
-
+  private parseResult(parsedResponse: z.infer<typeof DefiLlamaPriceResponseSchema>) {
+    const results = Object.entries(parsedResponse.coins).map(([tokenKey, tokenData]) => {
+      if (tokenData.confidence < MIN_CONFIDENCE) {
         return {
           token: tokenKey,
-          symbol: tokenData.symbol,
-          price: tokenData.price,
-          decimals: tokenData.decimals,
-          timestamp: tokenData.timestamp,
-          confidence: tokenData.confidence,
+          error: `Price data has low confidence (${tokenData.confidence})`,
         };
       }
-    );
+
+      return {
+        token: tokenKey,
+        symbol: tokenData.symbol,
+        price: tokenData.price,
+        decimals: tokenData.decimals,
+        timestamp: tokenData.timestamp,
+        confidence: tokenData.confidence,
+      };
+    });
 
     return { prices: results };
   }
 }
 
 class HistoricalPriceExecutor extends DefiLlamaExecutor {
-  async execute(args: {
-    coins: string[];
-    timestamp: number;
-    searchWidth?: string;
-  }) {
-    return this.withErrorHandling("get_historical_token_price", async () => {
+  async execute(args: { coins: string[]; timestamp: number; searchWidth?: string }) {
+    return this.withErrorHandling('get_historical_token_price', async () => {
       const url = this.buildUrl(args);
       const data = await this.fetchFromDefiLlama(url);
       const parsedResponse = DefiLlamaPriceResponseSchema.parse(data);
@@ -251,39 +212,31 @@ class HistoricalPriceExecutor extends DefiLlamaExecutor {
     });
   }
 
-  private buildUrl(params: {
-    coins: string[];
-    timestamp?: number;
-    searchWidth?: string;
-  }) {
-    const searchWidth = params.searchWidth || "4h";
-    const coinsString = params.coins.join(",");
-    const timestampSegment = params.timestamp ? `/${params.timestamp}` : "";
+  private buildUrl(params: { coins: string[]; timestamp?: number; searchWidth?: string }) {
+    const searchWidth = params.searchWidth || '4h';
+    const coinsString = params.coins.join(',');
+    const timestampSegment = params.timestamp ? `/${params.timestamp}` : '';
     return `${DEFILLAMA_BASE_URL}/prices/historical${timestampSegment}/${coinsString}?searchWidth=${searchWidth}`;
   }
 
-  private parseResult(
-    parsedResponse: z.infer<typeof DefiLlamaPriceResponseSchema>
-  ) {
-    const results = Object.entries(parsedResponse.coins).map(
-      ([tokenKey, tokenData]) => {
-        if (tokenData.confidence < MIN_CONFIDENCE) {
-          return {
-            token: tokenKey,
-            error: `Price data has low confidence (${tokenData.confidence})`,
-          };
-        }
-
+  private parseResult(parsedResponse: z.infer<typeof DefiLlamaPriceResponseSchema>) {
+    const results = Object.entries(parsedResponse.coins).map(([tokenKey, tokenData]) => {
+      if (tokenData.confidence < MIN_CONFIDENCE) {
         return {
           token: tokenKey,
-          symbol: tokenData.symbol,
-          price: tokenData.price,
-          decimals: tokenData.decimals,
-          timestamp: tokenData.timestamp,
-          confidence: tokenData.confidence,
+          error: `Price data has low confidence (${tokenData.confidence})`,
         };
       }
-    );
+
+      return {
+        token: tokenKey,
+        symbol: tokenData.symbol,
+        price: tokenData.price,
+        decimals: tokenData.decimals,
+        timestamp: tokenData.timestamp,
+        confidence: tokenData.confidence,
+      };
+    });
 
     return { prices: results };
   }
@@ -298,7 +251,7 @@ class ChartExecutor extends DefiLlamaExecutor {
     period?: string;
     searchWidth?: string;
   }) {
-    return this.withErrorHandling("get_token_price_chart", async () => {
+    return this.withErrorHandling('get_token_price_chart', async () => {
       const params = { ...args };
       if (params.start && params.end) {
         params.end = undefined; // Ignore end if start is provided
@@ -352,25 +305,25 @@ class ChartExecutor extends DefiLlamaExecutor {
     period?: string;
     searchWidth?: string;
   }): string {
-    const coinsString = params.coins.join(",");
+    const coinsString = params.coins.join(',');
 
     const queryParams = new URLSearchParams();
-    queryParams.append("start", params.start.toString());
+    queryParams.append('start', params.start.toString());
 
     if (params.end) {
-      queryParams.append("end", params.end.toString());
+      queryParams.append('end', params.end.toString());
     }
 
     if (params.span) {
-      queryParams.append("span", params.span.toString());
+      queryParams.append('span', params.span.toString());
     }
 
     if (params.period) {
-      queryParams.append("period", params.period);
+      queryParams.append('period', params.period);
     }
 
     if (params.searchWidth) {
-      queryParams.append("searchWidth", params.searchWidth);
+      queryParams.append('searchWidth', params.searchWidth);
     }
 
     return `${DEFILLAMA_BASE_URL}/chart/${coinsString}?${queryParams.toString()}`;
@@ -378,33 +331,22 @@ class ChartExecutor extends DefiLlamaExecutor {
 }
 
 class PercentageExecutor extends DefiLlamaExecutor {
-  async execute(args: {
-    coins: string[];
-    timestamp?: number;
-    lookForward?: boolean;
-    period?: string;
-  }) {
-    return this.withErrorHandling(
-      "get_token_price_percentage_change",
-      async () => {
-        const url = this.buildPercentageUrl(args);
-        const response = await this.fetchFromDefiLlama(url);
-        const parsedResponse =
-          DefiLlamaPercentageResponseSchema.parse(response);
-        const changes = this.parseResult(parsedResponse);
+  async execute(args: { coins: string[]; timestamp?: number; lookForward?: boolean; period?: string }) {
+    return this.withErrorHandling('get_token_price_percentage_change', async () => {
+      const url = this.buildPercentageUrl(args);
+      const response = await this.fetchFromDefiLlama(url);
+      const parsedResponse = DefiLlamaPercentageResponseSchema.parse(response);
+      const changes = this.parseResult(parsedResponse);
 
-        return { changes };
-      }
-    );
+      return { changes };
+    });
   }
 
   private parseResult(parsedResponse: { coins: Record<string, number> }) {
-    return Object.entries(parsedResponse.coins).map(
-      ([token, percentageChange]) => ({
-        token,
-        percentageChange,
-      })
-    );
+    return Object.entries(parsedResponse.coins).map(([token, percentageChange]) => ({
+      token,
+      percentageChange,
+    }));
   }
 
   private buildPercentageUrl(params: {
@@ -413,24 +355,24 @@ class PercentageExecutor extends DefiLlamaExecutor {
     lookForward?: boolean;
     period?: string;
   }): string {
-    const coinsString = params.coins.join(",");
+    const coinsString = params.coins.join(',');
 
     const queryParams = new URLSearchParams();
 
     if (params.timestamp) {
-      queryParams.append("timestamp", params.timestamp.toString());
+      queryParams.append('timestamp', params.timestamp.toString());
     }
 
     if (params.lookForward !== undefined) {
-      queryParams.append("lookForward", params.lookForward.toString());
+      queryParams.append('lookForward', params.lookForward.toString());
     }
 
     if (params.period) {
-      queryParams.append("period", params.period);
+      queryParams.append('period', params.period);
     }
 
     const queryString = queryParams.toString();
-    return `${DEFILLAMA_BASE_URL}/percentage/${coinsString}${queryString ? "?" + queryString : ""}`;
+    return `${DEFILLAMA_BASE_URL}/percentage/${coinsString}${queryString ? '?' + queryString : ''}`;
   }
 }
 

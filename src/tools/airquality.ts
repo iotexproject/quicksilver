@@ -1,18 +1,18 @@
-import { z } from "zod";
-import { tool } from "ai";
-import { APITool } from "./tool";
-import { logger } from "../logger/winston";
+import { z } from 'zod';
+import { tool } from 'ai';
+import { APITool } from './tool';
+import { logger } from '../logger/winston';
 
-export const AIRVISUAL_BASE_URL = "https://api.airvisual.com/v2";
+export const AIRVISUAL_BASE_URL = 'https://api.airvisual.com/v2';
 
 const AirQualityResponseSchema = z.object({
-  status: z.literal("success"),
+  status: z.literal('success'),
   data: z.object({
     city: z.string(),
     state: z.string(),
     country: z.string(),
     location: z.object({
-      type: z.literal("Point"),
+      type: z.literal('Point'),
       coordinates: z.tuple([z.number(), z.number()]),
     }),
     current: z.object({
@@ -28,12 +28,11 @@ const AirQualityResponseSchema = z.object({
 });
 
 const GetNearestCityAirQualityToolSchema = {
-  name: "get_nearest_city_air_quality",
-  description:
-    "Fetches air quality data for the nearest city using specified GPS coordinates. ",
+  name: 'get_nearest_city_air_quality',
+  description: 'Fetches air quality data for the nearest city using specified GPS coordinates. ',
   parameters: z.object({
-    latitude: z.number().describe("Latitude coordinate"),
-    longitude: z.number().describe("Longitude coordinate"),
+    latitude: z.number().describe('Latitude coordinate'),
+    longitude: z.number().describe('Longitude coordinate'),
   }),
   execute: async (args: { latitude: number; longitude: number }) => {
     const tool = new NearestCityExecutor();
@@ -50,10 +49,7 @@ abstract class AirQualityExecutor {
     return response.json();
   }
 
-  protected async withErrorHandling<T>(
-    operation: string,
-    action: () => Promise<T>
-  ): Promise<T | string> {
+  protected async withErrorHandling<T>(operation: string, action: () => Promise<T>): Promise<T | string> {
     try {
       return await action();
     } catch (error) {
@@ -67,7 +63,7 @@ abstract class AirQualityExecutor {
 
 class NearestCityExecutor extends AirQualityExecutor {
   async execute(args: { latitude: number; longitude: number }) {
-    return this.withErrorHandling("get_nearest_city_air_quality", async () => {
+    return this.withErrorHandling('get_nearest_city_air_quality', async () => {
       const url = this.buildUrl(args);
       const data = await this.fetchFromAirVisual(url);
       const parsedResponse = AirQualityResponseSchema.parse(data);
@@ -80,9 +76,7 @@ class NearestCityExecutor extends AirQualityExecutor {
     return `${AIRVISUAL_BASE_URL}/nearest_city?lat=${latitude}&lon=${longitude}&key=${process.env.AIRVISUAL_API_KEY}`;
   }
 
-  private parseResult(
-    parsedResponse: z.infer<typeof AirQualityResponseSchema>
-  ) {
+  private parseResult(parsedResponse: z.infer<typeof AirQualityResponseSchema>) {
     const { data } = parsedResponse;
     return {
       city: data.city,
@@ -100,23 +94,23 @@ class NearestCityExecutor extends AirQualityExecutor {
       },
       units: {
         pollutants: {
-          p2: { name: "PM2.5 (Fine particulate matter)", unit: "µg/m³" },
-          p1: { name: "PM10 (Coarse particulate matter)", unit: "µg/m³" },
-          o3: { name: "Ozone (O3)", unit: "ppb" },
-          n2: { name: "Nitrogen dioxide (NO2)", unit: "ppb" },
-          s2: { name: "Sulfur dioxide (SO2)", unit: "ppb" },
-          co: { name: "Carbon monoxide (CO)", unit: "ppm" },
+          p2: { name: 'PM2.5 (Fine particulate matter)', unit: 'µg/m³' },
+          p1: { name: 'PM10 (Coarse particulate matter)', unit: 'µg/m³' },
+          o3: { name: 'Ozone (O3)', unit: 'ppb' },
+          n2: { name: 'Nitrogen dioxide (NO2)', unit: 'ppb' },
+          s2: { name: 'Sulfur dioxide (SO2)', unit: 'ppb' },
+          co: { name: 'Carbon monoxide (CO)', unit: 'ppm' },
         },
         aqi: {
-          aqius: "US EPA standard (0-500 scale)",
-          aqicn: "China MEP standard (0-500 scale)",
+          aqius: 'US EPA standard (0-500 scale)',
+          aqicn: 'China MEP standard (0-500 scale)',
           pollutantCodes: {
-            p1: "PM10",
-            p2: "PM2.5",
-            o3: "Ozone",
-            n2: "NO2",
-            s2: "SO2",
-            co: "CO",
+            p1: 'PM10',
+            p2: 'PM2.5',
+            o3: 'Ozone',
+            n2: 'NO2',
+            s2: 'SO2',
+            co: 'CO',
           },
         },
       },
@@ -142,10 +136,10 @@ export class AirQualityTool extends APITool<{
       name: GetNearestCityAirQualityToolSchema.name,
       description: GetNearestCityAirQualityToolSchema.description,
       baseUrl: AIRVISUAL_BASE_URL,
-      twitterAccount: "IQAir",
+      twitterAccount: 'IQAir',
     });
     if (!process.env.AIRVISUAL_API_KEY) {
-      throw new Error("AIRVISUAL_API_KEY environment variable is required");
+      throw new Error('AIRVISUAL_API_KEY environment variable is required');
     }
   }
 

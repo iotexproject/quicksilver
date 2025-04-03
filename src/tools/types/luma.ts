@@ -21,4 +21,4 @@ export interface ICalEvent {
   location?: string;
   dtstart?: string;
   dtend?: string;
-} 
+}

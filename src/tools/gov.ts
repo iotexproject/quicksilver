@@ -1,44 +1,36 @@
-import { z } from "zod";
-import { tool } from "ai";
-import { APITool } from "./tool";
-import { logger } from "../logger/winston";
+import { z } from 'zod';
+import { tool } from 'ai';
+import { APITool } from './tool';
+import { logger } from '../logger/winston';
 
 const DateRangeSchema = z
   .object({
     start: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/)
-      .describe("Start date in YYYY-MM-DD format"),
+      .describe('Start date in YYYY-MM-DD format'),
     end: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/)
-      .describe("End date in YYYY-MM-DD format"),
+      .describe('End date in YYYY-MM-DD format'),
   })
-  .refine(
-    (data) => new Date(data.start) <= new Date(data.end),
-    "Start date must be before or equal to end date"
-  );
+  .refine(data => new Date(data.start) <= new Date(data.end), 'Start date must be before or equal to end date');
 
 const NuclearOutageDataSchema = z.object({
-  period: z.string().describe("The date of the measurement"),
-  outage: z.string().describe("Amount of nuclear power plant outage"),
-  capacity: z.string().describe("Total nuclear power plant capacity"),
-  percentOutage: z.string().describe("Percentage of capacity that is out"),
-  "outage-units": z.string().describe("Units for outage measurement"),
-  "capacity-units": z.string().describe("Units for capacity measurement"),
-  "percentOutage-units": z
-    .string()
-    .describe("Units for percentage measurement"),
+  period: z.string().describe('The date of the measurement'),
+  outage: z.string().describe('Amount of nuclear power plant outage'),
+  capacity: z.string().describe('Total nuclear power plant capacity'),
+  percentOutage: z.string().describe('Percentage of capacity that is out'),
+  'outage-units': z.string().describe('Units for outage measurement'),
+  'capacity-units': z.string().describe('Units for capacity measurement'),
+  'percentOutage-units': z.string().describe('Units for percentage measurement'),
 });
 
 const GetNuclearOutagesToolSchema = {
-  name: "get_nuclear_outages",
-  description:
-    "Fetches nuclear power plant outage data in the United States for a specified date range",
+  name: 'get_nuclear_outages',
+  description: 'Fetches nuclear power plant outage data in the United States for a specified date range',
   parameters: z.object({
-    dateRange: DateRangeSchema.describe(
-      "Date range for fetching nuclear outage data"
-    ),
+    dateRange: DateRangeSchema.describe('Date range for fetching nuclear outage data'),
   }),
   execute: async (args: { dateRange: { start: string; end: string } }) => {
     try {
@@ -46,7 +38,7 @@ const GetNuclearOutagesToolSchema = {
       const data = await tool.getRawData(args.dateRange);
 
       // Calculate summary statistics
-      const outages = data.map((d) => parseFloat(d.percentOutage));
+      const outages = data.map(d => parseFloat(d.percentOutage));
       const avgOutage = outages.reduce((a, b) => a + b, 0) / outages.length;
       const maxOutage = Math.max(...outages);
       const minOutage = Math.min(...outages);
@@ -59,17 +51,17 @@ const GetNuclearOutagesToolSchema = {
           maxOutagePercentage: Number(maxOutage.toFixed(2)),
           minOutagePercentage: Number(minOutage.toFixed(2)),
           totalCapacity: Number(latestCapacity.toFixed(2)),
-          capacityUnits: data[0]["capacity-units"],
+          capacityUnits: data[0]['capacity-units'],
           numberOfDays: data.length,
         },
-        dailyData: data.map((d) => ({
+        dailyData: data.map(d => ({
           date: d.period,
           outagePercentage: Number(parseFloat(d.percentOutage).toFixed(2)),
           capacity: Number(parseFloat(d.capacity).toFixed(2)),
         })),
       };
     } catch (error) {
-      logger.error("Error executing get_nuclear_outages tool", error);
+      logger.error('Error executing get_nuclear_outages tool', error);
       return `Error executing get_nuclear_outages tool`;
     }
   },
@@ -90,12 +82,12 @@ export class NuclearOutagesTool extends APITool<DateRange> {
     super({
       name: GetNuclearOutagesToolSchema.name,
       description: GetNuclearOutagesToolSchema.description,
-      baseUrl: "https://api.eia.gov/v2/nuclear-outages/us-nuclear-outages/data",
-      twitterAccount: "@EIAgov",
+      baseUrl: 'https://api.eia.gov/v2/nuclear-outages/us-nuclear-outages/data',
+      twitterAccount: '@EIAgov',
     });
 
     if (!process.env.EIA_API_KEY) {
-      throw new Error("Missing EIA_API_KEY environment variable");
+      throw new Error('Missing EIA_API_KEY environment variable');
     }
   }
 
@@ -106,26 +98,26 @@ export class NuclearOutagesTool extends APITool<DateRange> {
 
     // Ensure end date is not in the future
     if (endDate > currentDate) {
-      params.end = currentDate.toISOString().split("T")[0];
+      params.end = currentDate.toISOString().split('T')[0];
     }
 
     const url = new URL(this.baseUrl);
     const searchParams = new URLSearchParams({
-      frequency: "daily",
-      "data[0]": "outage",
-      "data[1]": "capacity",
-      "data[2]": "percentOutage",
+      frequency: 'daily',
+      'data[0]': 'outage',
+      'data[1]': 'capacity',
+      'data[2]': 'percentOutage',
       start,
       end: params.end,
-      "sort[0][column]": "period",
-      "sort[0][direction]": "desc",
-      offset: "0",
-      length: "5000",
+      'sort[0][column]': 'period',
+      'sort[0][direction]': 'desc',
+      offset: '0',
+      length: '5000',
     });
 
     const response = await fetch(`${url}?${searchParams.toString()}`, {
       headers: {
-        "X-Api-Key": process.env.EIA_API_KEY!,
+        'X-Api-Key': process.env.EIA_API_KEY!,
       },
     });
 

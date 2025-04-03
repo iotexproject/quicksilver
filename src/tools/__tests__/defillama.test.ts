@@ -1,20 +1,20 @@
-import { mockLLMService } from "../../__tests__/mocks";
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { DefiLlamaTool, DEFILLAMA_BASE_URL } from "../defillama";
-import { LLMService } from "../../llm/llm-service";
+import { mockLLMService } from '../../__tests__/mocks';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { DefiLlamaTool, DEFILLAMA_BASE_URL } from '../defillama';
+import { LLMService } from '../../llm/llm-service';
 
 const llmServiceParams = {
-  fastLLMModel: "test-fast-provider",
-  llmModel: "test-provider",
+  fastLLMModel: 'test-fast-provider',
+  llmModel: 'test-provider',
 };
 
-describe("DefiLlamaTool", () => {
+describe('DefiLlamaTool', () => {
   let defillamaTool: DefiLlamaTool;
   const mockDefillamaResponse = {
     coins: {
-      "solana:CXPLyc3EX8WySgEXLbjhuA7vy8EKQokVJYQuJm2jpump": {
+      'solana:CXPLyc3EX8WySgEXLbjhuA7vy8EKQokVJYQuJm2jpump': {
         decimals: 6,
-        symbol: "SENTAI",
+        symbol: 'SENTAI',
         price: 0.00128129,
         timestamp: 1743055060,
         confidence: 0.99,
@@ -24,22 +24,20 @@ describe("DefiLlamaTool", () => {
 
   beforeEach(() => {
     defillamaTool = new DefiLlamaTool();
-    vi.stubGlobal("fetch", vi.fn());
-    vi.mock("../../llm/llm-service", () => mockLLMService);
+    vi.stubGlobal('fetch', vi.fn());
+    vi.mock('../../llm/llm-service', () => mockLLMService);
   });
 
-  it("should initialize with correct properties", () => {
-    expect(defillamaTool.name).toBe("get_token_price");
-    expect(defillamaTool.description).toContain(
-      "Fetches token prices from DefiLlama"
-    );
+  it('should initialize with correct properties', () => {
+    expect(defillamaTool.name).toBe('get_token_price');
+    expect(defillamaTool.description).toContain('Fetches token prices from DefiLlama');
     expect(defillamaTool.schema).toHaveLength(4);
-    expect(defillamaTool.schema[0].name).toBe("get_token_price");
+    expect(defillamaTool.schema[0].name).toBe('get_token_price');
   });
 
-  describe("execute", () => {
+  describe('execute', () => {
     const executionOptions = {
-      toolCallId: "test-call-id",
+      toolCallId: 'test-call-id',
       messages: [],
       llm: new LLMService(llmServiceParams),
     };
@@ -51,28 +49,28 @@ describe("DefiLlamaTool", () => {
       } as Response);
     });
 
-    it("should fetch token price with default search width", async () => {
+    it('should fetch token price with default search width', async () => {
       const result = await defillamaTool.schema[0].tool.execute(
         {
-          coins: ["solana:CXPLyc3EX8WySgEXLbjhuA7vy8EKQokVJYQuJm2jpump"],
-          searchWidth: "4h",
+          coins: ['solana:CXPLyc3EX8WySgEXLbjhuA7vy8EKQokVJYQuJm2jpump'],
+          searchWidth: '4h',
         },
         executionOptions
       );
 
-      if (typeof result === "string") {
-        throw new Error("Expected result to be an object");
+      if (typeof result === 'string') {
+        throw new Error('Expected result to be an object');
       }
 
       expect(result).toEqual({
         prices: [
           {
-            symbol: "SENTAI",
+            symbol: 'SENTAI',
             price: 0.00128129,
             decimals: 6,
             timestamp: 1743055060,
             confidence: 0.99,
-            token: "solana:CXPLyc3EX8WySgEXLbjhuA7vy8EKQokVJYQuJm2jpump",
+            token: 'solana:CXPLyc3EX8WySgEXLbjhuA7vy8EKQokVJYQuJm2jpump',
           },
         ],
       });
@@ -82,11 +80,11 @@ describe("DefiLlamaTool", () => {
       );
     });
 
-    it("should handle custom search width", async () => {
+    it('should handle custom search width', async () => {
       await defillamaTool.schema[0].tool.execute(
         {
-          coins: ["solana:CXPLyc3EX8WySgEXLbjhuA7vy8EKQokVJYQuJm2jpump"],
-          searchWidth: "6h",
+          coins: ['solana:CXPLyc3EX8WySgEXLbjhuA7vy8EKQokVJYQuJm2jpump'],
+          searchWidth: '6h',
         },
         executionOptions
       );
@@ -96,12 +94,12 @@ describe("DefiLlamaTool", () => {
       );
     });
 
-    it("should handle low confidence price data", async () => {
+    it('should handle low confidence price data', async () => {
       const lowConfidenceResponse = {
         coins: {
-          "solana:CXPLyc3EX8WySgEXLbjhuA7vy8EKQokVJYQuJm2jpump": {
+          'solana:CXPLyc3EX8WySgEXLbjhuA7vy8EKQokVJYQuJm2jpump': {
             decimals: 6,
-            symbol: "SENTAI",
+            symbol: 'SENTAI',
             price: 0.00128129,
             timestamp: 1743055060,
             confidence: 0.5,
@@ -116,8 +114,8 @@ describe("DefiLlamaTool", () => {
 
       const result = await defillamaTool.schema[0].tool.execute(
         {
-          coins: ["solana:CXPLyc3EX8WySgEXLbjhuA7vy8EKQokVJYQuJm2jpump"],
-          searchWidth: "4h",
+          coins: ['solana:CXPLyc3EX8WySgEXLbjhuA7vy8EKQokVJYQuJm2jpump'],
+          searchWidth: '4h',
         },
         executionOptions
       );
@@ -125,14 +123,14 @@ describe("DefiLlamaTool", () => {
       expect(result).toEqual({
         prices: [
           {
-            token: "solana:CXPLyc3EX8WySgEXLbjhuA7vy8EKQokVJYQuJm2jpump",
-            error: "Price data has low confidence (0.5)",
+            token: 'solana:CXPLyc3EX8WySgEXLbjhuA7vy8EKQokVJYQuJm2jpump',
+            error: 'Price data has low confidence (0.5)',
           },
         ],
       });
     });
 
-    it("should handle token not found", async () => {
+    it('should handle token not found', async () => {
       const emptyResponse = {
         coins: {},
       };
@@ -144,8 +142,8 @@ describe("DefiLlamaTool", () => {
 
       const result = await defillamaTool.schema[0].tool.execute(
         {
-          coins: ["solana:nonexistent"],
-          searchWidth: "4h",
+          coins: ['solana:nonexistent'],
+          searchWidth: '4h',
         },
         executionOptions
       );
@@ -155,7 +153,7 @@ describe("DefiLlamaTool", () => {
       });
     });
 
-    it("should handle API errors", async () => {
+    it('should handle API errors', async () => {
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: false,
         status: 404,
@@ -163,29 +161,29 @@ describe("DefiLlamaTool", () => {
 
       const result = await defillamaTool.schema[0].tool.execute(
         {
-          chain: "solana",
-          address: "nonexistent",
-          searchWidth: "4h",
+          chain: 'solana',
+          address: 'nonexistent',
+          searchWidth: '4h',
         },
         executionOptions
       );
 
-      expect(result).toBe("Error executing get_token_price tool");
+      expect(result).toBe('Error executing get_token_price tool');
     });
 
-    it("should fetch multiple token prices", async () => {
+    it('should fetch multiple token prices', async () => {
       const multiTokenResponse = {
         coins: {
-          "solana:CXPLyc3EX8WySgEXLbjhuA7vy8EKQokVJYQuJm2jpump": {
+          'solana:CXPLyc3EX8WySgEXLbjhuA7vy8EKQokVJYQuJm2jpump': {
             decimals: 6,
-            symbol: "SENTAI",
+            symbol: 'SENTAI',
             price: 0.00128129,
             timestamp: 1743055060,
             confidence: 0.99,
           },
-          "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1": {
+          'ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1': {
             decimals: 18,
-            symbol: "EURS",
+            symbol: 'EURS',
             price: 1.112034,
             timestamp: 1743055060,
             confidence: 0.95,
@@ -201,10 +199,10 @@ describe("DefiLlamaTool", () => {
       const result = await defillamaTool.schema[0].tool.execute(
         {
           coins: [
-            "solana:CXPLyc3EX8WySgEXLbjhuA7vy8EKQokVJYQuJm2jpump",
-            "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1",
+            'solana:CXPLyc3EX8WySgEXLbjhuA7vy8EKQokVJYQuJm2jpump',
+            'ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1',
           ],
-          searchWidth: "4h",
+          searchWidth: '4h',
         },
         executionOptions
       );
@@ -212,16 +210,16 @@ describe("DefiLlamaTool", () => {
       expect(result).toEqual({
         prices: [
           {
-            token: "solana:CXPLyc3EX8WySgEXLbjhuA7vy8EKQokVJYQuJm2jpump",
-            symbol: "SENTAI",
+            token: 'solana:CXPLyc3EX8WySgEXLbjhuA7vy8EKQokVJYQuJm2jpump',
+            symbol: 'SENTAI',
             price: 0.00128129,
             decimals: 6,
             timestamp: 1743055060,
             confidence: 0.99,
           },
           {
-            token: "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1",
-            symbol: "EURS",
+            token: 'ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1',
+            symbol: 'EURS',
             price: 1.112034,
             decimals: 18,
             timestamp: 1743055060,
@@ -236,19 +234,19 @@ describe("DefiLlamaTool", () => {
     });
   });
 
-  describe("executeHistorical", () => {
+  describe('executeHistorical', () => {
     const executionOptions = {
-      toolCallId: "test-call-id",
+      toolCallId: 'test-call-id',
       messages: [],
       llm: new LLMService(llmServiceParams),
     };
 
-    it("should fetch historical token prices", async () => {
+    it('should fetch historical token prices', async () => {
       const historicalResponse = {
         coins: {
-          "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1": {
+          'ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1': {
             decimals: 18,
-            symbol: "EURS",
+            symbol: 'EURS',
             price: 1.112034,
             timestamp: 1648680149,
             confidence: 0.99,
@@ -263,9 +261,9 @@ describe("DefiLlamaTool", () => {
 
       const result = await defillamaTool.schema[1].tool.execute(
         {
-          coins: ["ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1"],
+          coins: ['ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1'],
           timestamp: 1648680149,
-          searchWidth: "4h",
+          searchWidth: '4h',
         },
         executionOptions
       );
@@ -273,8 +271,8 @@ describe("DefiLlamaTool", () => {
       expect(result).toEqual({
         prices: [
           {
-            token: "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1",
-            symbol: "EURS",
+            token: 'ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1',
+            symbol: 'EURS',
             price: 1.112034,
             decimals: 18,
             timestamp: 1648680149,
@@ -288,19 +286,19 @@ describe("DefiLlamaTool", () => {
       );
     });
 
-    it("should fetch multiple historical token prices", async () => {
+    it('should fetch multiple historical token prices', async () => {
       const historicalMultiResponse = {
         coins: {
-          "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1": {
+          'ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1': {
             decimals: 18,
-            symbol: "EURS",
+            symbol: 'EURS',
             price: 1.112034,
             timestamp: 1648680149,
             confidence: 0.99,
           },
-          "ethereum:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2": {
+          'ethereum:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2': {
             decimals: 18,
-            symbol: "WETH",
+            symbol: 'WETH',
             price: 3386.02,
             timestamp: 1648680149,
             confidence: 0.95,
@@ -316,11 +314,11 @@ describe("DefiLlamaTool", () => {
       const result = await defillamaTool.schema[1].tool.execute(
         {
           coins: [
-            "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1",
-            "ethereum:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+            'ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1',
+            'ethereum:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
           ],
           timestamp: 1648680149,
-          searchWidth: "4h",
+          searchWidth: '4h',
         },
         executionOptions
       );
@@ -328,16 +326,16 @@ describe("DefiLlamaTool", () => {
       expect(result).toEqual({
         prices: [
           {
-            token: "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1",
-            symbol: "EURS",
+            token: 'ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1',
+            symbol: 'EURS',
             price: 1.112034,
             decimals: 18,
             timestamp: 1648680149,
             confidence: 0.99,
           },
           {
-            token: "ethereum:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-            symbol: "WETH",
+            token: 'ethereum:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+            symbol: 'WETH',
             price: 3386.02,
             decimals: 18,
             timestamp: 1648680149,
@@ -347,7 +345,7 @@ describe("DefiLlamaTool", () => {
       });
     });
 
-    it("should handle API errors", async () => {
+    it('should handle API errors', async () => {
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: false,
         status: 404,
@@ -355,29 +353,29 @@ describe("DefiLlamaTool", () => {
 
       const result = await defillamaTool.schema[1].tool.execute(
         {
-          coins: ["ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1"],
+          coins: ['ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1'],
           timestamp: 1648680149,
-          searchWidth: "4h",
+          searchWidth: '4h',
         },
         executionOptions
       );
 
-      expect(result).toBe("Error executing get_historical_token_price tool");
+      expect(result).toBe('Error executing get_historical_token_price tool');
     });
   });
 
-  describe("executeChart", () => {
+  describe('executeChart', () => {
     const executionOptions = {
-      toolCallId: "test-call-id",
+      toolCallId: 'test-call-id',
       messages: [],
       llm: new LLMService(llmServiceParams),
     };
 
-    it("should fetch chart data for a token", async () => {
+    it('should fetch chart data for a token', async () => {
       const chartResponse = {
         coins: {
-          "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1": {
-            symbol: "HUSD",
+          'ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1': {
+            symbol: 'HUSD',
             confidence: 0.99,
             decimals: 8,
             prices: [
@@ -396,11 +394,11 @@ describe("DefiLlamaTool", () => {
 
       const result = await defillamaTool.schema[2].tool.execute(
         {
-          coins: ["ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1"],
+          coins: ['ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1'],
           start: 1664364537,
           span: 3,
-          period: "2d",
-          searchWidth: "600",
+          period: '2d',
+          searchWidth: '600',
         },
         executionOptions
       );
@@ -408,8 +406,8 @@ describe("DefiLlamaTool", () => {
       expect(result).toEqual({
         tokens: [
           {
-            token: "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1",
-            symbol: "HUSD",
+            token: 'ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1',
+            symbol: 'HUSD',
             decimals: 8,
             confidence: 0.99,
             prices: [
@@ -426,11 +424,11 @@ describe("DefiLlamaTool", () => {
       );
     });
 
-    it("should fetch chart data for multiple tokens", async () => {
+    it('should fetch chart data for multiple tokens', async () => {
       const chartResponse = {
         coins: {
-          "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1": {
-            symbol: "HUSD",
+          'ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1': {
+            symbol: 'HUSD',
             confidence: 0.99,
             decimals: 8,
             prices: [
@@ -438,8 +436,8 @@ describe("DefiLlamaTool", () => {
               { timestamp: 1664537423, price: 0.9914483744619215 },
             ],
           },
-          "coingecko:ethereum": {
-            symbol: "ETH",
+          'coingecko:ethereum': {
+            symbol: 'ETH',
             confidence: 0.99,
             prices: [
               { timestamp: 1664364547, price: 1294.8704281123682 },
@@ -456,14 +454,11 @@ describe("DefiLlamaTool", () => {
 
       const result = await defillamaTool.schema[2].tool.execute(
         {
-          coins: [
-            "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1",
-            "coingecko:ethereum",
-          ],
+          coins: ['ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1', 'coingecko:ethereum'],
           start: 1664364537,
           span: 2,
-          period: "2d",
-          searchWidth: "600",
+          period: '2d',
+          searchWidth: '600',
         },
         executionOptions
       );
@@ -471,8 +466,8 @@ describe("DefiLlamaTool", () => {
       expect(result).toEqual({
         tokens: [
           {
-            token: "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1",
-            symbol: "HUSD",
+            token: 'ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1',
+            symbol: 'HUSD',
             decimals: 8,
             confidence: 0.99,
             prices: [
@@ -481,8 +476,8 @@ describe("DefiLlamaTool", () => {
             ],
           },
           {
-            token: "coingecko:ethereum",
-            symbol: "ETH",
+            token: 'coingecko:ethereum',
+            symbol: 'ETH',
             confidence: 0.99,
             prices: [
               { timestamp: 1664364547, price: 1294.8704281123682 },
@@ -497,11 +492,11 @@ describe("DefiLlamaTool", () => {
       );
     });
 
-    it("should handle optional end parameter", async () => {
+    it('should handle optional end parameter', async () => {
       const chartResponse = {
         coins: {
-          "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1": {
-            symbol: "HUSD",
+          'ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1': {
+            symbol: 'HUSD',
             confidence: 0.99,
             decimals: 8,
             prices: [
@@ -519,11 +514,11 @@ describe("DefiLlamaTool", () => {
 
       await defillamaTool.schema[2].tool.execute(
         {
-          coins: ["ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1"],
+          coins: ['ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1'],
           start: 1664364537,
           end: 1664537500,
-          period: "2d",
-          searchWidth: "600",
+          period: '2d',
+          searchWidth: '600',
         },
         executionOptions
       );
@@ -533,11 +528,11 @@ describe("DefiLlamaTool", () => {
       );
     });
 
-    it("should handle default parameters", async () => {
+    it('should handle default parameters', async () => {
       const chartResponse = {
         coins: {
-          "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1": {
-            symbol: "HUSD",
+          'ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1': {
+            symbol: 'HUSD',
             confidence: 0.99,
             decimals: 8,
             prices: [{ timestamp: 1664364295, price: 0.9935534119681249 }],
@@ -552,7 +547,7 @@ describe("DefiLlamaTool", () => {
 
       await defillamaTool.schema[2].tool.execute(
         {
-          coins: ["ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1"],
+          coins: ['ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1'],
           start: 1664364537,
         },
         executionOptions
@@ -563,11 +558,11 @@ describe("DefiLlamaTool", () => {
       );
     });
 
-    it("should handle low confidence price data", async () => {
+    it('should handle low confidence price data', async () => {
       const lowConfidenceResponse = {
         coins: {
-          "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1": {
-            symbol: "HUSD",
+          'ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1': {
+            symbol: 'HUSD',
             confidence: 0.5,
             decimals: 8,
             prices: [{ timestamp: 1664364295, price: 0.9935534119681249 }],
@@ -582,9 +577,9 @@ describe("DefiLlamaTool", () => {
 
       const result = await defillamaTool.schema[2].tool.execute(
         {
-          coins: ["ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1"],
+          coins: ['ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1'],
           start: 1664364537,
-          period: "2d",
+          period: '2d',
         },
         executionOptions
       );
@@ -592,18 +587,18 @@ describe("DefiLlamaTool", () => {
       expect(result).toEqual({
         tokens: [
           {
-            token: "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1",
-            symbol: "HUSD",
+            token: 'ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1',
+            symbol: 'HUSD',
             decimals: 8,
             confidence: 0.5,
-            error: "Price data has low confidence (0.5)",
+            error: 'Price data has low confidence (0.5)',
             prices: [{ timestamp: 1664364295, price: 0.9935534119681249 }],
           },
         ],
       });
     });
 
-    it("should handle API errors", async () => {
+    it('should handle API errors', async () => {
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: false,
         status: 404,
@@ -611,46 +606,44 @@ describe("DefiLlamaTool", () => {
 
       const result = await defillamaTool.schema[2].tool.execute(
         {
-          coins: ["ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1"],
+          coins: ['ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1'],
           start: 1664364537,
         },
         executionOptions
       );
 
-      expect(result).toBe("Error executing get_token_price_chart tool");
+      expect(result).toBe('Error executing get_token_price_chart tool');
     });
 
-    it("should handle network errors", async () => {
-      vi.mocked(fetch).mockRejectedValueOnce(new Error("Network error"));
+    it('should handle network errors', async () => {
+      vi.mocked(fetch).mockRejectedValueOnce(new Error('Network error'));
 
       const result = await defillamaTool.schema[2].tool.execute(
         {
-          coins: ["ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1"],
+          coins: ['ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1'],
           start: 1664364537,
         },
         executionOptions
       );
 
-      expect(result).toBe("Error executing get_token_price_chart tool");
+      expect(result).toBe('Error executing get_token_price_chart tool');
     });
   });
 
-  describe("executePercentage", () => {
+  describe('executePercentage', () => {
     const executionOptions = {
-      toolCallId: "test-call-id",
+      toolCallId: 'test-call-id',
       messages: [],
       llm: new LLMService(llmServiceParams),
     };
 
-    it("should fetch percentage change for tokens", async () => {
+    it('should fetch percentage change for tokens', async () => {
       const percentageResponse = {
         coins: {
-          "coingecko:ethereum": -14.558151749299784,
-          "ethereum:0xdB25f211AB05b1c97D595516F45794528a807ad8":
-            -3.3519208785134125,
-          "bsc:0x762539b45a1dcce3d36d080f74d1aed37844b878": -8.822041839808112,
-          "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1":
-            -0.2106898504109858,
+          'coingecko:ethereum': -14.558151749299784,
+          'ethereum:0xdB25f211AB05b1c97D595516F45794528a807ad8': -3.3519208785134125,
+          'bsc:0x762539b45a1dcce3d36d080f74d1aed37844b878': -8.822041839808112,
+          'ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1': -0.2106898504109858,
         },
       };
 
@@ -662,14 +655,14 @@ describe("DefiLlamaTool", () => {
       const result = await defillamaTool.schema[3].tool.execute(
         {
           coins: [
-            "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1",
-            "coingecko:ethereum",
-            "bsc:0x762539b45a1dcce3d36d080f74d1aed37844b878",
-            "ethereum:0xdB25f211AB05b1c97D595516F45794528a807ad8",
+            'ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1',
+            'coingecko:ethereum',
+            'bsc:0x762539b45a1dcce3d36d080f74d1aed37844b878',
+            'ethereum:0xdB25f211AB05b1c97D595516F45794528a807ad8',
           ],
           timestamp: 1664364537,
           lookForward: false,
-          period: "3w",
+          period: '3w',
         },
         executionOptions
       );
@@ -677,19 +670,19 @@ describe("DefiLlamaTool", () => {
       expect(result).toEqual({
         changes: [
           {
-            token: "coingecko:ethereum",
+            token: 'coingecko:ethereum',
             percentageChange: -14.558151749299784,
           },
           {
-            token: "ethereum:0xdB25f211AB05b1c97D595516F45794528a807ad8",
+            token: 'ethereum:0xdB25f211AB05b1c97D595516F45794528a807ad8',
             percentageChange: -3.3519208785134125,
           },
           {
-            token: "bsc:0x762539b45a1dcce3d36d080f74d1aed37844b878",
+            token: 'bsc:0x762539b45a1dcce3d36d080f74d1aed37844b878',
             percentageChange: -8.822041839808112,
           },
           {
-            token: "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1",
+            token: 'ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1',
             percentageChange: -0.2106898504109858,
           },
         ],
@@ -700,11 +693,10 @@ describe("DefiLlamaTool", () => {
       );
     });
 
-    it("should handle default parameters", async () => {
+    it('should handle default parameters', async () => {
       const percentageResponse = {
         coins: {
-          "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1":
-            -0.2106898504109858,
+          'ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1': -0.2106898504109858,
         },
       };
 
@@ -715,7 +707,7 @@ describe("DefiLlamaTool", () => {
 
       await defillamaTool.schema[3].tool.execute(
         {
-          coins: ["ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1"],
+          coins: ['ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1'],
         },
         executionOptions
       );
@@ -725,10 +717,10 @@ describe("DefiLlamaTool", () => {
       );
     });
 
-    it("should handle lookForward parameter", async () => {
+    it('should handle lookForward parameter', async () => {
       const percentageResponse = {
         coins: {
-          "ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1": 0.5,
+          'ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1': 0.5,
         },
       };
 
@@ -739,7 +731,7 @@ describe("DefiLlamaTool", () => {
 
       await defillamaTool.schema[3].tool.execute(
         {
-          coins: ["ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1"],
+          coins: ['ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1'],
           lookForward: true,
         },
         executionOptions
@@ -750,7 +742,7 @@ describe("DefiLlamaTool", () => {
       );
     });
 
-    it("should handle missing tokens in response", async () => {
+    it('should handle missing tokens in response', async () => {
       const emptyResponse = {
         coins: {},
       };
@@ -762,7 +754,7 @@ describe("DefiLlamaTool", () => {
 
       const result = await defillamaTool.schema[3].tool.execute(
         {
-          coins: ["ethereum:0xnonexistent"],
+          coins: ['ethereum:0xnonexistent'],
         },
         executionOptions
       );
@@ -772,7 +764,7 @@ describe("DefiLlamaTool", () => {
       });
     });
 
-    it("should handle API errors", async () => {
+    it('should handle API errors', async () => {
       vi.mocked(fetch).mockResolvedValueOnce({
         ok: false,
         status: 404,
@@ -780,29 +772,25 @@ describe("DefiLlamaTool", () => {
 
       const result = await defillamaTool.schema[3].tool.execute(
         {
-          coins: ["ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1"],
+          coins: ['ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1'],
         },
         executionOptions
       );
 
-      expect(result).toBe(
-        "Error executing get_token_price_percentage_change tool"
-      );
+      expect(result).toBe('Error executing get_token_price_percentage_change tool');
     });
 
-    it("should handle network errors", async () => {
-      vi.mocked(fetch).mockRejectedValueOnce(new Error("Network error"));
+    it('should handle network errors', async () => {
+      vi.mocked(fetch).mockRejectedValueOnce(new Error('Network error'));
 
       const result = await defillamaTool.schema[3].tool.execute(
         {
-          coins: ["ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1"],
+          coins: ['ethereum:0xdF574c24545E5FfEcb9a659c229253D4111d87e1'],
         },
         executionOptions
       );
 
-      expect(result).toBe(
-        "Error executing get_token_price_percentage_change tool"
-      );
+      expect(result).toBe('Error executing get_token_price_percentage_change tool');
     });
   });
 });

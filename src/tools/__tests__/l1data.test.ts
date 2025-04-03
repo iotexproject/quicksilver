@@ -1,30 +1,26 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import {
-  L1DataTool,
-  GetL1StatsToolSchema,
-  GetL1DailyStatsToolSchema,
-} from "../l1data";
-import { ZodError } from "zod";
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { L1DataTool, GetL1StatsToolSchema, GetL1DailyStatsToolSchema } from '../l1data';
+import { ZodError } from 'zod';
 
-describe("L1DataTool", () => {
+describe('L1DataTool', () => {
   let l1DataTool: L1DataTool;
 
   beforeEach(() => {
     l1DataTool = new L1DataTool();
-    vi.stubGlobal("fetch", vi.fn());
+    vi.stubGlobal('fetch', vi.fn());
   });
 
-  it("should initialize with correct properties", () => {
-    expect(l1DataTool.name).toBe("get_l1_stats");
+  it('should initialize with correct properties', () => {
+    expect(l1DataTool.name).toBe('get_l1_stats');
     expect(l1DataTool.description).toBe(
-      "Fetches IoTeX L1 chain statistics and metrics: TVL, contracts, staking, nodes, dapps, tps, transactions, supply, holders, xrc20, xrc721"
+      'Fetches IoTeX L1 chain statistics and metrics: TVL, contracts, staking, nodes, dapps, tps, transactions, supply, holders, xrc20, xrc721'
     );
     expect(l1DataTool.schema).toHaveLength(2);
-    expect(l1DataTool.schema[0].name).toBe("get_l1_stats");
+    expect(l1DataTool.schema[0].name).toBe('get_l1_stats');
   });
 
-  describe("getRawData", () => {
-    it("should successfully fetch and process L1 data", async () => {
+  describe('getRawData', () => {
+    it('should successfully fetch and process L1 data', async () => {
       // Mock all REST API responses with quoted strings like the real API returns
       // @ts-ignore Mock responses don't need full Response implementation
       vi.mocked(fetch)
@@ -67,7 +63,7 @@ describe("L1DataTool", () => {
           // @ts-ignore Mock responses don't need full Response implementation
           Promise.resolve({
             ok: true,
-            text: () => Promise.resolve("1000"),
+            text: () => Promise.resolve('1000'),
           })
         ) // crossChainTx - this one doesn't have quotes based on logs
         // GraphQL response
@@ -77,7 +73,7 @@ describe("L1DataTool", () => {
             json: () =>
               Promise.resolve({
                 data: {
-                  Chain: { totalSupply: "10000000000000000000000000000" },
+                  Chain: { totalSupply: '10000000000000000000000000000' },
                   TotalNumberOfHolders: { totalNumberOfHolders: 150000 },
                   XRC20Addresses: { count: 300 },
                   XRC721Addresses: { count: 200 },
@@ -105,18 +101,16 @@ describe("L1DataTool", () => {
       });
     });
 
-    it("should handle REST API errors", async () => {
+    it('should handle REST API errors', async () => {
       vi.mocked(fetch)
-        .mockImplementationOnce(() =>
-          Promise.reject(new Error("Network error"))
-        )
+        .mockImplementationOnce(() => Promise.reject(new Error('Network error')))
         .mockImplementation(() =>
           // @ts-ignore Mock responses don't need full Response implementation
           Promise.resolve({
             json: () =>
               Promise.resolve({
                 data: {
-                  Chain: { totalSupply: "10000000000000000000000000000" },
+                  Chain: { totalSupply: '10000000000000000000000000000' },
                   TotalNumberOfHolders: { totalNumberOfHolders: 150000 },
                   XRC20Addresses: { count: 300 },
                   XRC721Addresses: { count: 200 },
@@ -126,49 +120,45 @@ describe("L1DataTool", () => {
           })
         );
 
-      await expect(l1DataTool.getRawData()).rejects.toThrow(
-        "Failed to fetch tvl: Network error"
-      );
+      await expect(l1DataTool.getRawData()).rejects.toThrow('Failed to fetch tvl: Network error');
     });
 
-    it("should handle GraphQL API errors", async () => {
+    it('should handle GraphQL API errors', async () => {
       // Mock successful REST responses first
       vi.mocked(fetch)
         .mockImplementationOnce(() =>
           // @ts-ignore Mock responses don't need full Response implementation
-          Promise.resolve({ text: () => Promise.resolve("1000000") })
+          Promise.resolve({ text: () => Promise.resolve('1000000') })
         )
         .mockImplementationOnce(() =>
           // @ts-ignore Mock responses don't need full Response implementation
-          Promise.resolve({ text: () => Promise.resolve("500") })
+          Promise.resolve({ text: () => Promise.resolve('500') })
         )
         .mockImplementationOnce(() =>
           // @ts-ignore Mock responses don't need full Response implementation
           Promise.resolve({
-            text: () => Promise.resolve("3561185000099304444227406264"),
+            text: () => Promise.resolve('3561185000099304444227406264'),
           })
         )
         .mockImplementationOnce(() =>
           // @ts-ignore Mock responses don't need full Response implementation
-          Promise.resolve({ text: () => Promise.resolve("100") })
+          Promise.resolve({ text: () => Promise.resolve('100') })
         )
         .mockImplementationOnce(() =>
           // @ts-ignore Mock responses don't need full Response implementation
-          Promise.resolve({ text: () => Promise.resolve("200") })
+          Promise.resolve({ text: () => Promise.resolve('200') })
         )
         .mockImplementationOnce(() =>
           // @ts-ignore Mock responses don't need full Response implementation
-          Promise.resolve({ text: () => Promise.resolve("1000") })
+          Promise.resolve({ text: () => Promise.resolve('1000') })
         )
         // Failed GraphQL response
-        .mockImplementationOnce(() =>
-          Promise.reject(new Error("GraphQL Error"))
-        );
+        .mockImplementationOnce(() => Promise.reject(new Error('GraphQL Error')));
 
-      await expect(l1DataTool.getRawData()).rejects.toThrow("GraphQL Error");
+      await expect(l1DataTool.getRawData()).rejects.toThrow('GraphQL Error');
     });
 
-    it("should handle malformed data responses", async () => {
+    it('should handle malformed data responses', async () => {
       vi.mocked(fetch).mockImplementationOnce(() =>
         Promise.resolve({
           ok: true,
@@ -179,7 +169,7 @@ describe("L1DataTool", () => {
       await expect(l1DataTool.getRawData()).rejects.toThrow();
     });
 
-    it("should correctly parse quoted string responses", async () => {
+    it('should correctly parse quoted string responses', async () => {
       // Mock a response with double quotes
       vi.mocked(fetch).mockImplementationOnce(() =>
         Promise.resolve({
@@ -189,7 +179,7 @@ describe("L1DataTool", () => {
       );
 
       // Call the fetchTvl method directly to test parsing
-      const result = await l1DataTool["fetchTvl"]();
+      const result = await l1DataTool['fetchTvl']();
 
       // Should correctly parse to a number
       expect(result).toBe(31946444.838592477);
@@ -197,8 +187,8 @@ describe("L1DataTool", () => {
   });
 });
 
-describe("GetL1StatsToolSchema execute function", () => {
-  it("should correctly format the data", async () => {
+describe('GetL1StatsToolSchema execute function', () => {
+  it('should correctly format the data', async () => {
     // Mock getRawData to return a known set of values
     const mockStats = {
       tvl: 31946444.838592477,
@@ -216,9 +206,7 @@ describe("GetL1StatsToolSchema execute function", () => {
     };
 
     // Spy on getRawData and make it return our mock data
-    const getRawDataSpy = vi
-      .spyOn(L1DataTool.prototype, "getRawData")
-      .mockResolvedValue(mockStats);
+    const getRawDataSpy = vi.spyOn(L1DataTool.prototype, 'getRawData').mockResolvedValue(mockStats);
 
     // Call the execute function
     const result = await GetL1StatsToolSchema.execute();
@@ -239,10 +227,10 @@ describe("GetL1StatsToolSchema execute function", () => {
   });
 });
 
-describe("GetL1DailyStatsToolSchema execute function", () => {
-  it("should correctly format daily stats data", async () => {
+describe('GetL1DailyStatsToolSchema execute function', () => {
+  it('should correctly format daily stats data', async () => {
     const mockDailyStats = {
-      date: "2024-01-01",
+      date: '2024-01-01',
       transactions: 50000,
       tx_volume: 1234567.89,
       sum_gas: 100.5,
@@ -254,12 +242,10 @@ describe("GetL1DailyStatsToolSchema execute function", () => {
     };
 
     // Spy on getDailyData and make it return our mock data
-    const getDailyDataSpy = vi
-      .spyOn(L1DataTool.prototype, "getDailyData")
-      .mockResolvedValue(mockDailyStats);
+    const getDailyDataSpy = vi.spyOn(L1DataTool.prototype, 'getDailyData').mockResolvedValue(mockDailyStats);
 
     const result = await GetL1DailyStatsToolSchema.execute({
-      date: "2024-01-01",
+      date: '2024-01-01',
     });
 
     expect(result).toEqual({
@@ -269,40 +255,38 @@ describe("GetL1DailyStatsToolSchema execute function", () => {
       avg_gas: 0.002,
       peak_tps: 45.5,
       currency: {
-        tx_volume: "USD",
-        sum_gas: "IOTX",
-        avg_gas: "IOTX",
-        tvl: "USD",
+        tx_volume: 'USD',
+        sum_gas: 'IOTX',
+        avg_gas: 'IOTX',
+        tvl: 'USD',
       },
     });
 
-    expect(getDailyDataSpy).toHaveBeenCalledWith("2024-01-01");
+    expect(getDailyDataSpy).toHaveBeenCalledWith('2024-01-01');
     getDailyDataSpy.mockRestore();
   });
 
-  it("should handle API errors gracefully", async () => {
-    const getDailyDataSpy = vi
-      .spyOn(L1DataTool.prototype, "getDailyData")
-      .mockRejectedValue(new Error("API Error"));
+  it('should handle API errors gracefully', async () => {
+    const getDailyDataSpy = vi.spyOn(L1DataTool.prototype, 'getDailyData').mockRejectedValue(new Error('API Error'));
 
     const result = await GetL1DailyStatsToolSchema.execute({
-      date: "2024-01-01",
+      date: '2024-01-01',
     });
-    expect(result).toBe("Error executing get_l1_daily_stats tool");
+    expect(result).toBe('Error executing get_l1_daily_stats tool');
 
     getDailyDataSpy.mockRestore();
   });
 });
 
-describe("L1DataTool getDailyData", () => {
+describe('L1DataTool getDailyData', () => {
   let l1DataTool: L1DataTool;
 
   beforeEach(() => {
     l1DataTool = new L1DataTool();
-    vi.stubGlobal("fetch", vi.fn());
+    vi.stubGlobal('fetch', vi.fn());
   });
 
-  it("should fetch and process daily L1 data", async () => {
+  it('should fetch and process daily L1 data', async () => {
     // Mock responses for each endpoint
     vi.mocked(fetch)
       .mockImplementationOnce(() =>
@@ -360,10 +344,10 @@ describe("L1DataTool getDailyData", () => {
         } as Response)
       ); // avg_staking_duration
 
-    const result = await l1DataTool.getDailyData("2024-01-01");
+    const result = await l1DataTool.getDailyData('2024-01-01');
 
     expect(result).toEqual({
-      date: "2024-01-01",
+      date: '2024-01-01',
       transactions: 50000,
       tx_volume: 1234567.89,
       sum_gas: 100.5,
@@ -376,12 +360,12 @@ describe("L1DataTool getDailyData", () => {
     });
   });
 
-  it("should handle API errors", async () => {
-    vi.mocked(fetch).mockRejectedValueOnce(new Error("Network error"));
+  it('should handle API errors', async () => {
+    vi.mocked(fetch).mockRejectedValueOnce(new Error('Network error'));
 
-    const result = await l1DataTool.getDailyData("2024-01-01");
+    const result = await l1DataTool.getDailyData('2024-01-01');
     expect(result).toStrictEqual({
-      date: "2024-01-01",
+      date: '2024-01-01',
       transactions: 0,
       tx_volume: 0,
       sum_gas: 0,
@@ -394,17 +378,17 @@ describe("L1DataTool getDailyData", () => {
     });
   });
 
-  it("should handle malformed response data", async () => {
+  it('should handle malformed response data', async () => {
     vi.mocked(fetch).mockImplementationOnce(() =>
       Promise.resolve({
         ok: true,
-        json: () => Promise.resolve([{ tx_count: "invalid-number" }]),
+        json: () => Promise.resolve([{ tx_count: 'invalid-number' }]),
       } as Response)
     );
 
-    const result = await l1DataTool.getDailyData("2024-01-01");
+    const result = await l1DataTool.getDailyData('2024-01-01');
     expect(result).toStrictEqual({
-      date: "2024-01-01",
+      date: '2024-01-01',
       transactions: NaN,
       tx_volume: 0,
       sum_gas: 0,
@@ -417,7 +401,7 @@ describe("L1DataTool getDailyData", () => {
     });
   });
 
-  it("should handle empty holders data", async () => {
+  it('should handle empty holders data', async () => {
     vi.mocked(fetch).mockImplementationOnce(() =>
       Promise.resolve({
         ok: true,
@@ -425,12 +409,12 @@ describe("L1DataTool getDailyData", () => {
       } as Response)
     );
 
-    await expect(l1DataTool["fetchDailyHolders"]("2024-01-01")).rejects.toThrow(
-      "Failed to fetch daily holders: No holders data returned"
+    await expect(l1DataTool['fetchDailyHolders']('2024-01-01')).rejects.toThrow(
+      'Failed to fetch daily holders: No holders data returned'
     );
   });
 
-  it("should return partial data when some fetches fail", async () => {
+  it('should return partial data when some fetches fail', async () => {
     // Mock successful responses for some endpoints and failures for others
     vi.mocked(fetch)
       .mockImplementationOnce(() =>
@@ -439,14 +423,14 @@ describe("L1DataTool getDailyData", () => {
           json: () => Promise.resolve([{ tx_count: 50000 }]),
         } as Response)
       ) // transactions succeeds
-      .mockImplementationOnce(() => Promise.reject(new Error("Network error"))) // tx_volume fails
+      .mockImplementationOnce(() => Promise.reject(new Error('Network error'))) // tx_volume fails
       .mockImplementationOnce(() =>
         Promise.resolve({
           ok: true,
           text: () => Promise.resolve('"100.5"'),
         } as Response)
       ) // sum_gas succeeds
-      .mockImplementationOnce(() => Promise.reject(new Error("API error"))) // avg_gas fails
+      .mockImplementationOnce(() => Promise.reject(new Error('API error'))) // avg_gas fails
       .mockImplementationOnce(() =>
         Promise.resolve({
           ok: true,
@@ -478,7 +462,7 @@ describe("L1DataTool getDailyData", () => {
         } as Response)
       ); // avg_staking_duration succeeds
 
-    const result = await l1DataTool.getDailyData("2024-01-01");
+    const result = await l1DataTool.getDailyData('2024-01-01');
 
     // Check that successful fetches returned data
     expect(result.transactions).toBe(50000);
@@ -495,7 +479,7 @@ describe("L1DataTool getDailyData", () => {
 
     // All fields should be present
     expect(result).toEqual({
-      date: "2024-01-01",
+      date: '2024-01-01',
       transactions: 50000,
       tx_volume: 0,
       sum_gas: 100.5,
@@ -508,16 +492,14 @@ describe("L1DataTool getDailyData", () => {
     });
   });
 
-  it("should return all zero values when all fetches fail", async () => {
+  it('should return all zero values when all fetches fail', async () => {
     // Mock all endpoints to fail
-    vi.mocked(fetch).mockImplementation(() =>
-      Promise.reject(new Error("Network error"))
-    );
+    vi.mocked(fetch).mockImplementation(() => Promise.reject(new Error('Network error')));
 
-    const result = await l1DataTool.getDailyData("2024-01-01");
+    const result = await l1DataTool.getDailyData('2024-01-01');
 
     expect(result).toEqual({
-      date: "2024-01-01",
+      date: '2024-01-01',
       transactions: 0,
       tx_volume: 0,
       sum_gas: 0,
@@ -530,7 +512,7 @@ describe("L1DataTool getDailyData", () => {
     });
   });
 
-  it("should handle empty staking duration data", async () => {
+  it('should handle empty staking duration data', async () => {
     vi.mocked(fetch).mockImplementationOnce(() =>
       Promise.resolve({
         ok: true,
@@ -538,49 +520,47 @@ describe("L1DataTool getDailyData", () => {
       } as Response)
     );
 
-    const result = await l1DataTool["fetchDailyStakingDuration"]("2024-01-01");
+    const result = await l1DataTool['fetchDailyStakingDuration']('2024-01-01');
     expect(result).toBe(0);
   });
 });
 
-describe("GetL1DailyStatsToolSchema date validation", () => {
-  it("should reject current date", async () => {
-    const currentDate = new Date().toISOString().split("T")[0];
+describe('GetL1DailyStatsToolSchema date validation', () => {
+  it('should reject current date', async () => {
+    const currentDate = new Date().toISOString().split('T')[0];
 
     const res = await GetL1DailyStatsToolSchema.execute({ date: currentDate });
-    expect(res).toBe("Error executing get_l1_daily_stats tool");
+    expect(res).toBe('Error executing get_l1_daily_stats tool');
   });
 
-  it("should reject future date", async () => {
+  it('should reject future date', async () => {
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + 1);
-    const futureDateStr = futureDate.toISOString().split("T")[0];
+    const futureDateStr = futureDate.toISOString().split('T')[0];
 
     const res = await GetL1DailyStatsToolSchema.execute({
       date: futureDateStr,
     });
-    expect(res).toBe("Error executing get_l1_daily_stats tool");
+    expect(res).toBe('Error executing get_l1_daily_stats tool');
   });
 
   it("should accept yesterday's date", async () => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split("T")[0];
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
 
-    const getDailyDataSpy = vi
-      .spyOn(L1DataTool.prototype, "getDailyData")
-      .mockResolvedValue({
-        date: yesterdayStr,
-        transactions: 50000,
-        tx_volume: 1234567.89,
-        sum_gas: 100.5,
-        avg_gas: 0.002,
-        active_wallets: 1500,
-        peak_tps: 45.5,
-        tvl: 31946444.838592477,
-        holders: 150000,
-        avg_staking_duration: 365.5,
-      });
+    const getDailyDataSpy = vi.spyOn(L1DataTool.prototype, 'getDailyData').mockResolvedValue({
+      date: yesterdayStr,
+      transactions: 50000,
+      tx_volume: 1234567.89,
+      sum_gas: 100.5,
+      avg_gas: 0.002,
+      active_wallets: 1500,
+      peak_tps: 45.5,
+      tvl: 31946444.838592477,
+      holders: 150000,
+      avg_staking_duration: 365.5,
+    });
 
     const result = await GetL1DailyStatsToolSchema.execute({
       date: yesterdayStr,
@@ -591,23 +571,21 @@ describe("GetL1DailyStatsToolSchema date validation", () => {
     getDailyDataSpy.mockRestore();
   });
 
-  it("should accept historical date", async () => {
-    const pastDate = "2024-01-01";
+  it('should accept historical date', async () => {
+    const pastDate = '2024-01-01';
 
-    const getDailyDataSpy = vi
-      .spyOn(L1DataTool.prototype, "getDailyData")
-      .mockResolvedValue({
-        date: pastDate,
-        transactions: 50000,
-        tx_volume: 1234567.89,
-        sum_gas: 100.5,
-        avg_gas: 0.002,
-        active_wallets: 1500,
-        peak_tps: 45.5,
-        tvl: 31946444.838592477,
-        holders: 150000,
-        avg_staking_duration: 365.5,
-      });
+    const getDailyDataSpy = vi.spyOn(L1DataTool.prototype, 'getDailyData').mockResolvedValue({
+      date: pastDate,
+      transactions: 50000,
+      tx_volume: 1234567.89,
+      sum_gas: 100.5,
+      avg_gas: 0.002,
+      active_wallets: 1500,
+      peak_tps: 45.5,
+      tvl: 31946444.838592477,
+      holders: 150000,
+      avg_staking_duration: 365.5,
+    });
 
     const result = await GetL1DailyStatsToolSchema.execute({ date: pastDate });
     expect(result).toBeTruthy();

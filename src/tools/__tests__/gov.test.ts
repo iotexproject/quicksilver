@@ -1,10 +1,10 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
-import { NuclearOutagesTool } from "../gov";
-import { ZodError } from "zod";
+import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { NuclearOutagesTool } from '../gov';
+import { ZodError } from 'zod';
 
-describe("NuclearOutagesTool", () => {
+describe('NuclearOutagesTool', () => {
   let nuclearTool: NuclearOutagesTool;
-  const mockApiKey = "test-api-key";
+  const mockApiKey = 'test-api-key';
 
   beforeEach(() => {
     // Setup environment variables
@@ -17,41 +17,39 @@ describe("NuclearOutagesTool", () => {
     nuclearTool = new NuclearOutagesTool();
   });
 
-  describe("constructor", () => {
-    it("should throw error if API key is missing", () => {
+  describe('constructor', () => {
+    it('should throw error if API key is missing', () => {
       delete process.env.EIA_API_KEY;
-      expect(() => new NuclearOutagesTool()).toThrow(
-        "Missing EIA_API_KEY environment variable"
-      );
+      expect(() => new NuclearOutagesTool()).toThrow('Missing EIA_API_KEY environment variable');
     });
 
-    it("should initialize with correct properties", () => {
-      expect(nuclearTool.name).toBe("get_nuclear_outages");
+    it('should initialize with correct properties', () => {
+      expect(nuclearTool.name).toBe('get_nuclear_outages');
       expect(nuclearTool.description).toBe(
-        "Fetches nuclear power plant outage data in the United States for a specified date range"
+        'Fetches nuclear power plant outage data in the United States for a specified date range'
       );
       expect(nuclearTool.schema).toHaveLength(1);
-      expect(nuclearTool.schema[0].name).toBe("get_nuclear_outages");
+      expect(nuclearTool.schema[0].name).toBe('get_nuclear_outages');
     });
   });
 
-  describe("getRawData", () => {
+  describe('getRawData', () => {
     const mockOutageData = [
       {
-        period: "2024-02-01",
-        outage: "3184.126",
-        capacity: "99094.6",
-        percentOutage: "3.21",
-        "outage-units": "megawatts",
-        "capacity-units": "megawatts",
-        "percentOutage-units": "percent",
+        period: '2024-02-01',
+        outage: '3184.126',
+        capacity: '99094.6',
+        percentOutage: '3.21',
+        'outage-units': 'megawatts',
+        'capacity-units': 'megawatts',
+        'percentOutage-units': 'percent',
       },
     ];
 
-    it("should fetch and validate nuclear outage data", async () => {
+    it('should fetch and validate nuclear outage data', async () => {
       const dateRange = {
-        start: "2024-02-01",
-        end: "2024-02-07",
+        start: '2024-02-01',
+        end: '2024-02-07',
       };
 
       // Mock API response
@@ -67,17 +65,15 @@ describe("NuclearOutagesTool", () => {
       const result = await nuclearTool.getRawData(dateRange);
       expect(result).toEqual(mockOutageData);
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining(
-          "https://api.eia.gov/v2/nuclear-outages/us-nuclear-outages/data"
-        ),
+        expect.stringContaining('https://api.eia.gov/v2/nuclear-outages/us-nuclear-outages/data'),
         expect.any(Object)
       );
     });
 
-    it("should handle API errors", async () => {
+    it('should handle API errors', async () => {
       const dateRange = {
-        start: "2024-02-01",
-        end: "2024-02-07",
+        start: '2024-02-01',
+        end: '2024-02-07',
       };
 
       // Mock API error
@@ -86,29 +82,25 @@ describe("NuclearOutagesTool", () => {
         status: 404,
       });
 
-      await expect(nuclearTool.getRawData(dateRange)).rejects.toThrow(
-        "API request failed with status: 404"
-      );
+      await expect(nuclearTool.getRawData(dateRange)).rejects.toThrow('API request failed with status: 404');
     });
 
-    it("should validate date range input", async () => {
+    it('should validate date range input', async () => {
       const invalidDateRange = {
-        start: "invalid-date",
-        end: "2024-02-07",
+        start: 'invalid-date',
+        end: '2024-02-07',
       };
 
-      await expect(nuclearTool.getRawData(invalidDateRange)).rejects.toThrow(
-        ZodError
-      );
+      await expect(nuclearTool.getRawData(invalidDateRange)).rejects.toThrow(ZodError);
     });
 
-    it("should adjust future end date to current date", async () => {
+    it('should adjust future end date to current date', async () => {
       const futureDate = new Date();
       futureDate.setFullYear(futureDate.getFullYear() + 1);
-      const futureDateStr = futureDate.toISOString().split("T")[0];
+      const futureDateStr = futureDate.toISOString().split('T')[0];
 
       const dateRange = {
-        start: "2024-02-01",
+        start: '2024-02-01',
         end: futureDateStr,
       };
 
@@ -125,11 +117,8 @@ describe("NuclearOutagesTool", () => {
       await nuclearTool.getRawData(dateRange);
 
       // Verify the API was called with today's date instead of the future date
-      const today = new Date().toISOString().split("T")[0];
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining(`end=${today}`),
-        expect.any(Object)
-      );
+      const today = new Date().toISOString().split('T')[0];
+      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining(`end=${today}`), expect.any(Object));
     });
   });
 });

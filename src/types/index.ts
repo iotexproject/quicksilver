@@ -1,4 +1,4 @@
-import { Tool } from "ai";
+import { Tool } from 'ai';
 
 export interface PromptContext {
   tools: QSTool[];

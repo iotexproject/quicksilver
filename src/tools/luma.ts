@@ -1,27 +1,21 @@
-import { logger } from "../logger/winston";
-import { z } from "zod";
-import { tool } from "ai";
-import { v4 as uuidv4 } from "uuid";
-import { UUID } from "crypto";
+import { logger } from '../logger/winston';
+import { z } from 'zod';
+import { tool } from 'ai';
+import { v4 as uuidv4 } from 'uuid';
+import { UUID } from 'crypto';
 
-import { APITool } from "./tool";
-import { LumaEvent, LumaParams, ICalEvent } from "./types/luma";
+import { APITool } from './tool';
+import { LumaEvent, LumaParams, ICalEvent } from './types/luma';
 
 // Default ETHDenver Luma calendar URL
-const DEFAULT_LUMA_CALENDAR_URL =
-  "https://api.lu.ma/ics/get?entity=calendar&id=cal-VFzfuxD01QUFkSs";
+const DEFAULT_LUMA_CALENDAR_URL = 'https://api.lu.ma/ics/get?entity=calendar&id=cal-VFzfuxD01QUFkSs';
 
 const FetchLumaEventsToolSchema = {
-  name: "fetch_luma_events",
+  name: 'fetch_luma_events',
   description:
-    "Fetches events from a Luma calendar, starting with ETHDenver events. Call it after ethdenver tool to back the ethdenver tool with luma events",
+    'Fetches events from a Luma calendar, starting with ETHDenver events. Call it after ethdenver tool to back the ethdenver tool with luma events',
   parameters: z.object({
-    calendarUrl: z
-      .string()
-      .optional()
-      .describe(
-        "Optional Luma calendar URL. If not provided, uses ETHDenver calendar"
-      ),
+    calendarUrl: z.string().optional().describe('Optional Luma calendar URL. If not provided, uses ETHDenver calendar'),
   }),
   execute: async (input: { calendarUrl?: string; filter?: string }) => {
     try {
@@ -31,7 +25,7 @@ const FetchLumaEventsToolSchema = {
         filter: input.filter,
       });
     } catch (error) {
-      logger.error("Error executing fetch_luma_events tool", error);
+      logger.error('Error executing fetch_luma_events tool', error);
       return `Error executing fetch_luma_events tool`;
     }
   },
@@ -47,9 +41,9 @@ export class LumaEventsTool extends APITool<LumaParams> {
 
   constructor() {
     super({
-      name: "LumaEvents",
-      description: "Tool for fetching and filtering events from Luma calendars",
-      baseUrl: "https://api.lu.ma",
+      name: 'LumaEvents',
+      description: 'Tool for fetching and filtering events from Luma calendars',
+      baseUrl: 'https://api.lu.ma',
     });
   }
 
@@ -61,15 +55,14 @@ export class LumaEventsTool extends APITool<LumaParams> {
       if (params.filter) {
         const filterLower = params.filter.toLowerCase();
         return events.filter(
-          (event) =>
-            event.title.toLowerCase().includes(filterLower) ||
-            event.description.toLowerCase().includes(filterLower)
+          event =>
+            event.title.toLowerCase().includes(filterLower) || event.description.toLowerCase().includes(filterLower)
         );
       }
 
       return events;
     } catch (error) {
-      logger.error("Luma Events Error", error);
+      logger.error('Luma Events Error', error);
       throw new Error(`Error fetching Luma events: ${error}`);
     }
   }
@@ -79,9 +72,7 @@ export class LumaEventsTool extends APITool<LumaParams> {
       const response = await fetch(calendarUrl);
 
       if (!response.ok) {
-        throw new Error(
-          `Failed to fetch calendar: ${response.status} ${response.statusText}`
-        );
+        throw new Error(`Failed to fetch calendar: ${response.status} ${response.statusText}`);
       }
 
       const icsText = await response.text();
@@ -90,21 +81,21 @@ export class LumaEventsTool extends APITool<LumaParams> {
       const events = this.parseICalendar(icsText);
 
       // Transform the events into our format
-      return events.map((event) => {
+      return events.map(event => {
         const uid = event.uid || uuidv4();
 
         return {
           id: uid,
-          title: event.summary || "Untitled Event",
+          title: event.summary || 'Untitled Event',
           start: event.dtstart ? new Date(event.dtstart) : new Date(),
           end: event.dtend ? new Date(event.dtend) : new Date(),
-          location: event.location || "",
-          description: event.description || "",
-          url: this.extractUrlFromDescription(event.description || ""),
+          location: event.location || '',
+          description: event.description || '',
+          url: this.extractUrlFromDescription(event.description || ''),
         };
       });
     } catch (error) {
-      logger.error("Error fetching Luma calendar", error);
+      logger.error('Error fetching Luma calendar', error);
       throw new Error(`Failed to fetch or parse Luma calendar: ${error}`);
     }
   }
@@ -113,42 +104,37 @@ export class LumaEventsTool extends APITool<LumaParams> {
   private parseICalendar(icsData: string): ICalEvent[] {
     const events: ICalEvent[] = [];
     let currentEvent: ICalEvent | null = null;
-    let currentProperty = "";
+    let currentProperty = '';
 
     // Split by lines and process
     const lines = icsData.split(/\r\n|\n|\r/);
 
     for (const line of lines) {
-      if (line.startsWith("BEGIN:VEVENT")) {
+      if (line.startsWith('BEGIN:VEVENT')) {
         currentEvent = {};
-      } else if (line.startsWith("END:VEVENT") && currentEvent) {
+      } else if (line.startsWith('END:VEVENT') && currentEvent) {
         events.push(currentEvent);
         currentEvent = null;
       } else if (currentEvent) {
         // Handle property
-        if (line.startsWith(" ") && currentProperty) {
+        if (line.startsWith(' ') && currentProperty) {
           // This is a continuation of the previous property
           const value = line.substring(1);
           if (currentEvent[currentProperty as keyof ICalEvent]) {
             currentEvent[currentProperty as keyof ICalEvent] += value;
           }
         } else {
-          const colonIndex = line.indexOf(":");
+          const colonIndex = line.indexOf(':');
           if (colonIndex > 0) {
             const key = line.substring(0, colonIndex).toLowerCase();
             const value = line.substring(colonIndex + 1);
 
             // Handle common properties
-            if (
-              key === "uid" ||
-              key === "summary" ||
-              key === "description" ||
-              key === "location"
-            ) {
+            if (key === 'uid' || key === 'summary' || key === 'description' || key === 'location') {
               currentEvent[key] = value;
-            } else if (key.startsWith("dtstart")) {
+            } else if (key.startsWith('dtstart')) {
               currentEvent.dtstart = this.parseICalDate(value);
-            } else if (key.startsWith("dtend")) {
+            } else if (key.startsWith('dtend')) {
               currentEvent.dtend = this.parseICalDate(value);
             }
 
@@ -165,10 +151,10 @@ export class LumaEventsTool extends APITool<LumaParams> {
   private parseICalDate(dateStr: string): string {
     // Basic handling for common iCal date formats
     // This is a simplified version and might need enhancement for all iCal date formats
-    if (dateStr.includes("T")) {
+    if (dateStr.includes('T')) {
       // Format with time component
-      const cleanDate = dateStr.replace(/[Z]/g, "");
-      if (cleanDate.includes("-")) {
+      const cleanDate = dateStr.replace(/[Z]/g, '');
+      if (cleanDate.includes('-')) {
         return cleanDate; // Already in ISO format
       }
 
@@ -185,7 +171,7 @@ export class LumaEventsTool extends APITool<LumaParams> {
       return `${year}-${month}-${day}T${hour}:${minute}:${second}`;
     } else {
       // Date only format
-      if (dateStr.includes("-")) {
+      if (dateStr.includes('-')) {
         return `${dateStr}T00:00:00`;
       }
 
@@ -212,10 +198,7 @@ export class LumaEventsTool extends APITool<LumaParams> {
   }
 
   // Optional method to store events in knowledge base if needed
-  async storeEventsInKnowledgeBase(
-    events: LumaEvent[],
-    runtime: any
-  ): Promise<void> {
+  async storeEventsInKnowledgeBase(events: LumaEvent[], runtime: any): Promise<void> {
     for (const event of events) {
       await runtime.ragKnowledgeManager.createKnowledge({
         id: uuidv4() as UUID,
@@ -226,7 +209,7 @@ export class LumaEventsTool extends APITool<LumaParams> {
             title: event.title,
             isMain: true,
             isChunk: false,
-            type: "event",
+            type: 'event',
           },
         },
       });

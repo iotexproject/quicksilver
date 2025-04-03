@@ -1,12 +1,8 @@
-import { LLM, ModelAdapter, DummyLLM } from "./llm";
+import { LLM, ModelAdapter, DummyLLM } from './llm';
 
-const OPENAI_MODELS = new Set(["gpt-4o", "gpt-4o-mini", "o3-mini", "o1-mini"]);
-const DEEPSEEK_MODELS = new Set(["deepseek-chat", "deepseek-reasoner"]);
-const ANTHROPIC_MODELS = new Set([
-  "claude-3-5-sonnet-latest",
-  "claude-3-5-haiku-latest",
-  "claude-3-7-sonnet-latest",
-]);
+const OPENAI_MODELS = new Set(['gpt-4o', 'gpt-4o-mini', 'o3-mini', 'o1-mini']);
+const DEEPSEEK_MODELS = new Set(['deepseek-chat', 'deepseek-reasoner']);
+const ANTHROPIC_MODELS = new Set(['claude-3-5-sonnet-latest', 'claude-3-5-haiku-latest', 'claude-3-7-sonnet-latest']);
 
 export class LLMService {
   fastllm: LLM;
@@ -23,29 +19,29 @@ export class LLMService {
   }
 
   providerMap: Record<string, (model?: string) => LLM> = {
-    anthropic: (model) =>
+    anthropic: model =>
       new ModelAdapter({
-        provider: "anthropic",
-        model: model || "claude-3-5-haiku-latest",
+        provider: 'anthropic',
+        model: model || 'claude-3-5-haiku-latest',
       }),
-    deepseek: (model) =>
+    deepseek: model =>
       new ModelAdapter({
-        provider: "deepseek",
-        model: model || "deepseek-chat",
+        provider: 'deepseek',
+        model: model || 'deepseek-chat',
       }),
-    openai: (model) =>
+    openai: model =>
       new ModelAdapter({
-        provider: "openai",
-        model: model || "gpt-4o-mini",
+        provider: 'openai',
+        model: model || 'gpt-4o-mini',
       }),
   };
 
   private getProviderFromModel(model?: string): string {
-    if (!model) return ""; // default provider
-    if (OPENAI_MODELS.has(model)) return "openai";
-    if (DEEPSEEK_MODELS.has(model)) return "deepseek";
-    if (ANTHROPIC_MODELS.has(model)) return "anthropic";
-    return "";
+    if (!model) return ''; // default provider
+    if (OPENAI_MODELS.has(model)) return 'openai';
+    if (DEEPSEEK_MODELS.has(model)) return 'deepseek';
+    if (ANTHROPIC_MODELS.has(model)) return 'anthropic';
+    return '';
   }
 
   private initLLM(params: { model?: string }): LLM {

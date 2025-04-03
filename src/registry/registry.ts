@@ -1,15 +1,15 @@
-import { ToolSet } from "ai";
+import { ToolSet } from 'ai';
 
-import { QSTool } from "../types";
-import { logger } from "../logger/winston";
-import { ToolName } from "./toolNames";
-import { availableTools } from "./toolClasses";
+import { QSTool } from '../types';
+import { logger } from '../logger/winston';
+import { ToolName } from './toolNames';
+import { availableTools } from './toolClasses';
 
 export class ToolRegistry {
   private static tools = new Map<ToolName, () => QSTool>();
 
   static {
-    availableTools.forEach((tool) => {
+    availableTools.forEach(tool => {
       this.register(tool.name, () => new tool.toolClass());
     });
   }
@@ -26,32 +26,22 @@ export class ToolRegistry {
     const enabledToolsEnv = process.env.ENABLED_TOOLS;
 
     if (!enabledToolsEnv) {
-      logger.warn(
-        "No tools enabled. Please set ENABLED_TOOLS environment variable."
-      );
+      logger.warn('No tools enabled. Please set ENABLED_TOOLS environment variable.');
       return [];
     }
 
-    const enabledTools = enabledToolsEnv
-      .split(",")
-      .map((t) => t.trim() as ToolName);
+    const enabledTools = enabledToolsEnv.split(',').map(t => t.trim() as ToolName);
 
-    const invalidTools = enabledTools.filter((tool) => !this.tools.has(tool));
+    const invalidTools = enabledTools.filter(tool => !this.tools.has(tool));
     if (invalidTools.length > 0) {
-      logger.warn(
-        `Warning: Unknown tools configured: ${invalidTools.join(", ")}`
-      );
+      logger.warn(`Warning: Unknown tools configured: ${invalidTools.join(', ')}`);
     }
 
-    return enabledTools
-      .map((tool) => this.getTool(tool))
-      .filter((tool): tool is QSTool => tool !== undefined);
+    return enabledTools.map(tool => this.getTool(tool)).filter((tool): tool is QSTool => tool !== undefined);
   }
 
   static getSpecialtyTools(toolNames: ToolName[]): QSTool[] {
-    return toolNames
-      .map((toolName) => this.getTool(toolName))
-      .filter((tool): tool is QSTool => tool !== undefined);
+    return toolNames.map(toolName => this.getTool(toolName)).filter((tool): tool is QSTool => tool !== undefined);
   }
 
   static getTool(name: ToolName): QSTool | undefined {
@@ -73,15 +63,15 @@ export class ToolRegistry {
       return false;
     }
     return enabledToolsEnv
-      .split(",")
-      .map((t) => t.trim())
+      .split(',')
+      .map(t => t.trim())
       .includes(name);
   }
 
   static buildToolSet(tools: QSTool[]): ToolSet {
     const toolSet: ToolSet = {};
-    tools.forEach((tool) => {
-      tool.schema.forEach((schema) => {
+    tools.forEach(tool => {
+      tool.schema.forEach(schema => {
         toolSet[schema.name] = schema.tool;
       });
     });

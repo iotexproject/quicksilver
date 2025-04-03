@@ -1,24 +1,21 @@
-import { NewsAPITool } from "../tools/newsapi";
-import { CurrentWeatherAPITool, ForecastWeatherAPITool } from "../tools/nubila";
-import {
-  DePINScanMetricsTool,
-  DePINScanProjectsTool,
-} from "../tools/depinscan";
-import { L1DataTool } from "../tools/l1data";
-import DimoTool from "../tools/dimo";
-import { NuclearOutagesTool } from "../tools/gov";
-import { MapboxTool } from "../tools/mapbox";
-import LumaEventsTool from "../tools/luma";
-import { ThirdWebTool } from "../tools/thirdWeb";
-import { CMCBaseTool } from "../tools/cmc";
-import { DefiLlamaTool } from "../tools/defillama";
-import { AskSpecialtyTool } from "../tools/askSpecialty";
-import { ToolName } from "./toolNames";
-import { TimestampConverterTool } from "../tools/time";
-import { CalculatorTool } from "../tools/calculator";
-import { AirQualityTool } from "../tools/airquality";
-import { DePINNinjaTool } from "../tools/depinninja";
-import MessariTool from "../tools/messari";
+import { NewsAPITool } from '../tools/newsapi';
+import { CurrentWeatherAPITool, ForecastWeatherAPITool } from '../tools/nubila';
+import { DePINScanMetricsTool, DePINScanProjectsTool } from '../tools/depinscan';
+import { L1DataTool } from '../tools/l1data';
+import DimoTool from '../tools/dimo';
+import { NuclearOutagesTool } from '../tools/gov';
+import { MapboxTool } from '../tools/mapbox';
+import LumaEventsTool from '../tools/luma';
+import { ThirdWebTool } from '../tools/thirdWeb';
+import { CMCBaseTool } from '../tools/cmc';
+import { DefiLlamaTool } from '../tools/defillama';
+import { AskSpecialtyTool } from '../tools/askSpecialty';
+import { ToolName } from './toolNames';
+import { TimestampConverterTool } from '../tools/time';
+import { CalculatorTool } from '../tools/calculator';
+import { AirQualityTool } from '../tools/airquality';
+import { DePINNinjaTool } from '../tools/depinninja';
+import MessariTool from '../tools/messari';
 
 export const availableTools = [
   {
