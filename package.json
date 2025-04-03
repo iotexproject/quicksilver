@@ -3,14 +3,17 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "bun run server.ts --server-options=\"{\\\"idleTimeout\\\": 120000}\"",
     "dev": "bun run --watch server.ts --server-options=\"{\\\"idleTimeout\\\": 120000}\"",
     "test": "vitest run",
     "test:watch": "vitest",
-    "coverage": "vitest --coverage",
+    "coverage": "vitest run --coverage",
+    "coverage:watch": "vitest --coverage",
     "format": "bun prettier . --write",
-    "prerelease": "bun run format && bun run coverage"
+    "lint": "eslint . --fix",
+    "prerelease": "bun run format && bun run lint && bun run coverage"
   },
   "keywords": [],
   "author": "",
@@ -40,9 +43,17 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@eslint/js": "^9.23.0",
     "@types/axios": "^0.14.4",
     "@types/node": "^22.10.5",
+    "@typescript-eslint/eslint-plugin": "^8.29.0",
+    "@typescript-eslint/parser": "^8.29.0",
     "@vitest/coverage-v8": "2.1.8",
+    "eslint": "^9.23.0",
+    "eslint-config-prettier": "^10.1.1",
+    "eslint-import-resolver-typescript": "^4.3.1",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-prettier": "^5.2.6",
     "prettier": "^3.4.2",
     "vitest": "^2.1.8"
   },

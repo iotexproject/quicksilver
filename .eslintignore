@@ -1,0 +1,14 @@
+node_modules
+dist
+coverage
+.env
+.env.*
+configs
+.gitignore
+.git
+.vscode
+.DS_Store
+.idea
+*.config.js
+*.config.ts
+test/fixtures 
