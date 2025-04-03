@@ -17,4 +17,5 @@ export enum ToolName {
   CALCULATOR = "calculator",
   AIR_QUALITY = "air_quality",
   DEPIN_NINJA = "depin_ninja",
+  MESSARI = "messari",
 }

@@ -88,6 +88,7 @@ describe("AskSpecialtyTool", () => {
         ToolName.DEPIN_PROJECTS,
         ToolName.L1DATA,
         ToolName.THIRDWEB,
+        ToolName.MESSARI,
       ]);
       expect(ToolRegistry.buildToolSet).toHaveBeenCalled();
       expect(mockOrchestrator.process).toHaveBeenCalledWith(

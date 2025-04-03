@@ -9,7 +9,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "coverage": "vitest --coverage",
-    "format": "bun prettier . --write"
+    "format": "bun prettier . --write",
+    "prerelease": "bun run format && bun run coverage"
   },
   "keywords": [],
   "author": "",

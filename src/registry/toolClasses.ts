@@ -18,6 +18,7 @@ import { TimestampConverterTool } from "../tools/time";
 import { CalculatorTool } from "../tools/calculator";
 import { AirQualityTool } from "../tools/airquality";
 import { DePINNinjaTool } from "../tools/depinninja";
+import MessariTool from "../tools/messari";
 
 export const availableTools = [
   {
@@ -91,5 +92,9 @@ export const availableTools = [
   {
     name: ToolName.DEPIN_NINJA,
     toolClass: DePINNinjaTool,
+  },
+  {
+    name: ToolName.MESSARI,
+    toolClass: MessariTool,
   },
 ];
