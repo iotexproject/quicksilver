@@ -40,7 +40,7 @@ export class TimestampConverterTool extends APITool<{
     });
   }
 
-  async execute(args: { value: string | number; targetUnit?: 'ms' | 'sec' }) {
+  async execute(args: { value: string | number; targetUnit?: 'ms' | 'sec' }): Promise<string | number> {
     return this.withErrorHandling('convert_timestamp', async () => {
       const { value, targetUnit } = args;
 
@@ -66,7 +66,7 @@ export class TimestampConverterTool extends APITool<{
     return targetUnit === 'sec' ? Math.floor(timestamp / 1000).toString() : timestamp.toString();
   }
 
-  getRawData(args: { value: string | number; targetUnit?: 'ms' | 'sec' }) {
+  getRawData(args: { value: string | number; targetUnit?: 'ms' | 'sec' }): Promise<string | number> {
     return this.execute(args);
   }
 
