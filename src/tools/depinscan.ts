@@ -181,10 +181,10 @@ const GetProjectsToolSchema: {
           name: p.project_name,
           ...(args.requireDescription ? { description: p.description || '' } : {}),
           token: p.token || '',
-          marketCap: Number(p.market_cap || 0).toLocaleString(),
-          tokenPrice: Number(p.token_price || 0).toLocaleString(),
-          totalDevices: Number(p.total_devices || 0).toLocaleString(),
-          avgDeviceCost: Number(p.avg_device_cost || 0).toLocaleString(),
+          marketCap: numberOrZeroIfNanToString(p.market_cap),
+          tokenPrice: numberOrZeroIfNanToString(p.token_price),
+          totalDevices: numberOrZeroIfNanToString(p.total_devices),
+          avgDeviceCost: numberOrZeroIfNanToString(p.avg_device_cost),
           estimatedDailyEarnings: Number(p.estimated_daily_earnings || 0).toLocaleString(),
           daysToBreakeven: Number(p.days_to_breakeven || 0),
           categories: p.categories || [],
@@ -204,61 +204,89 @@ type DepinScanMetricsParams = {
 type DepinScanMetricsResponse = z.infer<typeof DepinScanMetricsSchema>[];
 type DepinScanProjectResponse = z.infer<typeof DepinScanProjectSchema>[];
 
+type FilterPredicate = (project: DepinScanProjectResponse[number]) => boolean;
+
+const ProjectFilters = {
+  byCategory:
+    (category: string): FilterPredicate =>
+    project =>
+      project.categories?.some(c => c.toLowerCase() === category.toLowerCase()) ?? false,
+
+  byLayer1:
+    (layer1: string): FilterPredicate =>
+    project =>
+      project.layer_1?.includes(layer1) ?? false,
+
+  byMinNumber:
+    (value: number, field: keyof DepinScanProjectResponse[number]): FilterPredicate =>
+    project => {
+      const projectValue = project[field];
+      const numericValue = typeof projectValue === 'string' ? Number(projectValue) : projectValue;
+      return typeof numericValue === 'number' && !isNaN(numericValue) && numericValue > 0 && numericValue >= value;
+    },
+
+  byMaxNumber:
+    (value: number, field: keyof DepinScanProjectResponse[number]): FilterPredicate =>
+    project => {
+      const projectValue = project[field];
+      return typeof projectValue === 'string' && Number(projectValue) > 0 && Number(projectValue) <= value;
+    },
+
+  hasToken: (): FilterPredicate => project => Boolean(project.token?.length),
+};
+
+interface FilterConfig {
+  condition: (args: z.infer<typeof GetProjectsToolSchema.parameters>) => boolean;
+  createFilter: (args: z.infer<typeof GetProjectsToolSchema.parameters>) => FilterPredicate;
+}
+
+const filterConfigs: Record<string, FilterConfig> = {
+  category: {
+    condition: args => Boolean(args.category),
+    createFilter: args => ProjectFilters.byCategory(args.category!),
+  },
+  layer1: {
+    condition: args => Boolean(args.layer1),
+    createFilter: args => ProjectFilters.byLayer1(args.layer1!),
+  },
+  minMarketCap: {
+    condition: args => args.minMarketCap !== undefined,
+    createFilter: args => ProjectFilters.byMinNumber(args.minMarketCap!, 'market_cap'),
+  },
+  minDevices: {
+    condition: args => args.minDevices !== undefined,
+    createFilter: args => ProjectFilters.byMinNumber(args.minDevices!, 'total_devices'),
+  },
+  requireToken: {
+    condition: args => Boolean(args.requireToken),
+    createFilter: () => ProjectFilters.hasToken(),
+  },
+  minTokenPrice: {
+    condition: args => args.minTokenPrice !== undefined,
+    createFilter: args => ProjectFilters.byMinNumber(args.minTokenPrice!, 'token_price'),
+  },
+  minDailyEarnings: {
+    condition: args => args.minDailyEarnings !== undefined,
+    createFilter: args => ProjectFilters.byMinNumber(args.minDailyEarnings!, 'estimated_daily_earnings'),
+  },
+  maxDaysToBreakeven: {
+    condition: args => args.maxDaysToBreakeven !== undefined,
+    createFilter: args => ProjectFilters.byMaxNumber(args.maxDaysToBreakeven!, 'days_to_breakeven'),
+  },
+};
+
+function getActiveFilters(args: z.infer<typeof GetProjectsToolSchema.parameters>): FilterPredicate[] {
+  return Object.values(filterConfigs)
+    .filter(config => config.condition(args))
+    .map(config => config.createFilter(args));
+}
+
 function filterProjects(
   projects: DepinScanProjectResponse,
   args: z.infer<typeof GetProjectsToolSchema.parameters>
 ): DepinScanProjectResponse {
-  let filteredProjects = projects;
-  if (args.category) {
-    filteredProjects = filteredProjects.filter(p => {
-      const lowerCaseCategory = args.category!.toLowerCase();
-      return p.categories?.some(c => c.toLowerCase() === lowerCaseCategory) ?? false;
-    });
-  }
-  if (args.layer1) {
-    filteredProjects = filteredProjects.filter(p => {
-      return p.layer_1?.includes(args.layer1!) ?? false;
-    });
-  }
-  if (args.minMarketCap !== undefined) {
-    filteredProjects = filteredProjects.filter(
-      p => p.market_cap && Number(p.market_cap) > 0 && Number(p.market_cap) >= (args.minMarketCap ?? 0)
-    );
-  }
-  if (args.minDevices !== undefined) {
-    filteredProjects = filteredProjects.filter(
-      p => p.total_devices && Number(p.total_devices) > 0 && Number(p.total_devices) >= (args.minDevices ?? 0)
-    );
-  }
-
-  if (args.requireToken) {
-    filteredProjects = filteredProjects.filter(p => p.token && p.token.length > 0);
-  }
-
-  if (args.minTokenPrice !== undefined) {
-    filteredProjects = filteredProjects.filter(
-      p => p.token_price && Number(p.token_price) > 0 && Number(p.token_price) >= (args.minTokenPrice ?? 0)
-    );
-  }
-
-  if (args.minDailyEarnings !== undefined) {
-    filteredProjects = filteredProjects.filter(
-      p =>
-        p.estimated_daily_earnings &&
-        Number(p.estimated_daily_earnings) > 0 &&
-        Number(p.estimated_daily_earnings) >= (args.minDailyEarnings ?? 0)
-    );
-  }
-
-  if (args.maxDaysToBreakeven !== undefined) {
-    filteredProjects = filteredProjects.filter(
-      p =>
-        p.days_to_breakeven &&
-        Number(p.days_to_breakeven) > 0 &&
-        Number(p.days_to_breakeven) <= (args.maxDaysToBreakeven ?? Infinity)
-    );
-  }
-  return filteredProjects;
+  const filters = getActiveFilters(args);
+  return projects.filter(project => filters.every(filter => filter(project)));
 }
 
 export class DePINScanMetricsTool extends APITool<DepinScanMetricsParams> {
@@ -299,4 +327,8 @@ export class DePINScanProjectsTool extends APITool<void> {
     }
     return await res.json();
   }
+}
+
+function numberOrZeroIfNanToString(value: string | number | null | undefined): string {
+  return Number(value || 0).toLocaleString();
 }
