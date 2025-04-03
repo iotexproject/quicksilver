@@ -71,42 +71,55 @@ export class ThirdWebTool extends APITool<ThirdWebParams> {
     return this.askNebula(validatedParams);
   }
 
+  private handleNebulaError(error: unknown, timeout: number): never {
+    if (axios.isAxiosError(error)) {
+      if (error.code === 'ECONNABORTED') {
+        throw new Error(`Request timed out after ${timeout / 1000} seconds`);
+      }
+
+      const errorMessages: Record<number, string> = {
+        401: 'Authentication failed: Invalid ThirdWeb secret key',
+        422: 'Invalid request parameters',
+        524: 'Server timeout: The ThirdWeb API took too long to respond',
+      };
+
+      const status = error.response?.status;
+      if (status && errorMessages[status]) {
+        throw new Error(errorMessages[status]);
+      }
+    }
+    throw error;
+  }
+
   private async askNebula(params: ThirdWebParams): Promise<NebulaResponse> {
-    const secretKey = process.env.THIRDWEB_SECRET_KEY!;
-    const sessionId = process.env.THIRDWEB_SESSION_ID!;
     const timeout = Number(process.env.THIRDWEB_REQUEST_TIMEOUT) || 60000;
 
     try {
-      const response = await axios.post<NebulaResponse>(
-        this.baseUrl,
-        {
-          message: params.message,
-          stream: false,
-          session_id: sessionId,
-        },
-        {
-          headers: {
-            'x-secret-key': secretKey,
-            'Content-Type': 'application/json',
-          },
-          timeout: timeout,
-        }
-      );
-      return response.data;
+      return await this.fetchNebulaResponse(params, timeout);
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        if (error.code === 'ECONNABORTED') {
-          throw new Error(`Request timed out after ${timeout / 1000} seconds`);
-        }
-        if (error.response?.status === 401) {
-          throw new Error('Authentication failed: Invalid ThirdWeb secret key');
-        } else if (error.response?.status === 422) {
-          throw new Error('Invalid request parameters');
-        } else if (error.response?.status === 524) {
-          throw new Error('Server timeout: The ThirdWeb API took too long to respond');
-        }
-      }
-      throw error;
+      this.handleNebulaError(error, timeout);
     }
+  }
+
+  private async fetchNebulaResponse(params: ThirdWebParams, timeout: number): Promise<NebulaResponse> {
+    const secretKey = process.env.THIRDWEB_SECRET_KEY!;
+    const sessionId = process.env.THIRDWEB_SESSION_ID!;
+
+    const response = await axios.post<NebulaResponse>(
+      this.baseUrl,
+      {
+        message: params.message,
+        stream: false,
+        session_id: sessionId,
+      },
+      {
+        headers: {
+          'x-secret-key': secretKey,
+          'Content-Type': 'application/json',
+        },
+        timeout: timeout,
+      }
+    );
+    return response.data;
   }
 }
