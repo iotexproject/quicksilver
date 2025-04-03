@@ -6,7 +6,6 @@ import { LLMService } from '../llm/llm-service';
 import { APITool } from '../tools/tool';
 import { QueryOrchestrator } from '../workflow';
 
-
 class TestAPITool extends APITool<any> {
   schema: { name: string; tool: Tool }[] = [
     {

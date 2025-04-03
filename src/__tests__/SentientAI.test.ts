@@ -38,7 +38,7 @@ describe('SentientAI', () => {
     }));
     vi.mock('../raw-data-provider', () => ({
       RawDataProvider: vi.fn().mockImplementation(() => ({
-        process: vi.fn().mockImplementation((tool) => {
+        process: vi.fn().mockImplementation(tool => {
           if (tool.name === 'get_current_weather') {
             return Promise.resolve('+10 C');
           }
