@@ -416,36 +416,12 @@ export class MapboxTool extends APITool<GeocodeParams | DirectionsParams | Rever
   }
 
   async getRawData(params: GeocodeParams | DirectionsParams | ReverseGeocodeParams): Promise<any> {
-    // This method is required by the APITool abstract class but we're using more specific methods
-    // Determine which operation to perform based on the parameters
     if ('location' in params) {
       return this.getGeocodingData(params);
     } else if ('longitude' in params && 'latitude' in params) {
       return this.getReverseGeocodingData(params);
     } else if ('origin' in params && 'destination' in params) {
-      // Parse origin and destination - they could be coordinates or location names
-      let originCoords: [number, number];
-      let destCoords: [number, number];
-
-      // Check if origin is already coordinates
-      const originParsed = parseCoordinateString(params.origin);
-      if (originParsed) {
-        originCoords = originParsed;
-      } else {
-        // If not coordinates, geocode the location name
-        originCoords = await this.geocodeLocation(params.origin);
-      }
-
-      // Check if destination is already coordinates
-      const destParsed = parseCoordinateString(params.destination);
-      if (destParsed) {
-        destCoords = destParsed;
-      } else {
-        // If not coordinates, geocode the location name
-        destCoords = await this.geocodeLocation(params.destination);
-      }
-
-      // Then get the directions
+      const { originCoords, destCoords } = await this.extractCoordinates(params);
       return this.getDirections({
         coordinates: [originCoords, destCoords],
         profile: params.profile || 'driving',
@@ -457,5 +433,27 @@ export class MapboxTool extends APITool<GeocodeParams | DirectionsParams | Rever
         'Invalid parameters: must provide either location for geocoding, longitude/latitude for reverse geocoding, or origin/destination for directions'
       );
     }
+  }
+
+  private async extractCoordinates(
+    params: DirectionsParams
+  ): Promise<{ originCoords: [number, number]; destCoords: [number, number] }> {
+    let originCoords: [number, number];
+    let destCoords: [number, number];
+
+    const originParsed = parseCoordinateString(params.origin);
+    if (originParsed) {
+      originCoords = originParsed;
+    } else {
+      originCoords = await this.geocodeLocation(params.origin);
+    }
+
+    const destParsed = parseCoordinateString(params.destination);
+    if (destParsed) {
+      destCoords = destParsed;
+    } else {
+      destCoords = await this.geocodeLocation(params.destination);
+    }
+    return { originCoords, destCoords };
   }
 }
