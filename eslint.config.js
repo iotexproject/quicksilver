@@ -7,7 +7,7 @@ import importPlugin from 'eslint-plugin-import';
 export default [
   js.configs.recommended,
   {
-    files: ['**/*.ts'],
+    files: ['server.ts', '__tests__/**/*.ts', 'src/**/*.ts', 'src/**/*.js'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
@@ -61,7 +61,7 @@ export default [
     },
   },
   {
-    ignores: ['node_modules/', 'dist/', 'coverage/', '*.config.js', '*.config.ts'],
+    ignores: ['node_modules/', 'dist/', 'coverage/', 'configs/', '*.config.js', '*.config.ts', 'configs/'],
   },
   prettierConfig,
 ];
