@@ -1,8 +1,7 @@
 import { anthropic } from '@ai-sdk/anthropic';
-
 import { deepseek } from '@ai-sdk/deepseek';
 import { openai } from '@ai-sdk/openai';
-import { generateText, streamText, LanguageModel, ToolSet, createDataStreamResponse, smoothStream } from 'ai';
+import { generateText, streamText, LanguageModel, ToolSet, createDataStreamResponse, smoothStream, StepResult } from 'ai';
 
 import { logger } from '../logger/winston';
 
@@ -10,7 +9,7 @@ export const TOOL_CALL_LIMIT = process.env.TOOL_CALL_LIMIT ? parseInt(process.en
 
 export interface LLM {
   generate(prompt: string, tools?: ToolSet): Promise<string>;
-  stream(prompt: string, tools?: ToolSet): Promise<any>;
+  stream(prompt: string, tools?: ToolSet): Promise<Response>;
 }
 
 export class DummyLLM implements LLM {
@@ -22,8 +21,8 @@ export class DummyLLM implements LLM {
     });
   }
 
-  async stream(_: string): Promise<string> {
-    return "Dummy LLM Response to the user's request.";
+  async stream(_: string): Promise<Response> {
+    return new Response("Dummy LLM Response to the user's request.");
   }
 }
 
@@ -55,7 +54,7 @@ export class ModelAdapter implements LLM {
         tools,
         maxSteps: TOOL_CALL_LIMIT,
         experimental_continueSteps: true,
-        onStepFinish(step: any) {
+        onStepFinish(step: StepResult<ToolSet>) {
           ModelAdapter.logStep(step);
         },
       });
@@ -67,7 +66,7 @@ export class ModelAdapter implements LLM {
     }
   }
 
-  async stream(prompt: string, tools?: ToolSet) {
+  async stream(prompt: string, tools?: ToolSet): Promise<Response> {
     console.log('stream', prompt);
     return createDataStreamResponse({
       execute: dataStream => {
@@ -83,7 +82,7 @@ export class ModelAdapter implements LLM {
           experimental_continueSteps: true,
           experimental_transform: smoothStream({ chunking: 'word' }),
           experimental_generateMessageId: generateUUID,
-          onStepFinish(step: any) {
+          onStepFinish(step: StepResult<ToolSet>) {
             ModelAdapter.logStep(step);
           },
         });
@@ -95,7 +94,7 @@ export class ModelAdapter implements LLM {
     });
   }
 
-  static logStep(step: any) {
+  static logStep(step: StepResult<ToolSet>): void {
     console.log('step: ', step.text);
     console.log('toolCalls: ', step.toolCalls);
     console.log('toolResults: ', step.toolResults);
