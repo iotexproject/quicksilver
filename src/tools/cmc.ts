@@ -230,15 +230,7 @@ export class CMCBaseTool extends APITool<CMCBaseParams> {
   }
 
   async getRawData(params: CMCBaseParams): Promise<z.infer<typeof CMCResponseSchema>> {
-    const queryParams = new URLSearchParams({
-      start: (params.start || 1).toString(),
-      limit: (params.limit || 100).toString(),
-      sort: params.sort || 'id',
-      listing_status: Array.isArray(params.listingStatus)
-        ? params.listingStatus.join(',')
-        : params.listingStatus || 'active',
-      aux: (params.aux || ['platform']).join(','),
-    });
+    const queryParams = this.buildSearchParams(params);
 
     if (params.symbol) {
       queryParams.set('symbol', params.symbol);
@@ -257,6 +249,18 @@ export class CMCBaseTool extends APITool<CMCBaseParams> {
     return await res.json();
   }
 
+  private buildSearchParams(params: CMCBaseParams): URLSearchParams {
+    return new URLSearchParams({
+      start: (params.start || 1).toString(),
+      limit: (params.limit || 100).toString(),
+      sort: params.sort || 'id',
+      listing_status: Array.isArray(params.listingStatus)
+        ? params.listingStatus.join(',')
+        : params.listingStatus || 'active',
+      aux: (params.aux || ['platform']).join(','),
+    });
+  }
+
   async getMetadataV2(params: {
     id?: string;
     slug?: string;
@@ -264,15 +268,10 @@ export class CMCBaseTool extends APITool<CMCBaseParams> {
     address?: string;
     skip_invalid?: boolean;
     aux?: string;
-  }) {
+  }): Promise<z.infer<typeof CMCMetadataV2Schema>> {
     const queryParams = new URLSearchParams();
 
-    if (params.id) queryParams.set('id', params.id);
-    if (params.slug) queryParams.set('slug', params.slug);
-    if (params.symbol) queryParams.set('symbol', params.symbol);
-    if (params.address) queryParams.set('address', params.address);
-    if (params.skip_invalid) queryParams.set('skip_invalid', 'true');
-    if (params.aux) queryParams.set('aux', params.aux);
+    this.populateQueryParams(params, queryParams);
 
     const res = await fetch(`${CMC_BASE_URL}/cryptocurrency/info?${queryParams.toString()}`, {
       headers: {
@@ -285,5 +284,17 @@ export class CMCBaseTool extends APITool<CMCBaseParams> {
     }
 
     return await res.json();
+  }
+
+  private populateQueryParams(
+    params: { id?: string; slug?: string; symbol?: string; address?: string; skip_invalid?: boolean; aux?: string },
+    queryParams: URLSearchParams
+  ): void {
+    if (params.id) queryParams.set('id', params.id);
+    if (params.slug) queryParams.set('slug', params.slug);
+    if (params.symbol) queryParams.set('symbol', params.symbol);
+    if (params.address) queryParams.set('address', params.address);
+    if (params.skip_invalid) queryParams.set('skip_invalid', 'true');
+    if (params.aux) queryParams.set('aux', params.aux);
   }
 }
