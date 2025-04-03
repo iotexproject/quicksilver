@@ -127,6 +127,26 @@ type FetchResult<T> = {
   error?: string;
 };
 
+// At the top level of the file
+const _METRICS = {
+  TRANSACTIONS: 'transactions',
+  TX_VOLUME: 'tx_volume',
+  SUM_GAS: 'sum_gas',
+  AVG_GAS: 'avg_gas',
+  ACTIVE_WALLETS: 'active_wallets',
+  PEAK_TPS: 'peak_tps',
+  TVL: 'tvl',
+  HOLDERS: 'holders',
+  AVG_STAKING_DURATION: 'avg_staking_duration',
+} as const;
+
+type MetricKey = keyof typeof _METRICS;
+
+interface MetricFetcher {
+  key: MetricKey;
+  fetch: (date: string) => Promise<number>;
+}
+
 export class L1DataTool extends APITool<void> {
   schema = [
     { name: GetL1StatsToolSchema.name, tool: tool(GetL1StatsToolSchema) },
@@ -318,70 +338,37 @@ export class L1DataTool extends APITool<void> {
     return result;
   }
 
-  private buildResults(
-    date: string,
-    results: FetchResult<number>[]
-  ): {
-    date: string;
-    transactions: number;
-    tx_volume: number;
-    sum_gas: number;
-    avg_gas: number;
-    active_wallets: number;
-    peak_tps: number;
-    tvl: number;
-    holders: number;
-    avg_staking_duration: number;
-  } {
+  private buildResults(date: string, results: Map<MetricKey, FetchResult<number>>): L1DailyStats {
     return {
       date,
-      transactions: this.resultOrZeroIfNan(results),
-      tx_volume: this.resultOrZeroIfNan(results),
-      sum_gas: this.resultOrZeroIfNan(results),
-      avg_gas: this.resultOrZeroIfNan(results),
-      active_wallets: this.resultOrZeroIfNan(results),
-      peak_tps: this.resultOrZeroIfNan(results),
-      tvl: this.resultOrZeroIfNan(results),
-      holders: this.resultOrZeroIfNan(results),
-      avg_staking_duration: this.resultOrZeroIfNan(results),
+      transactions: this.resultOrZeroIfNan(results.get('TRANSACTIONS')),
+      tx_volume: this.resultOrZeroIfNan(results.get('TX_VOLUME')),
+      sum_gas: this.resultOrZeroIfNan(results.get('SUM_GAS')),
+      avg_gas: this.resultOrZeroIfNan(results.get('AVG_GAS')),
+      active_wallets: this.resultOrZeroIfNan(results.get('ACTIVE_WALLETS')),
+      peak_tps: this.resultOrZeroIfNan(results.get('PEAK_TPS')),
+      tvl: this.resultOrZeroIfNan(results.get('TVL')),
+      holders: this.resultOrZeroIfNan(results.get('HOLDERS')),
+      avg_staking_duration: this.resultOrZeroIfNan(results.get('AVG_STAKING_DURATION')),
     };
   }
 
-  private resultOrZeroIfNan(results: FetchResult<number>[]): number {
-    return Number(results[0].value ?? 0);
+  private resultOrZeroIfNan(result: FetchResult<number> | undefined): number {
+    return Number(result?.value ?? 0);
   }
 
-  private logErrors(results: FetchResult<number>[]): void {
-    results.forEach((result, index) => {
+  private logErrors(results: Map<MetricKey, FetchResult<number>>): void {
+    results.forEach((result, key: MetricKey) => {
       if (result.error) {
-        const metrics = [
-          'transactions',
-          'tx_volume',
-          'sum_gas',
-          'avg_gas',
-          'active_wallets',
-          'peak_tps',
-          'tvl',
-          'holders',
-          'avg_staking_duration',
-        ];
-        logger.error(`Error fetching ${metrics[index]}: ${result.error}`);
+        logger.error(`Error fetching ${_METRICS[key]}: ${result.error}`);
       }
     });
   }
 
-  private async runFetchers(date: string): Promise<FetchResult<number>[]> {
-    return await Promise.all([
-      this.safeFetch(() => this.fetchDailyTransactionCount(date)),
-      this.safeFetch(() => this.fetchDailyTxVolume(date)),
-      this.safeFetch(() => this.fetchDailySumGas(date)),
-      this.safeFetch(() => this.fetchDailyAvgGas(date)),
-      this.safeFetch(() => this.fetchDailyActiveWallets(date)),
-      this.safeFetch(() => this.fetchDailyPeakTps(date)),
-      this.safeFetch(() => this.fetchDailyTvl(date)),
-      this.safeFetch(() => this.fetchDailyHolders(date)),
-      this.safeFetch(() => this.fetchDailyStakingDuration(date)),
-    ]);
+  private async runFetchers(date: string): Promise<Map<MetricKey, FetchResult<number>>> {
+    const results = await Promise.all(this.fetchers.map(f => this.safeFetch(() => f.fetch(date))));
+
+    return new Map(this.fetchers.map((f, i) => [f.key, results[i]]));
   }
 
   // Add helper method for safe fetching
@@ -512,6 +499,45 @@ export class L1DataTool extends APITool<void> {
       throw new Error(`Failed to fetch ${path}: ${error.message}`);
     }
   }
+
+  private readonly fetchers: MetricFetcher[] = [
+    {
+      key: 'TRANSACTIONS',
+      fetch: this.fetchDailyTransactionCount.bind(this),
+    },
+    {
+      key: 'TX_VOLUME',
+      fetch: this.fetchDailyTxVolume.bind(this),
+    },
+    {
+      key: 'SUM_GAS',
+      fetch: this.fetchDailySumGas.bind(this),
+    },
+    {
+      key: 'AVG_GAS',
+      fetch: this.fetchDailyAvgGas.bind(this),
+    },
+    {
+      key: 'ACTIVE_WALLETS',
+      fetch: this.fetchDailyActiveWallets.bind(this),
+    },
+    {
+      key: 'PEAK_TPS',
+      fetch: this.fetchDailyPeakTps.bind(this),
+    },
+    {
+      key: 'TVL',
+      fetch: this.fetchDailyTvl.bind(this),
+    },
+    {
+      key: 'HOLDERS',
+      fetch: this.fetchDailyHolders.bind(this),
+    },
+    {
+      key: 'AVG_STAKING_DURATION',
+      fetch: this.fetchDailyStakingDuration.bind(this),
+    },
+  ];
 }
 
 function getYesterday(): string {
