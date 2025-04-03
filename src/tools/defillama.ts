@@ -39,7 +39,6 @@ const DefiLlamaChartResponseSchema = z.object({
 const SearchWidthParamSchema = z
   .string()
   .optional()
-  .default('6h')
   .describe(
     "Time range on either side to find price data. Accepts candle notation: W (week), D (day), H (hour), M (minute). Examples: '4h', '1d', '30m'."
   );
@@ -127,11 +126,7 @@ const GetTokenPricePercentageChangeToolSchema = {
   parameters: z.object({
     coins: z.array(TokenIdentifierSchema),
     timestamp: z.number().optional().describe('UNIX timestamp of reference point, defaults to current time'),
-    lookForward: z
-      .boolean()
-      .optional()
-      .default(false)
-      .describe('Whether to look forward from timestamp (true) or backward (false)'),
+    lookForward: z.boolean().optional().describe('Whether to look forward from timestamp (true) or backward (false)'),
     period: z
       .string()
       .optional()
@@ -143,8 +138,29 @@ const GetTokenPricePercentageChangeToolSchema = {
   },
 };
 
+type CurrentPriceParams = z.infer<typeof GetTokenPriceToolSchema.parameters>;
+type HistoricalPriceParams = z.infer<typeof GetHistoricalTokenPriceToolSchema.parameters>;
+type PriceChartParams = z.infer<typeof GetTokenPriceChartToolSchema.parameters>;
+type PricePercentageChangeParams = z.infer<typeof GetTokenPricePercentageChangeToolSchema.parameters>;
+type PriceResponse = z.infer<typeof DefiLlamaPriceResponseSchema>;
+type HistoricalTokenPrices = {
+  token: string;
+  timestamp?: number;
+  confidence?: number;
+  price?: number;
+  symbol?: string;
+  decimals?: number;
+}[];
+type ChartTokenPrices = {
+  token: string;
+  symbol: string;
+  confidence: number;
+  prices: { price: number; timestamp: number }[];
+  decimals?: number;
+}[];
+
 abstract class DefiLlamaExecutor {
-  protected async fetchFromDefiLlama(url: string): Promise<any> {
+  protected async fetchFromDefiLlama<T>(url: string): Promise<T> {
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`API request failed with status: ${response.status}`);
@@ -161,14 +177,25 @@ abstract class DefiLlamaExecutor {
     }
   }
 
-  abstract execute(args: any): Promise<any>;
+  abstract execute(
+    args:
+      | z.infer<typeof GetTokenPriceToolSchema.parameters>
+      | z.infer<typeof GetHistoricalTokenPriceToolSchema.parameters>
+      | z.infer<typeof GetTokenPriceChartToolSchema.parameters>
+      | z.infer<typeof GetTokenPricePercentageChangeToolSchema.parameters>
+  ): Promise<
+    | { prices: HistoricalTokenPrices }
+    | { tokens: ChartTokenPrices }
+    | { changes: { token: string; percentageChange: number }[] }
+    | string
+  >;
 }
 
 class CurrentPriceExecutor extends DefiLlamaExecutor {
-  async execute(args: { coins: string[]; searchWidth?: string }) {
-    return this.withErrorHandling('get_token_price', async () => {
+  async execute(args: CurrentPriceParams): Promise<{ prices: HistoricalTokenPrices } | string> {
+    return this.withErrorHandling<{ prices: HistoricalTokenPrices }>('get_token_price', async () => {
       const url = this.buildUrl(args);
-      const data = await this.fetchFromDefiLlama(url);
+      const data = await this.fetchFromDefiLlama<PriceResponse>(url);
       const parsedResponse = DefiLlamaPriceResponseSchema.parse(data);
       return this.parseResult(parsedResponse);
     });
@@ -180,7 +207,7 @@ class CurrentPriceExecutor extends DefiLlamaExecutor {
     return `${DEFILLAMA_BASE_URL}/prices/current/${coinsString}?searchWidth=${searchWidth}`;
   }
 
-  private parseResult(parsedResponse: z.infer<typeof DefiLlamaPriceResponseSchema>) {
+  private parseResult(parsedResponse: PriceResponse): { prices: HistoricalTokenPrices } {
     const results = Object.entries(parsedResponse.coins).map(([tokenKey, tokenData]) => {
       if (tokenData.confidence < MIN_CONFIDENCE) {
         return {
@@ -204,23 +231,23 @@ class CurrentPriceExecutor extends DefiLlamaExecutor {
 }
 
 class HistoricalPriceExecutor extends DefiLlamaExecutor {
-  async execute(args: { coins: string[]; timestamp: number; searchWidth?: string }) {
-    return this.withErrorHandling('get_historical_token_price', async () => {
+  async execute(args: HistoricalPriceParams): Promise<{ prices: HistoricalTokenPrices } | string> {
+    return this.withErrorHandling<{ prices: HistoricalTokenPrices }>('get_historical_token_price', async () => {
       const url = this.buildUrl(args);
-      const data = await this.fetchFromDefiLlama(url);
+      const data = await this.fetchFromDefiLlama<PriceResponse>(url);
       const parsedResponse = DefiLlamaPriceResponseSchema.parse(data);
       return this.parseResult(parsedResponse);
     });
   }
 
-  private buildUrl(params: { coins: string[]; timestamp?: number; searchWidth?: string }) {
+  private buildUrl(params: { coins: string[]; timestamp?: number; searchWidth?: string }): string {
     const searchWidth = params.searchWidth || '4h';
     const coinsString = params.coins.join(',');
     const timestampSegment = params.timestamp ? `/${params.timestamp}` : '';
     return `${DEFILLAMA_BASE_URL}/prices/historical${timestampSegment}/${coinsString}?searchWidth=${searchWidth}`;
   }
 
-  private parseResult(parsedResponse: z.infer<typeof DefiLlamaPriceResponseSchema>) {
+  private parseResult(parsedResponse: PriceResponse): { prices: HistoricalTokenPrices } {
     const results = Object.entries(parsedResponse.coins).map(([tokenKey, tokenData]) => {
       if (tokenData.confidence < MIN_CONFIDENCE) {
         return {
@@ -244,22 +271,15 @@ class HistoricalPriceExecutor extends DefiLlamaExecutor {
 }
 
 class ChartExecutor extends DefiLlamaExecutor {
-  async execute(args: {
-    coins: string[];
-    start: number;
-    end?: number;
-    span?: number;
-    period?: string;
-    searchWidth?: string;
-  }) {
-    return this.withErrorHandling('get_token_price_chart', async () => {
+  async execute(args: PriceChartParams): Promise<{ tokens: ChartTokenPrices } | string> {
+    return this.withErrorHandling<{ tokens: ChartTokenPrices }>('get_token_price_chart', async () => {
       const params = { ...args };
       if (params.start && params.end) {
         params.end = undefined; // Ignore end if start is provided
       }
 
       const url = this.buildChartUrl(params);
-      const data = await this.fetchFromDefiLlama(url);
+      const data = await this.fetchFromDefiLlama<PriceResponse>(url);
       const parsedResponse = DefiLlamaChartResponseSchema.parse(data);
       const tokens = this.parseResult(parsedResponse);
 
@@ -274,12 +294,19 @@ class ChartExecutor extends DefiLlamaExecutor {
         symbol: string;
         confidence: number;
         prices: { price: number; timestamp: number }[];
-        decimals?: number | undefined;
+        decimals?: number;
       }
     >;
-  }) {
+  }): ChartTokenPrices {
     return Object.entries(parsedResponse.coins).map(([tokenKey, tokenData]) => {
-      const result: any = {
+      const result: {
+        token: string;
+        symbol: string;
+        confidence: number;
+        prices: { price: number; timestamp: number }[];
+        decimals?: number;
+        error?: string;
+      } = {
         token: tokenKey,
         symbol: tokenData.symbol,
         confidence: tokenData.confidence,
@@ -331,23 +358,29 @@ class ChartExecutor extends DefiLlamaExecutor {
   }
 }
 
+type PercentageChangeResponse = {
+  changes: { token: string; percentageChange: number }[];
+};
+
 class PercentageExecutor extends DefiLlamaExecutor {
-  async execute(args: { coins: string[]; timestamp?: number; lookForward?: boolean; period?: string }) {
-    return this.withErrorHandling('get_token_price_percentage_change', async () => {
+  async execute(args: PricePercentageChangeParams): Promise<PercentageChangeResponse | string> {
+    return this.withErrorHandling<PercentageChangeResponse>('get_token_price_percentage_change', async () => {
       const url = this.buildPercentageUrl(args);
       const response = await this.fetchFromDefiLlama(url);
       const parsedResponse = DefiLlamaPercentageResponseSchema.parse(response);
       const changes = this.parseResult(parsedResponse);
 
-      return { changes };
+      return changes;
     });
   }
 
-  private parseResult(parsedResponse: { coins: Record<string, number> }) {
-    return Object.entries(parsedResponse.coins).map(([token, percentageChange]) => ({
-      token,
-      percentageChange,
-    }));
+  private parseResult(parsedResponse: { coins: Record<string, number> }): PercentageChangeResponse {
+    return {
+      changes: Object.entries(parsedResponse.coins).map(([token, percentageChange]) => ({
+        token,
+        percentageChange,
+      })),
+    };
   }
 
   private buildPercentageUrl(params: {
@@ -410,7 +443,10 @@ export class DefiLlamaTool extends APITool<{
     });
   }
 
-  async getRawData(params: { coins: string[]; searchWidth?: string }) {
+  async getRawData(params: {
+    coins: string[];
+    searchWidth?: string;
+  }): Promise<{ prices: HistoricalTokenPrices } | string> {
     return DefiLlamaTool.currentExecutor.execute(params);
   }
 }
