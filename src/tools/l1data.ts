@@ -8,8 +8,8 @@ import { logger } from '../logger/winston';
 const ANALYTICS_API = 'https://gateway1.iotex.me/analyzer';
 const GQL_ANALYTICS = 'https://analyser-api.iotex.io/graphql';
 
-// Zod Schemas
-const L1StatsSchema = z.object({
+// Add underscore, remove if decide to use schemas for parsing
+const _L1StatsSchema = z.object({
   tvl: z.number().describe('Total Value Locked in the chain'),
   contracts: z.number().describe('Number of deployed contracts'),
   totalStaked: z.number().describe('Total amount of IOTX staked'),
@@ -24,7 +24,7 @@ const L1StatsSchema = z.object({
   tps: z.number().describe('Transactions per second'),
 });
 
-const ChainStatsSchema = z.object({
+const _ChainStatsSchema = z.object({
   Chain: z.object({
     totalSupply: z.string().describe('Total supply in smallest unit (18 decimals)'),
   }),
@@ -42,8 +42,7 @@ const ChainStatsSchema = z.object({
   }),
 });
 
-// Add new Zod schemas
-const L1DailyStatsSchema = z.object({
+const _L1DailyStatsSchema = z.object({
   date: z.string().describe('Date for which stats are fetched (YYYY-MM-DD)'),
   transactions: z.number().describe('Number of transactions for the day'),
   tx_volume: z.number().describe('Total transaction volume for the day'),
@@ -114,9 +113,9 @@ export const GetL1DailyStatsToolSchema = {
 };
 
 // Types
-type L1Stats = z.infer<typeof L1StatsSchema>;
-type ChainStats = z.infer<typeof ChainStatsSchema>;
-type L1DailyStats = z.infer<typeof L1DailyStatsSchema>;
+type L1Stats = z.infer<typeof _L1StatsSchema>;
+type ChainStats = z.infer<typeof _ChainStatsSchema>;
+type L1DailyStats = z.infer<typeof _L1DailyStatsSchema>;
 
 interface GraphQLResponse {
   data: ChainStats;
@@ -309,19 +308,50 @@ export class L1DataTool extends APITool<void> {
       throw new Error('Can only fetch historical data (yesterday or earlier)');
     }
 
-    const results = await Promise.all([
-      this.safeFetch(() => this.fetchDailyTransactionCount(date)),
-      this.safeFetch(() => this.fetchDailyTxVolume(date)),
-      this.safeFetch(() => this.fetchDailySumGas(date)),
-      this.safeFetch(() => this.fetchDailyAvgGas(date)),
-      this.safeFetch(() => this.fetchDailyActiveWallets(date)),
-      this.safeFetch(() => this.fetchDailyPeakTps(date)),
-      this.safeFetch(() => this.fetchDailyTvl(date)),
-      this.safeFetch(() => this.fetchDailyHolders(date)),
-      this.safeFetch(() => this.fetchDailyStakingDuration(date)),
-    ]);
+    const results = await this.runFetchers(date);
 
     // Log any errors that occurred
+    this.logErrors(results);
+
+    const result: L1DailyStats = this.buildResults(date, results);
+
+    return result;
+  }
+
+  private buildResults(
+    date: string,
+    results: FetchResult<number>[]
+  ): {
+    date: string;
+    transactions: number;
+    tx_volume: number;
+    sum_gas: number;
+    avg_gas: number;
+    active_wallets: number;
+    peak_tps: number;
+    tvl: number;
+    holders: number;
+    avg_staking_duration: number;
+  } {
+    return {
+      date,
+      transactions: this.resultOrZeroIfNan(results),
+      tx_volume: this.resultOrZeroIfNan(results),
+      sum_gas: this.resultOrZeroIfNan(results),
+      avg_gas: this.resultOrZeroIfNan(results),
+      active_wallets: this.resultOrZeroIfNan(results),
+      peak_tps: this.resultOrZeroIfNan(results),
+      tvl: this.resultOrZeroIfNan(results),
+      holders: this.resultOrZeroIfNan(results),
+      avg_staking_duration: this.resultOrZeroIfNan(results),
+    };
+  }
+
+  private resultOrZeroIfNan(results: FetchResult<number>[]): number {
+    return Number(results[0].value ?? 0);
+  }
+
+  private logErrors(results: FetchResult<number>[]): void {
     results.forEach((result, index) => {
       if (result.error) {
         const metrics = [
@@ -338,19 +368,20 @@ export class L1DataTool extends APITool<void> {
         logger.error(`Error fetching ${metrics[index]}: ${result.error}`);
       }
     });
+  }
 
-    return {
-      date,
-      transactions: Number(results[0].value ?? 0),
-      tx_volume: Number(results[1].value ?? 0),
-      sum_gas: Number(results[2].value ?? 0),
-      avg_gas: Number(results[3].value ?? 0),
-      active_wallets: Number(results[4].value ?? 0),
-      peak_tps: Number(results[5].value ?? 0),
-      tvl: Number(results[6].value ?? 0),
-      holders: Number(results[7].value ?? 0),
-      avg_staking_duration: Number(results[8].value ?? 0),
-    };
+  private async runFetchers(date: string): Promise<FetchResult<number>[]> {
+    return await Promise.all([
+      this.safeFetch(() => this.fetchDailyTransactionCount(date)),
+      this.safeFetch(() => this.fetchDailyTxVolume(date)),
+      this.safeFetch(() => this.fetchDailySumGas(date)),
+      this.safeFetch(() => this.fetchDailyAvgGas(date)),
+      this.safeFetch(() => this.fetchDailyActiveWallets(date)),
+      this.safeFetch(() => this.fetchDailyPeakTps(date)),
+      this.safeFetch(() => this.fetchDailyTvl(date)),
+      this.safeFetch(() => this.fetchDailyHolders(date)),
+      this.safeFetch(() => this.fetchDailyStakingDuration(date)),
+    ]);
   }
 
   // Add helper method for safe fetching
