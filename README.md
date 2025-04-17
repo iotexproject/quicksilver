@@ -460,9 +460,7 @@ curl "http://localhost:8000/raw?tool=depin-metrics&isLatest=true"
 **Response**
 ```json
 {
-  "data": {
-    // Tool-specific response data
-  }
+  "data": "Tool-specific response data"
 }
 ```
 
