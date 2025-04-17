@@ -28,7 +28,7 @@ The QuickSilver framework empowers developers to build intelligent agents that:
 ## Features
 
 - **Workflow Orchestration**: Executes complex, multi-step tasks orchestrating interaction between LLM, tools, and memory.
-- **LLM Integration**: Suports popular LLMs like OpenAI, Gemini, etc... to understand and generate human-like text.
+- **LLM Integration**: Suports popular LLM providers like OpenAI, Anthropic, DeepSeek, etc... to understand and generate human-like text.
 - **Contextual Memory**: Maintains state and context across conversations.
 - **Built in Tools**: Built-in tools for computing, interacting with DePIN projects and other APIs (e.g., weather and energy data, news services, and more).
 - **Modular Architecture**: Easily extendable with new tools and workflows.
@@ -41,32 +41,45 @@ Quicksilver's architecture is modular and extensible, enabling developers to cus
 
 ```mermaid
 graph TD
-    A[Sentient AI - Core Orchestrator]
-    B[Contextual Memory]
-    C[Workflow Manager]
-    D[Modular Tools]
-    E[LLM Integration]
-    F[Energy DePIN Data]
-    G[News API]
-    H[Weather DePIN Data]
-    I[Custom Tool...]
+    User[👤 User]
+    User --> |How has the recent heat wave in Texas affected energy prices and Bitcoin mining operations?| SocialClients[💬 Social Media Clients<br/>Discord, Telegram, X]
 
+    subgraph ElizoOS Stack
+        SocialClients --> BinoAI[🧠 BinoAI]
+    end
 
-    A <--> B
-    A --> C
-    C --> E
-    C --> D
-    D --> F
-    D --> G
-    D --> I
-    D --> H
-    E --> A
+    BinoAI -->|Requests Real-World Data| QS
+
+    subgraph QS[⚡ Quicksilver System]
+        Orchestrator[🎼 Orchestrator] --> Finance[💰 Finance]
+        Finance --> Orchestrator
+
+        Orchestrator --> Blockchain[⛓️ Blockchain]
+        Blockchain --> Orchestrator
+
+        Orchestrator --> Climate[🌍 Climate & Environment]
+        Climate --> Orchestrator
+
+        Orchestrator --> Navigation[🧭 Navigation]
+        Navigation --> Orchestrator
+
+        Orchestrator --> Media[📰 Media Intelligence]
+        Media --> Orchestrator
+    end
+
+    ThirdParty[🧩 Third-Party Tools<br/>ThirdWeb, Messari Copilot, DeFiLlama,<br/>CoinMarketCap, DePINNinja, Nebula API, etc.]
+
+    Finance --> ThirdParty
+    Blockchain --> ThirdParty
+    Climate --> ThirdParty
+    Navigation --> ThirdParty
+    Media --> ThirdParty
 ```
 
 ### Key Components
 
 1. **Sentient AI (Core Orchestrator)**: Central hub managing interactions and delegating tasks.
-2. **Contextual Memory**: Tracks user interactions and maintains context for continuity. This has been removed to make API calls more efficient.
+2. **Contextual Memory**: Tracks user interactions and maintains context for continuity.
 3. **Workflow Manager**: Handles task automation and orchestration.
 4. **Modular Tools**: Extensible modues for interacting with different DePINs.
 5. **LLM Integration**: Interfaces with language models for intelligent responses.
@@ -102,6 +115,7 @@ graph TD
     OPENAI_API_KEY=your_openai_api_key
     NUBILA_API_KEY=your_nubila_api_key
     NEWSAPI_API_KEY=your_newsapi_api_key
+    # Other API keys...
    ```
 
 4. Run example agents:
@@ -155,7 +169,6 @@ Available tools and their parameters:
 | `depin-projects` | none | DePIN project data |
 | `l1data` | none | L1 blockchain statistics |
 | `nuclear` | `start`, `end` | Nuclear outage data |
-
 ---
 
 ## What's next?
@@ -178,6 +191,10 @@ Quicksilver is serving the sentient AI queries as the DePIN-Plugin on [Eliza](ht
 Quicksilver supports multiple LLM providers and uses a dual-LLM architecture with a fast LLM for initial processing and a primary LLM for complex reasoning. Configure your providers in the `.env` file:
 
 ```env
+# LLM Provider
+FAST_LLM_PROVIDER=openai
+LLM_PROVIDER=deepseek
+
 # LLM Provider API Keys
 OPENAI_API_KEY=your_openai_api_key
 ANTHROPIC_API_KEY=your_anthropic_api_key
@@ -198,15 +215,6 @@ LLM_MODEL=deepseek-chat       # Model for primary reasoning
   - Default model: `deepseek-chat`
   - Note: DeepSeek uses OpenAI-compatible API endpoints
 
-You can configure both the fast LLM and primary LLM providers in the SentientAI initialization:
-
-```typescript
-new SentientAI({
-  fastLLMProvider: 'openai', // For quick processing
-  llmProvider: 'deepseek', // For main reasoning
-});
-```
-
 ## Managing Multiple Instances
 
 Quicksilver supports running multiple instances with different tool configurations. This is useful when you want to:
@@ -219,36 +227,48 @@ Quicksilver supports running multiple instances with different tool configuratio
 ### Configuration Structure
 
 ```bash
-configs/
-└── instances/           # Your instance-specific configurations (gitignored)
-    ├── weather.env      # Instance with only weather-related tools
-    ├── news.env         # Instance with news and analytics tools
-    └── full.env         # Instance with all tools enabled
+configs/ # Your instance-specific configuration (gitignored) 
+    ├── .env.weather # Instance with only weather-related tools
+    ├── .env.news    # Instance with news and analytics tools
+    └── .env.full    # Instance with all tools enabled
 ```
 
 ### Creating a New Instance
 
 1. Copy the template configuration:
 
-   ```bash
-   cp .env.template configs/instances/myinstance.env
-   ```
+```bash
+cp .env.template configs/.env.myinstance
+```
 
 2. Edit the configuration file:
 
-   ```env
-   # configs/instances/myinstance.env
+```env
+# configs/.env.myinstance
 
-   # Enable only required tools
-   ENABLED_TOOLS=weather-current,weather-forecast,news
+# Enable only required tools
+ENABLED_TOOLS=weather-current,weather-forecast,news
 
-   # Configure instance-specific API keys
-   NUBILA_API_KEY=your_key
-   NEWSAPI_API_KEY=your_key
+# Configure instance-specific API keys
+NUBILA_API_KEY=your_key
+NEWSAPI_API_KEY=your_key
 
-   # Other configuration...
-   PORT=8001
-   ```
+# Other configuration...
+PORT=8001
+```
+
+3. Update the docker-compose.yml file to use the new instance:
+
+```yaml
+services:
+  instance1:
+    # image: ghcr.io/iotexproject/quicksilver:latest (uncomment if you want to use the latest official image)
+    env_file: configs/.env.myinstance
+    ports:
+      - '33333:3000'
+      - '8001:8000'
+    restart: always
+```
 
 ### Running Instances
 
@@ -256,11 +276,10 @@ Using Docker Compose:
 
 ```bash
 # Start a specific instance
-CONFIG_PATH=configs/instances/weather.env docker compose up instance1
+docker compose up instance1
 
 # Run multiple instances
-CONFIG_PATH=configs/instances/weather.env docker compose up instance1 & \
-CONFIG_PATH=configs/instances/news.env docker compose up instance2
+docker compose up
 ```
 
 Using environment files directly:
@@ -305,36 +324,7 @@ API_KEY=your_key
 PORT=8003
 ```
 
-### Docker Compose Example
 
-```yaml
-version: '3'
-
-services:
-  # Weather instance
-  weather:
-    image: qs:main
-    env_file: ${CONFIG_PATH:-configs/instances/weather.env}
-    ports:
-      - '8001:8000'
-    restart: always
-
-  # News instance
-  news:
-    image: qs:main
-    env_file: ${CONFIG_PATH:-configs/instances/news.env}
-    ports:
-      - '8002:8000'
-    restart: always
-
-  # IoT instance
-  iot:
-    image: qs:main
-    env_file: ${CONFIG_PATH:-configs/instances/iot.env}
-    ports:
-      - '8003:8000'
-    restart: always
-```
 
 ### Available Tools
 
@@ -347,9 +337,16 @@ The following tools can be enabled in your configuration:
 | `weather-forecast` | Weather forecasts     | `NUBILA_API_KEY`                       |
 | `depin-metrics`    | DePIN network metrics | `DEPIN_API_KEY`                        |
 | `depin-projects`   | DePIN project data    | `DEPIN_API_KEY`                        |
-| `l1data`           | L1 blockchain data    | -                                      |
+| `l1data`           | L1 blockchain data    | `API_V2_KEY`                          |
 | `dimo`             | Vehicle IoT data      | `CLIENT_ID`, `REDIRECT_URI`, `API_KEY` |
 | `nuclear`          | Nuclear outage data   | `EIA_API_KEY`                          |
+| `mapbox`           | Mapbox API integration | `MAPBOX_ACCESS_TOKEN`                  |
+| `messari`          | Messari API integration | `MESSARI_API_KEY`                     |
+| `thirdweb`         | Thirdweb API integration | `THIRDWEB_SECRET_KEY`, `THIRDWEB_SESSION_ID` |
+| `cmc`              | CoinMarketCap API integration | `CMC_API_KEY`                          |
+| `airquality`       | Air quality data      | `AIRVISUAL_API_KEY`                   |
+| `depinninja`       | Depin Ninja API integration | `DEPINNINJA_API_KEY`                  |
+
 
 ### Best Practices
 
