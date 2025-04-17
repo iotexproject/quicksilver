@@ -59,33 +59,33 @@ Quicksilver's architecture is modular and extensible, enabling developers to cus
 
 ```mermaid
 graph TD
-    User[👤 User]
-    User --> |How has the recent heat wave in Texas affected energy prices and Bitcoin mining operations?| SocialClients[💬 Social Media Clients<br/>Discord, Telegram, X]
+    User[User]
+    User --> SocialClients[Social Media Clients<br/>Discord, Telegram, X]
 
     subgraph ElizoOS Stack
-        SocialClients --> BinoAI[🧠 BinoAI]
+        SocialClients --> BinoAI[BinoAI]
     end
 
     BinoAI -->|Requests Real-World Data| QS
 
-    subgraph QS[⚡ Quicksilver System]
-        Orchestrator[🎼 Orchestrator] --> Finance[💰 Finance]
+    subgraph QS[Quicksilver System]
+        Orchestrator[Orchestrator] --> Finance[Finance]
         Finance --> Orchestrator
 
-        Orchestrator --> Blockchain[⛓️ Blockchain]
+        Orchestrator --> Blockchain[Blockchain]
         Blockchain --> Orchestrator
 
-        Orchestrator --> Climate[🌍 Climate & Environment]
+        Orchestrator --> Climate[Climate & Environment]
         Climate --> Orchestrator
 
-        Orchestrator --> Navigation[🧭 Navigation]
+        Orchestrator --> Navigation[Navigation]
         Navigation --> Orchestrator
 
-        Orchestrator --> Media[📰 Media Intelligence]
+        Orchestrator --> Media[Media Intelligence]
         Media --> Orchestrator
     end
 
-    ThirdParty[🧩 Third-Party Tools<br/>ThirdWeb, Messari Copilot, DeFiLlama,<br/>CoinMarketCap, DePINNinja, Nebula API, etc.]
+    ThirdParty[Third-Party Tools<br/>ThirdWeb, Messari Copilot, DeFiLlama,<br/>CoinMarketCap, DePINNinja, etc.]
 
     Finance --> ThirdParty
     Blockchain --> ThirdParty
