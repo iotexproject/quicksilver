@@ -21,6 +21,24 @@ The QuickSilver framework empowers developers to build intelligent agents that:
 
 </details>
 
+## Table of Contents
+
+- [Features](#features)
+- [Architecture](#architecture)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+- [What's next?](#whats-next)
+- [Quicksilver works with Eliza](#quicksilver-works-with-eliza)
+- [API Reference](#api-reference)
+  - [Endpoints](#endpoints)
+- [LLM Provider Configuration](#llm-provider-configuration)
+- [Managing Multiple Instances](#managing-multiple-instances)
+  - [Available Tools](#available-tools)
+  - [Best Practices](#best-practices)
+- [Contributing](#contributing)
+- [License](#license)
+
 ---
 
 ![Preview](./assets/preview.gif)
