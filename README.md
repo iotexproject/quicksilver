@@ -175,16 +175,120 @@ Available tools and their parameters:
 
 Quicksilver is just getting started, and there's immense potential for growth. We're inviting contributors to join us in building the future of AI agents and DePIN integration. Here are some areas where you can make a difference:
 
-- **Integrate DePIN network**: Be part of Quicksilver’s core vision by researching and integrating a Decentralized Physical Infrastructure Network (DePIN). This is an opportunity to demonstrate how DePINs can act as the “sensorial” layer for AI agents.
+- **Integrate DePIN network**: Be part of Quicksilver's core vision by researching and integrating a Decentralized Physical Infrastructure Network (DePIN). This is an opportunity to demonstrate how DePINs can act as the "sensorial" layer for AI agents.
 - **Implement advanced memory types**: Help Quicksilver remember more effectively! Experiment with innovative memory systems like conversation buffers or vector databases to enhance context retention and agent intelligence.
-- **Develop custom tools**: Bring your creativity to life by building tools for new functionalities, such as calendar access, task management, or data analysis. Your contributions can significantly expand the agent’s utility.
-- **Enhance workflow logic**: Improve the agent’s decision-making capabilities to make better use of the tools and resources available. Collaborate to create smarter, more adaptable workflows.
+- **Develop custom tools**: Bring your creativity to life by building tools for new functionalities, such as calendar access, task management, or data analysis. Your contributions can significantly expand the agent's utility.
+- **Enhance workflow logic**: Improve the agent's decision-making capabilities to make better use of the tools and resources available. Collaborate to create smarter, more adaptable workflows.
 
 Have an idea outside of this list? We'd love to hear it!
 
 ## Quicksilver works with Eliza
 
 Quicksilver is serving the sentient AI queries as the DePIN-Plugin on [Eliza](https://github.com/elizaOS/eliza). You can simply enable the plugin and start using it. With Quicksilver, your Eliza agent will gain sentient-like capabilities to interact intelligently with the world. The current capabilities are listed above. If you like to add more capabilities, please refer to the [Contributing](#contributing) section.
+
+## API Reference
+
+Quicksilver exposes several REST endpoints to interact with the Sentient AI system.
+
+### Base URL
+
+```
+http://localhost:8000
+```
+
+### Authentication
+
+Add your API key to requests with the `API-KEY` header:
+
+```bash
+curl -H "API-KEY: your_api_key" http://localhost:8000/endpoint
+```
+
+### Endpoints
+
+#### GET `/`
+
+Simple health check endpoint.
+
+**Response**
+```
+hello world, Sentient AI!
+```
+
+#### POST `/ask`
+
+Send a query to the Sentient AI system.
+
+**Parameters**
+- `q` or `content` (string, required) - The query text
+
+**Request Examples**
+```bash
+# URL parameter
+curl "http://localhost:8000/ask?q=What%20is%20the%20weather%20in%20San%20Francisco?"
+
+# JSON body
+curl http://localhost:8000/ask \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"q": "What is the weather in San Francisco?"}'
+```
+
+**Response**
+```json
+{
+  "data": "The current weather in San Francisco is 62°F with partly cloudy conditions..."
+}
+```
+
+#### POST `/stream`
+
+Stream a response from the Sentient AI system.
+
+**Parameters**
+- `text` (form data, required) - The query text
+- `recentMessages` (form data, optional) - Previous conversation context
+
+**Request Example**
+```bash
+curl http://localhost:8000/stream \
+  -X POST \
+  -H "Content-Type: multipart/form-data" \
+  -F "text=How will the weather affect energy consumption today?" \
+  -F "recentMessages=Previous conversation context..."
+```
+
+**Response**
+Stream of text data.
+
+#### GET `/raw`
+
+Get raw data from a specific tool without LLM processing.
+
+**Parameters**
+- `tool` (string, required) - The tool name to query
+- Additional parameters specific to each tool
+
+**Request Examples**
+```bash
+# Get current weather
+curl "http://localhost:8000/raw?tool=weather-current&lat=37.7749&lon=-122.4194"
+
+# Get news
+curl "http://localhost:8000/raw?tool=news"
+
+# Get DePIN metrics
+curl "http://localhost:8000/raw?tool=depin-metrics&isLatest=true"
+```
+
+**Response**
+```json
+{
+  "data": {
+    // Tool-specific response data
+  }
+}
+```
 
 ## LLM Provider Configuration
 
