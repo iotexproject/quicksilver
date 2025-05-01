@@ -5,7 +5,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { JSONRPCMessage, JSONRPCMessageSchema } from '@modelcontextprotocol/sdk/types.js';
 
-import { addMCPTools } from './src/mcp/registry.js';
+import { ToolRegistry } from './src/registry/registry.js';
 
 const app = new Hono();
 
@@ -86,14 +86,14 @@ class HonoSSETransport implements Transport {
 
 // Create server instance
 const server = new McpServer({
-  name: 'weather',
+  name: 'askSentientAI',
   version: '1.0.0',
   capabilities: {
     tools: {},
   },
 });
 
-addMCPTools(server);
+ToolRegistry.registerMcpTools(server);
 
 // Store active transports by session ID
 const transports: Record<string, HonoSSETransport> = {};

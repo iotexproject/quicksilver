@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "bun run server.ts --server-options=\"{\\\"idleTimeout\\\": 120000}\"",
+    "start:mcp": "bun run mcpServer.ts --server-options=\"{\\\"idleTimeout\\\": 120000}\"",
     "dev": "bun run --watch server.ts --server-options=\"{\\\"idleTimeout\\\": 120000}\"",
     "test": "vitest run",
     "test:watch": "vitest",
