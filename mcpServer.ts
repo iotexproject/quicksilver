@@ -5,7 +5,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { JSONRPCMessage, JSONRPCMessageSchema } from '@modelcontextprotocol/sdk/types.js';
 
-import { addMCPTools } from 'mcp/initTools';
+import { addMCPTools } from './src/mcp/registry.js';
 
 const app = new Hono();
 
