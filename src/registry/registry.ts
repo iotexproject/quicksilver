@@ -1,3 +1,4 @@
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp';
 import { ToolSet } from 'ai';
 
 import { logger } from '../logger/winston';
@@ -76,5 +77,27 @@ export class ToolRegistry {
       });
     });
     return toolSet;
+  }
+
+  static registerMcpTools(server: McpServer): void {
+    const enabledTools = this.getEnabledTools();
+    enabledTools.forEach(tool => {
+      tool.schema.forEach(schema => {
+        const name = schema.name;
+        const description = schema.tool.description || '';
+        const parameters = schema.tool.parameters.shape;
+        const execute = schema.tool.execute || (() => Promise.resolve({}));
+
+        server.tool(name, description, parameters, async (args, _extra) => {
+          const res = await execute(args, {
+            toolCallId: '',
+            messages: [],
+          });
+          return {
+            content: [{ type: 'text' as const, text: JSON.stringify(res) }],
+          };
+        });
+      });
+    });
   }
 }
