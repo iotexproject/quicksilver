@@ -142,33 +142,7 @@ export class Metering implements IMetering {
 
     try {
       // Send each event individually per the CloudEvents format
-      const results = await Promise.all(
-        eventsToSend.map(async event => {
-          const response = await fetch(`${this.apiUrl}/events`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/cloudevents+json',
-              Authorization: `Bearer ${process.env.OPENMETER_API_KEY}`,
-            },
-            body: JSON.stringify(event),
-          });
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            logger.error('API error', {
-              status: response.status,
-              body: errorText,
-            });
-            return {
-              success: false,
-              error: errorText,
-              eventId: event.id,
-            };
-          }
-
-          return { success: true, eventId: event.id };
-        })
-      );
+      const results = await this.sendEvents(eventsToSend);
 
       const failures = results.filter(r => !r.success);
 
@@ -199,6 +173,36 @@ export class Metering implements IMetering {
         errors: [(error as Error).message],
       };
     }
+  }
+
+  private async sendEvents(eventsToSend: MeteringEvent[]): Promise<MeteringResponse[]> {
+    return await Promise.all(
+      eventsToSend.map(async event => {
+        const response = await fetch(`${this.apiUrl}/events`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/cloudevents+json',
+            Authorization: `Bearer ${process.env.OPENMETER_API_KEY}`,
+          },
+          body: JSON.stringify(event),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          logger.error('API error', {
+            status: response.status,
+            body: errorText,
+          });
+          return {
+            success: false,
+            error: errorText,
+            eventId: event.id,
+          };
+        }
+
+        return { success: true, eventId: event.id };
+      })
+    );
   }
 
   /**
