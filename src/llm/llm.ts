@@ -12,8 +12,8 @@ import {
 } from 'ai';
 
 import { logger } from '../logger/winston';
-import { IMetering } from '../types';
 import { Metering } from '../metering';
+import { IMetering } from '../types';
 
 export const TOOL_CALL_LIMIT = process.env.TOOL_CALL_LIMIT ? parseInt(process.env.TOOL_CALL_LIMIT) : 20;
 
