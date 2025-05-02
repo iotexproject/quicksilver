@@ -85,6 +85,8 @@ describe('AskSpecialtyTool', () => {
         ToolName.L1DATA,
         ToolName.THIRDWEB,
         ToolName.MESSARI,
+        ToolName.CALCULATOR,
+        ToolName.TIMESTAMP_CONVERTER,
       ]);
       expect(ToolRegistry.buildToolSet).toHaveBeenCalled();
       expect(mockOrchestrator.process).toHaveBeenCalledWith("What's the price of ETH?");
