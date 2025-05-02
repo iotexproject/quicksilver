@@ -152,13 +152,33 @@ graph TD
    bun run start
    ```
 
-6. Test API query:
+6. Run in MCP (Model Context Protocol) mode:
+
+   ```bash
+   bun run start:mcp
+   ```
+   
+   This starts Quicksilver in MCP compatibility mode on port 3000 by default. To connect an MCP-compatible client, add the following to your client configuration:
+
+   ```json
+   {
+     "mcpServers": {
+       "askSentai": {
+         "url": "http://yourServerUrl/sse"
+       }
+     }
+   }
+   ```
+
+   Note that the standard API endpoints (`/ask`, `/stream`, etc.) are not available in MCP mode.
+
+7. Test API query:
 
    ```bash
     curl http://localhost:8000/ask -X POST -H "Content-Type: application/json" -d '{"q": "What is the weather in San Francisco?"}'
    ```
 
-7. Access raw tool data:
+8. Access raw tool data:
 
    ```bash
    # Get raw weather data for San Francisco
@@ -170,7 +190,6 @@ graph TD
    # Get raw DePIN metrics
    curl "http://localhost:8000/raw?tool=depin-metrics&isLatest=true"
    ```
-
 
 ---
 
@@ -217,7 +236,7 @@ Quicksilver supports running multiple instances with different tool configuratio
 #### Configuration Structure
 
 ```bash
-configs/ # Your instance-specific configuration (gitignored) 
+configs/ # Your instance-specific configuration (gitignored)
     ├── .env.weather # Instance with only weather-related tools
     ├── .env.news    # Instance with news and analytics tools
     └── .env.full    # Instance with all tools enabled
@@ -318,22 +337,22 @@ PORT=8003
 
 The following tools can be enabled in your configuration:
 
-| Tool Name          | Description           | Required Environment Variables         |
-| ------------------ | --------------------- | -------------------------------------- |
-| `news`             | News API integration  | `NEWSAPI_API_KEY`                      |
-| `weather-current`  | Current weather data  | `NUBILA_API_KEY`                       |
-| `weather-forecast` | Weather forecasts     | `NUBILA_API_KEY`                       |
-| `depin-metrics`    | DePIN network metrics | `DEPIN_API_KEY`                        |
-| `depin-projects`   | DePIN project data    | `DEPIN_API_KEY`                        |
-| `l1data`           | L1 blockchain data    | `API_V2_KEY`                          |
-| `dimo`             | Vehicle IoT data      | `CLIENT_ID`, `REDIRECT_URI`, `API_KEY` |
-| `nuclear`          | Nuclear outage data   | `EIA_API_KEY`                          |
-| `mapbox`           | Mapbox API integration | `MAPBOX_ACCESS_TOKEN`                  |
-| `messari`          | Messari API integration | `MESSARI_API_KEY`                     |
-| `thirdweb`         | Thirdweb API integration | `THIRDWEB_SECRET_KEY`, `THIRDWEB_SESSION_ID` |
-| `cmc`              | CoinMarketCap API integration | `CMC_API_KEY`                          |
-| `airquality`       | Air quality data      | `AIRVISUAL_API_KEY`                   |
-| `depinninja`       | Depin Ninja API integration | `DEPINNINJA_API_KEY`                  |
+| Tool Name          | Description                   | Required Environment Variables               |
+| ------------------ | ----------------------------- | -------------------------------------------- |
+| `news`             | News API integration          | `NEWSAPI_API_KEY`                            |
+| `weather-current`  | Current weather data          | `NUBILA_API_KEY`                             |
+| `weather-forecast` | Weather forecasts             | `NUBILA_API_KEY`                             |
+| `depin-metrics`    | DePIN network metrics         | `DEPIN_API_KEY`                              |
+| `depin-projects`   | DePIN project data            | `DEPIN_API_KEY`                              |
+| `l1data`           | L1 blockchain data            | `API_V2_KEY`                                 |
+| `dimo`             | Vehicle IoT data              | `CLIENT_ID`, `REDIRECT_URI`, `API_KEY`       |
+| `nuclear`          | Nuclear outage data           | `EIA_API_KEY`                                |
+| `mapbox`           | Mapbox API integration        | `MAPBOX_ACCESS_TOKEN`                        |
+| `messari`          | Messari API integration       | `MESSARI_API_KEY`                            |
+| `thirdweb`         | Thirdweb API integration      | `THIRDWEB_SECRET_KEY`, `THIRDWEB_SESSION_ID` |
+| `cmc`              | CoinMarketCap API integration | `CMC_API_KEY`                                |
+| `airquality`       | Air quality data              | `AIRVISUAL_API_KEY`                          |
+| `depinninja`       | Depin Ninja API integration   | `DEPINNINJA_API_KEY`                         |
 
 ### Best Practices
 
@@ -387,6 +406,7 @@ curl -H "API-KEY: your_api_key" http://localhost:8000/endpoint
 Simple health check endpoint.
 
 **Response**
+
 ```
 hello world, Sentient AI!
 ```
@@ -396,9 +416,11 @@ hello world, Sentient AI!
 Send a query to the Sentient AI system.
 
 **Parameters**
+
 - `q` or `content` (string, required) - The query text
 
 **Request Examples**
+
 ```bash
 # URL parameter
 curl "http://localhost:8000/ask?q=What%20is%20the%20weather%20in%20San%20Francisco?"
@@ -411,6 +433,7 @@ curl http://localhost:8000/ask \
 ```
 
 **Response**
+
 ```json
 {
   "data": "The current weather in San Francisco is 62°F with partly cloudy conditions..."
@@ -422,10 +445,12 @@ curl http://localhost:8000/ask \
 Stream a response from the Sentient AI system.
 
 **Parameters**
+
 - `text` (form data, required) - The query text
 - `recentMessages` (form data, optional) - Previous conversation context
 
 **Request Example**
+
 ```bash
 curl http://localhost:8000/stream \
   -X POST \
@@ -442,10 +467,12 @@ Stream of text data.
 Get raw data from a specific tool without LLM processing.
 
 **Parameters**
+
 - `tool` (string, required) - The tool name to query
 - Additional parameters specific to each tool
 
 **Request Examples**
+
 ```bash
 # Get current weather
 curl "http://localhost:8000/raw?tool=weather-current&lat=37.7749&lon=-122.4194"
@@ -458,11 +485,46 @@ curl "http://localhost:8000/raw?tool=depin-metrics&isLatest=true"
 ```
 
 **Response**
+
 ```json
 {
   "data": "Tool-specific response data"
 }
 ```
+
+#### GET `/sse` (MCP Mode)
+
+Establishes a Server-Sent Events (SSE) connection for Model Context Protocol interactions. Available when running in MCP mode.
+
+**Request Example**
+
+```bash
+# Connect to the MCP server via SSE
+curl -N http://localhost:3000/sse
+```
+
+**Response**
+Stream of SSE events with tool capabilities and message exchange.
+
+#### POST `/messages` (MCP Mode)
+
+Endpoint for sending messages to the MCP server after establishing an SSE connection.
+
+**Parameters**
+- `sessionId` (query parameter, required) - The session ID received from the SSE connection
+
+**Request Example**
+
+```bash
+# Send a message to the MCP server (session ID will be provided by the SSE connection)
+curl http://localhost:3000/messages?sessionId=YOUR_SESSION_ID \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"invoke","params":{"name":"tool_name","arguments":{}},"id":"request-id"}'
+```
+
+**Response**
+Confirmation of message receipt or error information.
 
 ---
 
