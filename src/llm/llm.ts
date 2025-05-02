@@ -12,6 +12,8 @@ import {
 } from 'ai';
 
 import { logger } from '../logger/winston';
+import { Metering } from '../metering';
+import { IMetering } from '../types';
 
 export const TOOL_CALL_LIMIT = process.env.TOOL_CALL_LIMIT ? parseInt(process.env.TOOL_CALL_LIMIT) : 20;
 
@@ -36,6 +38,7 @@ export class DummyLLM implements LLM {
 
 export class ModelAdapter implements LLM {
   model: LanguageModel;
+  metering: IMetering;
 
   constructor({ provider, model }: { provider: string; model: string }) {
     if (provider === 'anthropic') {
@@ -47,9 +50,14 @@ export class ModelAdapter implements LLM {
     } else {
       throw new Error(`Unsupported provider: ${provider}`);
     }
+    this.metering = new Metering({
+      source: process.env.OPENMETER_SOURCE || 'sentient-ai',
+    });
   }
 
   async generate(prompt: string, tools?: ToolSet): Promise<string> {
+    const metering = this.metering;
+    const model = this.model;
     try {
       console.time(`generation with model: ${this.model.modelId}`);
       const response = await generateText({
@@ -63,6 +71,18 @@ export class ModelAdapter implements LLM {
         maxSteps: TOOL_CALL_LIMIT,
         experimental_continueSteps: true,
         onStepFinish(step: StepResult<ToolSet>) {
+          metering.trackPrompt({
+            tokens: step.usage.promptTokens,
+            model: model.modelId,
+            type: 'input',
+            id: step.response.id + '-input',
+          });
+          metering.trackPrompt({
+            tokens: step.usage.completionTokens,
+            model: model.modelId,
+            type: 'output',
+            id: step.response.id + '-output',
+          });
           ModelAdapter.logStep(step);
         },
       });
@@ -75,6 +95,8 @@ export class ModelAdapter implements LLM {
   }
 
   async stream(prompt: string, tools?: ToolSet): Promise<Response> {
+    const metering = this.metering;
+    const model = this.model;
     console.log('stream', prompt);
     return createDataStreamResponse({
       execute: dataStream => {
@@ -92,6 +114,18 @@ export class ModelAdapter implements LLM {
           experimental_generateMessageId: generateUUID,
           onStepFinish(step: StepResult<ToolSet>) {
             ModelAdapter.logStep(step);
+            metering.trackPrompt({
+              tokens: step.usage.promptTokens,
+              model: model.modelId,
+              type: 'input',
+              id: step.response.id + '-input',
+            });
+            metering.trackPrompt({
+              tokens: step.usage.completionTokens,
+              model: model.modelId,
+              type: 'output',
+              id: step.response.id + '-output',
+            });
           },
         });
         result.consumeStream();
