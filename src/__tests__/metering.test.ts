@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { Logger } from 'winston';
+
 import { Metering } from '../metering';
 import { MeteringEvent } from '../types';
-import { logger } from '../logger/winston';
-import { Logger } from 'winston';
 describe('Metering', () => {
   let metering: Metering;
   let fetchMock: any;
