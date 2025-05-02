@@ -152,13 +152,33 @@ graph TD
    bun run start
    ```
 
-6. Test API query:
+6. Run in MCP (Model Context Protocol) mode:
+
+   ```bash
+   bun run start:mcp
+   ```
+   
+   This starts Quicksilver in MCP compatibility mode on port 3000 by default. To connect an MCP-compatible client, add the following to your client configuration:
+
+   ```json
+   {
+     "mcpServers": {
+       "askSentai": {
+         "url": "http://yourServerUrl/sse"
+       }
+     }
+   }
+   ```
+
+   Note that the standard API endpoints (`/ask`, `/stream`, etc.) are not available in MCP mode.
+
+7. Test API query:
 
    ```bash
     curl http://localhost:8000/ask -X POST -H "Content-Type: application/json" -d '{"q": "What is the weather in San Francisco?"}'
    ```
 
-7. Access raw tool data:
+8. Access raw tool data:
 
    ```bash
    # Get raw weather data for San Francisco
@@ -471,6 +491,40 @@ curl "http://localhost:8000/raw?tool=depin-metrics&isLatest=true"
   "data": "Tool-specific response data"
 }
 ```
+
+#### GET `/sse` (MCP Mode)
+
+Establishes a Server-Sent Events (SSE) connection for Model Context Protocol interactions. Available when running in MCP mode.
+
+**Request Example**
+
+```bash
+# Connect to the MCP server via SSE
+curl -N http://localhost:3000/sse
+```
+
+**Response**
+Stream of SSE events with tool capabilities and message exchange.
+
+#### POST `/messages` (MCP Mode)
+
+Endpoint for sending messages to the MCP server after establishing an SSE connection.
+
+**Parameters**
+- `sessionId` (query parameter, required) - The session ID received from the SSE connection
+
+**Request Example**
+
+```bash
+# Send a message to the MCP server (session ID will be provided by the SSE connection)
+curl http://localhost:3000/messages?sessionId=YOUR_SESSION_ID \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"invoke","params":{"name":"tool_name","arguments":{}},"id":"request-id"}'
+```
+
+**Response**
+Confirmation of message receipt or error information.
 
 ---
 
