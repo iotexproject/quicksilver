@@ -25,9 +25,9 @@ const RevenueProjectSchema = z.object({
   id: z.number(),
   createdAt: z.string(),
   updatedAt: z.string(),
-  arr: z.number(),
-  mrr: z.number(),
-  normalizedRevenueFor30Days: z.number(),
+  arr: z.number().nullable(),
+  mrr: z.number().nullable(),
+  normalizedRevenueFor30Days: z.number().nullable(),
   projectId: z.string(),
   name: z.string(),
   category: z.string(),
@@ -167,10 +167,20 @@ class RevenueDataExecutor extends BaseDepiNinjaExecutor {
     const lastPageData = await this.fetchFromDePINNinja(lastPageUrl);
     const parsedData = RevenueDataResponseSchema.parse(lastPageData);
 
-    // Return the most recent project data
-    return {
-      project: parsedData.data[parsedData.data.length - 1],
-    };
+    // If we have data, ensure null values are handled properly
+    if (parsedData.data.length > 0) {
+      const project = parsedData.data[parsedData.data.length - 1];
+      // Convert null values to 0 to ensure consistent data structure
+      project.arr = project.arr === null ? 0 : project.arr;
+      project.mrr = project.mrr === null ? 0 : project.mrr;
+      project.normalizedRevenueFor30Days =
+        project.normalizedRevenueFor30Days === null ? 0 : project.normalizedRevenueFor30Days;
+
+      return { project };
+    }
+
+    // Handle case when no data is returned
+    throw new Error(`No data found for project: ${projectName}`);
   }
 
   private buildUrl(params: { page: number; projectName: string; getRevenueHistoricalData?: boolean }): string {
