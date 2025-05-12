@@ -1,19 +1,18 @@
-import { anthropic } from '@ai-sdk/anthropic';
-import { deepseek } from '@ai-sdk/deepseek';
-import { openai } from '@ai-sdk/openai';
 import {
   generateText,
   streamText,
-  LanguageModel,
   ToolSet,
   createDataStreamResponse,
   smoothStream,
   StepResult,
+  type LanguageModelV1,
 } from 'ai';
 
 import { logger } from '../logger/winston';
 import { Metering } from '../metering';
 import { IMetering } from '../types';
+
+import { ModelProviders, ModelProviderName } from './providers';
 
 export const TOOL_CALL_LIMIT = process.env.TOOL_CALL_LIMIT ? parseInt(process.env.TOOL_CALL_LIMIT) : 20;
 
@@ -37,19 +36,17 @@ export class DummyLLM implements LLM {
 }
 
 export class ModelAdapter implements LLM {
-  model: LanguageModel;
+  model: LanguageModelV1;
   metering: IMetering;
 
-  constructor({ provider, model }: { provider: string; model: string }) {
-    if (provider === 'anthropic') {
-      this.model = anthropic(model);
-    } else if (provider === 'openai') {
-      this.model = openai(model);
-    } else if (provider === 'deepseek') {
-      this.model = deepseek(model);
-    } else {
+  constructor({ provider, model }: { provider: ModelProviderName; model: string }) {
+    const modelProvider = ModelProviders[provider];
+    if (!modelProvider) {
       throw new Error(`Unsupported provider: ${provider}`);
     }
+    // @ts-ignore: we only retrieve the model, it's has the same signature for all providers
+    this.model = modelProvider(model);
+
     this.metering = new Metering({
       source: process.env.OPENMETER_SOURCE || 'sentient-ai',
     });

@@ -46,6 +46,16 @@ describe('LLMService', () => {
       expect((service.llm as ModelAdapter).model.modelId).toBe('deepseek-reasoner');
     });
 
+    it('should initialize with OpenRouter models', () => {
+      const service = new LLMService({
+        fastLLMModel: 'mistralai/mistral-large',
+        LLMModel: 'anthropic/claude-3-opus',
+      });
+
+      expect((service.fastllm as ModelAdapter).model.modelId).toBe('mistralai/mistral-large');
+      expect((service.llm as ModelAdapter).model.modelId).toBe('anthropic/claude-3-opus');
+    });
+
     it('should mix different providers based on models', () => {
       const service = new LLMService({
         fastLLMModel: 'claude-3-5-haiku-latest',
