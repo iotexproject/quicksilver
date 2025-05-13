@@ -16,6 +16,6 @@ jobs:
       - name: Run Release Please
         uses: google-github-actions/release-please-action@v4
         with:
-          token: ${{ secrets.RELEASE_PLEASE_PAT }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
           changelog-notes-type: github
