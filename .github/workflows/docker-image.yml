@@ -35,7 +35,8 @@ jobs:
           tags: |
             type=raw,value=latest,enable=${{ github.event_name == 'release' }}
             type=raw,value=${{ github.event.release.tag_name }},enable=${{ github.event_name == 'release' }}
-            type=sha,prefix=sha-,enable=${{ github.event_name == 'pull_request' }}
+            # For pull requests, use full SHA and PR number
+            type=raw,value=sha-${{ github.sha }},enable=${{ github.event_name == 'pull_request' }}
             type=ref,event=pr,enable=${{ github.event_name == 'pull_request' }}
 
       - name: Set up Docker Buildx
