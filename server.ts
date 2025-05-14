@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { paymentMiddleware } from 'x402-hono';
 
 import { logger } from './src/logger/winston';
 import { SentientAI } from './src/sentientAI';
@@ -6,6 +7,32 @@ import { SentientAI } from './src/sentientAI';
 const app = new Hono();
 
 const sentai = new SentientAI();
+
+const X402_PAYMENT_RECEIVER = process.env.X402_PAYMENT_RECEIVER || '';
+const X402_PRICE_FOR_PROTECTED_ROUTE_USDC = process.env.X402_PRICE_FOR_PROTECTED_ROUTE_USDC || '$0.1';
+const X402_NETWORK = process.env.X402_NETWORK || 'iotex';
+const X402_FACILITATOR_URL = process.env.X402_FACILITATOR_URL || 'http://localhost:8001/facilitator';
+
+const routePaymentConfig = {
+  price: X402_PRICE_FOR_PROTECTED_ROUTE_USDC,
+  network: X402_NETWORK,
+  config: {
+    description: 'Access to quicksilver',
+  },
+};
+
+app.use(
+  paymentMiddleware(
+    X402_PAYMENT_RECEIVER,
+    {
+      '/ask': routePaymentConfig,
+      '/stream': routePaymentConfig,
+    },
+    {
+      url: X402_FACILITATOR_URL,
+    }
+  )
+);
 
 app.get('/', c => {
   return c.text('hello world, Sentient AI!');
